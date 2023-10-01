@@ -1,9 +1,11 @@
 import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
 import { Configuration, OpenAIApi } from "openai";
-
 import { checkSubscription } from "@/lib/subscription";
 import { incrementApiLimit, checkApiLimit } from "@/lib/api-limit";
+import prismadb from "@/lib/prismadb";
+
+// Import your Prisma Client instance
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
@@ -11,9 +13,7 @@ const configuration = new Configuration({
 
 const openai = new OpenAIApi(configuration);
 
-export async function POST(
-  req: Request
-) {
+export async function POST(req: Request) {
   try {
     const { userId } = auth();
     const body = await req.json();
@@ -54,6 +54,21 @@ export async function POST(
 
     if (!isPro) {
       await incrementApiLimit();
+    }
+
+    //response.data.data contains the URL of the generated image
+    const imageUrl = response.data.data[0].url || '';
+
+    try{
+    // Save the image URL in your database
+    await prismadb.image.create({
+      data: {
+        userId,
+        imageUrl,
+      },
+    })}
+    catch (error) {
+      console.log('error while saving in database :', error);
     }
 
     return NextResponse.json(response.data.data);

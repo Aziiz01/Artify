@@ -3,7 +3,8 @@ import React, { useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import axios from 'axios';
-
+import { auth } from "@clerk/nextjs";
+import prismadb from "@/lib/prismadb";
 import { Card, CardFooter } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -24,7 +25,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "react-hot-toast";
-
+import {promptOptions} from "./constants";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faLightbulb } from "@fortawesome/free-solid-svg-icons";
+import {SelectItem} from "@/components/ui/select"
 export default function HomePage() {
   const router = useRouter();
   const proModal = useProModal();
@@ -63,7 +67,18 @@ export default function HomePage() {
   const handleModelChange = (event: any) => {
     setSelectedModel(event.target.value);
   };
+  const getRandomPromptIndex = () => {
+    const randomIndex = Math.floor(Math.random() * promptOptions.length);
+    return randomIndex;
+  };
+  const handleSurpriseMeClick = () => {
+    const randomIndex = getRandomPromptIndex();
 
+    // Set the selected prompt in the user input bar
+    if (randomIndex !== null) {
+      setTextInput(promptOptions[randomIndex]);
+    }
+  };
   const values = {
     prompt:`${textInput} , ${selectedStyle}`,
     amount: "1",
@@ -77,6 +92,7 @@ export default function HomePage() {
       const response = await axios.post('/api/image', values);
       const urls = response.data.map((image: { url: string }) => image.url);
       setPhotos(urls);
+
     } catch (error: any) {
       if (error?.response?.status === 403) {
         proModal.onOpen();
@@ -125,6 +141,8 @@ export default function HomePage() {
   const closeModal = () => {
     setIsModalOpen(false);
   };
+
+  
   return (
     <div className="container mx-auto p-8">
       <div className="mb-8 space-y-4 text-center">
@@ -148,21 +166,32 @@ export default function HomePage() {
             </span>
           </button>
         </div>
-        <p className="text-gray-500 text-lg">
+        <div className="relative flex items-center">
+        <p className="text-gray-500 text-lg ">
           Describe what you want the AI to create
         </p>
+        {/* Add the "Surprise Me" button with Font Awesome icon */}
+        <button
+          className="bg-gray-200 text-gray-500 py-1 px-2 rounded-md ml-auto"
+          onClick={handleSurpriseMeClick}
+        >
+          <FontAwesomeIcon icon={faLightbulb} className="mr-1" /> {/* Font Awesome icon */}
+          Surprise Me
+        </button>
+      </div>
         <input
-          className="border rounded-md px-4 py-2 mt-4 w-full"
+          className="border rounded-md px-4 py-2 w-full" // Remove left padding
           type="text"
           placeholder="Your text prompt"
           value={textInput}
           onChange={(e) => setTextInput(e.target.value)}
-
         />
+       
         <h2 className="text-2xl font-bold">
           Choose a style
         </h2>
         <select value={selectedStyle} onChange={handleStyleChange}>
+        <option value="">No Style</option>
           <option value="Realistic">Realistic</option>
           <option value="Anime">Anime</option>
           <option value="Cosmic">Cosmic</option>
@@ -239,7 +268,7 @@ export default function HomePage() {
               <CardFooter className="p-2">
                 <Button onClick={() => window.open(src)} variant="secondary" className="w-full">
                   <Download className="h-4 w-4 mr-2" />
-                  Download
+                  Open Image
                 </Button>
               </CardFooter>
             </Card>

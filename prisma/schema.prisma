@@ -24,3 +24,11 @@ model UserSubscription {
   stripePriceId          String?   @map(name: "stripe_price_id")
   stripeCurrentPeriodEnd DateTime? @map(name: "stripe_current_period_end")
 }
+
+model Image {
+  id        String      @id @default(cuid())
+  userId    String      
+  imageUrl  String      // You can store the image URL here
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
