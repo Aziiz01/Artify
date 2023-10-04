@@ -34,7 +34,7 @@ export default function HomePage() {
   const proModal = useProModal();
   // State to manage modal visibility
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [image, setImage] = useState<string | null>(null);
+  const [image, setImage] =useState<HTMLImageElement[] | null>(null);
   const [photos, setPhotos] = useState<string[]>([]);
   const [textInput, setTextInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -111,11 +111,10 @@ export default function HomePage() {
       } else {
         // Use the selected model to determine which API to call
         const selectedApi = SDXLmodelApiMapping[selectedModel];
-        console.log(selectedApi);
         if (selectedApi) {
-          const imageData = await selectedApi(prompt);
-          if (imageData !== null) {
-            setImage(imageData);
+          const generatedImages = await selectedApi(prompt);
+          if (generatedImages !== null) {
+            setImage(generatedImages);
           }
         } else {
           // Handle the case where the selected model doesn't have a corresponding API
@@ -225,32 +224,26 @@ export default function HomePage() {
         {image == null  && !isLoading && photos == null && (
           <Empty label="No images generated." />
         )}
-        {image && (
-          <Card className="rounded-lg overflow-hidden">
-            <div className="relative aspect-square">
-            <Image
-              fill
-              alt="Generated"
-              src={`data:image/png;base64,${image}`}
-/>
-            </div>
-            
-            <CardFooter className="p-2">
-              <Button onClick={() => {
-                const newWindow = window.open();
-                if (newWindow) {
-                  newWindow.document.write(`<img src="data:image/png;base64,${image}" alt="Generated Image"/>`);
-                } else {
-                  // Handle the case where the new window couldn't be opened
-                  alert('Failed to open a new window.');
-                }
-              }} variant="secondary" className="w-full">
-                <Download className="h-4 w-4 mr-2" />
-                Open Image
-              </Button>
-            </CardFooter>
-          </Card>
-        )}
+       {image && (
+  image.map((img: any, index: any) => (
+    <Card key={index} className="rounded-lg overflow-hidden">
+      <div className="relative aspect-square">
+        <Image
+          fill
+          src={img.src}
+          alt={`Generated Image ${index + 1}`}
+        />
+      </div>
+      <CardFooter className="p-2">
+      <Button onClick={() => window.open(img.src)} variant="secondary" className="w-full">
+                  <Download className="h-4 w-4 mr-2" />
+                  Open Image
+                </Button>
+      </CardFooter>
+    </Card>
+  ))
+  )}
+
 
 
       </div>{/*DALLE PHOTOS */}

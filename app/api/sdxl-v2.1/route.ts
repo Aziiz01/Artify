@@ -1,45 +1,44 @@
 import axios from 'axios';
+import prismadb from '@/lib/prismadb'; // Import your Prisma Client instance
+import { auth } from "@clerk/nextjs";
+import { NextResponse } from "next/server";
+import * as Generation from "../../../app/generation/generation_pb";
+import {
+  buildGenerationRequest,
+  executeGenerationRequest,
+  onGenerationComplete,
+} from "../../../lib/helpers";
+import { client, metadata } from "../../../lib/grpc-client";
 
 // Define your API key
-const apiKey ='sk-9e2cyUTvElmetXgbPETM5ialGGB3FAcwtY0DX7Q2tsbEP9qG';
+const apiKey = 'sk-lMZmjzn1bSEdbyFNokTgYtCDP0yE09M4xYQ3WLQNgFCg9Gvf';
 console.log('API Key:', apiKey);
 
-// Create a function to make the API call
-export async function SDXLv21(textInput: string) {
+// Create a function to make the API call and save the image
+export async function SDXLv21(prompt: string) {
   try {
-    const response = await axios.post(
-      'https://api.stability.ai/v1/generation/stable-diffusion-512-v2-1/text-to-image',
-      {
-        text_prompts: [
-          {
-            text: textInput,
-          },
-        ],
-        steps: 30,
-        cfg_scale: 5,
-        height: 512,
-        width: 512,
-        samples: 1,
-        seed: 0,
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          Authorization: `Bearer ${apiKey}`,
+    const request = buildGenerationRequest("stable-diffusion-512-v2-1", {
+      type: "text-to-image",
+      prompts: [
+        {
+          text: prompt ,
         },
-      }
-    );
+      ],
+      width: 512,
+      height: 512,
+      samples: 1,
+      cfgScale: 5,
+      steps: 30,
+      seed: 0,
+      sampler: Generation.DiffusionSampler.SAMPLER_K_DPMPP_2M,
+    });
+    
+    const response = await executeGenerationRequest(client, request, metadata);
+        const generatedImageData = onGenerationComplete(response);
+        return generatedImageData; // Return the generated image data
 
-    if (response.status === 200) {
-      const imageData = response.data.artifacts[0].base64;
-      return imageData;
-    } else {
-      console.error('Error:', response.statusText);
-      return null;
-    }
   } catch (error) {
-    console.error('API Error:', error);
+    console.error('Failed to generate Text-To-Image, Error:', error);
     return null;
   }
 }
