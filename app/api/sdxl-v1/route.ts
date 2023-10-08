@@ -18,6 +18,7 @@ console.log('API Key:', apiKey);
 export async function SDXLv1(prompt: string) {
   try {
     const request = buildGenerationRequest("stable-diffusion-xl-1024-v1-0", {
+      
       type: "text-to-image",
       prompts: [
         {
