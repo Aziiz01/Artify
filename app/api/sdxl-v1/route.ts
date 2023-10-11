@@ -10,12 +10,13 @@ import {
 } from "../../../lib/helpers";
 import { client, metadata } from "../../../lib/grpc-client";
 
-// Define your API key
-const apiKey = 'sk-lMZmjzn1bSEdbyFNokTgYtCDP0yE09M4xYQ3WLQNgFCg9Gvf';
-console.log('API Key:', apiKey);
 
 // Create a function to make the API call and save the image
 export async function SDXLv1(prompt: string) {
+  const { userId } = auth();
+  if (!userId) {
+    return new NextResponse("Unauthorized", { status: 401 });
+  }
   try {
     const request = buildGenerationRequest("stable-diffusion-xl-1024-v1-0", {
       
@@ -37,6 +38,8 @@ export async function SDXLv1(prompt: string) {
     const response = await executeGenerationRequest(client, request, metadata);
         const generatedImageData = onGenerationComplete(response);
         return generatedImageData; // Return the generated image data
+
+       
 
   } catch (error) {
     console.error('Failed to generate Text-To-Image, Error:', error);

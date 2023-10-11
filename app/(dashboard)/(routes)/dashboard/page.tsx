@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import React, { useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -92,6 +93,7 @@ export default function HomePage() {
       const response = await axios.post('/api/image', values);
       const urls = response.data.map((image: { url: string }) => image.url);
       setPhotos(urls);
+      localStorage.setItem('DallEgeneratedPhotos', JSON.stringify(urls));
 
     } catch (error: any) {
       if (error?.response?.status === 403) {
@@ -115,6 +117,8 @@ export default function HomePage() {
           const generatedImages = await selectedApi(prompt);
           if (generatedImages !== null) {
             setImage(generatedImages);
+            localStorage.setItem('generatedImages', JSON.stringify(generatedImages.map((img: HTMLImageElement) => img.src)));
+
           }
         } else {
           // Handle the case where the selected model doesn't have a corresponding API
@@ -225,7 +229,7 @@ export default function HomePage() {
           <Empty label="No images generated." />
         )}
        {image && (
-  image.map((img: any, index: any) => (
+  image.map((img, index) => (
     <Card key={index} className="rounded-lg overflow-hidden">
       <div className="relative aspect-square">
         <Image
@@ -239,12 +243,15 @@ export default function HomePage() {
                   <Download className="h-4 w-4 mr-2" />
                   Open Image
                 </Button>
+                <Link href="/image-to-image">
+       <Button  variant="secondary" className="w-full">
+                  Enhance Image (Pro)
+                </Button>
+                </Link>
       </CardFooter>
     </Card>
   ))
   )}
-
-
 
       </div>{/*DALLE PHOTOS */}
       {photos && (

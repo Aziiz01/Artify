@@ -34,7 +34,7 @@ const PricingCard: React.FC<PricingCardProps> = ({ price }) => {
               className="h-5 w-5 flex-shrink-0 text-green-500 ml-2"
               aria-hidden="true"
             />
-            <h2 className="text-sm text-gray-500">$25 per day after 3 days</h2>
+            <h2 className="text-sm text-gray-500">4200 credits</h2>
           </div>
           <div className="border" />
           <div className="flex space-x-3">
@@ -75,7 +75,7 @@ const PricingCard: React.FC<PricingCardProps> = ({ price }) => {
               className="h-5 w-5 flex-shrink-0 text-green-500 ml-2"
               aria-hidden="true"
             />
-            <p className="text-sm text-gray-500">$25 per day after 3 days</p>
+            <p className="text-sm text-gray-500">1500 credits</p>
           </div>
           <div className="border" />
           <div className="flex space-x-3">
@@ -114,7 +114,7 @@ const PricingCard: React.FC<PricingCardProps> = ({ price }) => {
               className="h-5 w-5 flex-shrink-0 text-green-500 ml-2"
               aria-hidden="true"
             />
-            <p className="text-sm text-gray-500">$25 per day after 3 days</p>
+            <p className="text-sm text-gray-500">600 credtis</p>
           </div>
           <div className="border" />
           <div className="flex space-x-3">
@@ -153,7 +153,7 @@ const PricingCard: React.FC<PricingCardProps> = ({ price }) => {
               className="h-5 w-5 flex-shrink-0 text-green-500 ml-2"
               aria-hidden="true"
             />
-            <p className="text-sm text-gray-500">$25 per day after 3 days</p>
+            <p className="text-sm text-gray-500">300 credits</p>
           </div>
           <div className="border" />
           <div className="flex space-x-3">
@@ -209,7 +209,6 @@ const PricingCard: React.FC<PricingCardProps> = ({ price }) => {
         <div className="bg-gray-100 h-28 items-center font-bold">
           <h4 className="text-3xl">{price.nickname}</h4>
           <p>{dynamicSubTitle(price)}</p>
-          <h3>First 2,000lbs Included</h3>
         </div>
         <div>
           <div className="flex flex-col items-center justify-center pt-4">

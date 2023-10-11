@@ -5,8 +5,6 @@ import { checkSubscription } from "@/lib/subscription";
 import { incrementApiLimit, checkApiLimit } from "@/lib/api-limit";
 import prismadb from "@/lib/prismadb";
 
-// Import your Prisma Client instance
-
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -17,7 +15,7 @@ export async function POST(req: Request) {
   try {
     const { userId } = auth();
     const body = await req.json();
-    const { prompt, amount = 1, resolution = "512x512" } = body;
+    const { prompt, amount = 4, resolution = "512x512" } = body;
 
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -56,19 +54,48 @@ export async function POST(req: Request) {
       await incrementApiLimit();
     }
 
+    // Decrement the user's credit by 1
+    try {
+      const userSubscription = await prismadb.userSubscription.findUnique({
+        where: {
+          userId,
+        },
+        select: {
+          credits: true,
+        },
+      });
+
+      if (userSubscription) {
+        // Convert credits from a string to a number, decrement by 1, and store it back as a string
+        const currentCredits = parseInt(userSubscription.credits, 10);
+        const updatedCredits = (currentCredits - amount).toString();
+
+        await prismadb.userSubscription.update({
+          where: {
+            userId,
+          },
+          data: {
+            credits: updatedCredits,
+          },
+        });
+      }
+    } catch (error) {
+      console.log('Error while decrementing credits:', error);
+    }
+
     //response.data.data contains the URL of the generated image
     const imageUrl = response.data.data[0].url || '';
 
-    try{
-    // Save the image URL in your database
-    await prismadb.image.create({
-      data: {
-        userId,
-        imageUrl,
-      },
-    })}
-    catch (error) {
-      console.log('error while saving in database :', error);
+    try {
+      // Save the image URL in your database
+      await prismadb.image.create({
+        data: {
+          userId,
+          imageUrl,
+        },
+      });
+    } catch (error) {
+      console.log('Error while saving in database:', error);
     }
 
     return NextResponse.json(response.data.data);
@@ -76,4 +103,4 @@ export async function POST(req: Request) {
     console.log('[IMAGE_ERROR]', error);
     return new NextResponse("Internal Error", { status: 500 });
   }
-};
+}

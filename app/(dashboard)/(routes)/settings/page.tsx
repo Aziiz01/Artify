@@ -1,11 +1,12 @@
 import { Settings } from "lucide-react";
-
 import { Heading } from "@/components/heading";
 import { SubscriptionButton } from "@/components/subscription-button";
 import { checkSubscription } from "@/lib/subscription";
+import { getCredits } from "@/lib/credits";
 
 const SettingsPage = async () => {
   const isPro = await checkSubscription();
+  const credits = await getCredits(); // Corrected function call
 
   return ( 
     <div>
@@ -21,10 +22,10 @@ const SettingsPage = async () => {
           {isPro ? "You are currently on a Pro plan." : "You are currently on a free plan."}
         </div>
         <SubscriptionButton isPro={isPro} />
+        Your credits are: {credits}
       </div>
     </div>
-   );
+  );
 }
- 
-export default SettingsPage;
 
+export default SettingsPage;

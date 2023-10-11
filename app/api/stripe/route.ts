@@ -6,7 +6,7 @@ import { absoluteUrl } from "@/lib/utils";
 
 const creditsUrl = absoluteUrl("/credits");
 
-export async function POST(request: Request) {
+export async function POST(request?: Request) {
   try {
     const { userId } = auth();
     const user = await currentUser();
@@ -30,31 +30,35 @@ export async function POST(request: Request) {
       return new NextResponse(JSON.stringify({ url: stripeSession.url }));
     }
 
-    let data = await request.json();
-    let priceId = data.priceId;
+    if (request) {
+      let data = await request.json();
+      let priceId = data.priceId;
 
-    if (!priceId) {
-      return new NextResponse("Price ID is required", { status: 400 });
-    }
-
-    const session = await stripe.checkout.sessions.create({
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
+      if (!priceId) {
+        return new NextResponse("Price ID is required", { status: 400 });
+      }
+  
+      const session = await stripe.checkout.sessions.create({
+        line_items: [
+          {
+            price: priceId,
+            quantity: 1,
+          },
+        ],
+        mode: "subscription",
+        success_url: creditsUrl,
+        cancel_url: creditsUrl,
+        
+        metadata: {
+          userId,
         },
-      ],
-      mode: "subscription",
-      success_url: creditsUrl,
-      cancel_url: creditsUrl,
-      
-      metadata: {
-        userId,
-      },
-    });
-
-    return NextResponse.json(session.url)
-      } catch (error) {
+      });
+  
+      return NextResponse.json(session.url);
+    } else {
+      return new NextResponse("Bad Request", { status: 400 });
+    }
+  } catch (error) {
     console.log("[STRIPE_ERROR]", error);
     return new NextResponse("Internal Error", { status: 500 });
   }

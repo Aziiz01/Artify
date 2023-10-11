@@ -29,6 +29,17 @@ const routes = [
     icon: ImageIcon,
     color: "text-pink-700",
     href: '/image',
+  },{
+    label: 'Image to Image',
+    icon: ImageIcon,
+    color: "text-pink-700",
+    href: '/image-to-image',
+  }
+  ,{
+    label: 'Upscaler',
+    icon: ImageIcon,
+    color: "text-pink-700",
+    href: '/upscale',
   },
   {
     label: 'Video Generation',
@@ -81,6 +92,7 @@ export const Sidebar = ({
             Genius
           </h1>
         </Link>
+        
         <div className="space-y-1">
           {routes.map((route) => (
             <Link
