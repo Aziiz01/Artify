@@ -29,7 +29,11 @@ import { toast } from "react-hot-toast";
 import {promptOptions} from "./constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faLightbulb } from "@fortawesome/free-solid-svg-icons";
-import {SelectItem} from "@/components/ui/select"
+import {SelectItem} from "@/components/ui/select";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { db } from '../../../../firebase';
+import { getDownloadURL, ref, uploadString } from 'firebase/storage';
+import { storage } from "../../../../firebase";
 export default function HomePage() {
   const router = useRouter();
   const proModal = useProModal();
@@ -94,7 +98,7 @@ export default function HomePage() {
       const urls = response.data.map((image: { url: string }) => image.url);
       setPhotos(urls);
       localStorage.setItem('DallEgeneratedPhotos', JSON.stringify(urls));
-
+     
     } catch (error: any) {
       if (error?.response?.status === 403) {
         proModal.onOpen();
@@ -117,8 +121,8 @@ export default function HomePage() {
           const generatedImages = await selectedApi(prompt);
           if (generatedImages !== null) {
             setImage(generatedImages);
-            localStorage.setItem('generatedImages', JSON.stringify(generatedImages.map((img: HTMLImageElement) => img.src)));
-
+            console.log( generatedImages[0].src);
+            handleSaveSDXL(generatedImages[0].src);
           }
         } else {
           // Handle the case where the selected model doesn't have a corresponding API
@@ -130,6 +134,39 @@ export default function HomePage() {
       setIsLoading(false);
     }
   };
+// method working perfectly
+  const handleSaveSDXL = async (imageData : any) => {
+    try {
+      // Generate a unique filename based on the current timestamp
+      const timestamp = Date.now();
+      const filename = `{userIdnew}/${timestamp}.jpg`; // Change the file extension as needed
+  
+      // Extract the base64-encoded image data from the data URL
+      const base64Data = imageData.split(',')[1];
+  
+      const storageRef = ref(storage, 'SDXL/' + filename);
+  
+      // Upload the base64-encoded image data to Firebase Storage
+      await uploadString(storageRef, base64Data, 'base64', { contentType: 'image/jpeg' });
+  
+      // Get the download URL for the uploaded image
+      const imageUrl = await getDownloadURL(storageRef);
+  
+      // Store the URL in Firestore
+      await addDoc(collection(db, "images"), {
+        userId: 'userId',
+        image: imageUrl,
+        timeStamp: serverTimestamp(),
+      });
+    } catch (err) {
+      console.log(err);
+    }
+  };
+  
+  
+  
+  
+  
 
 
   const handleGenerate = () => {

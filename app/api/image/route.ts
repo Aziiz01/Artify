@@ -15,7 +15,7 @@ export async function POST(req: Request) {
   try {
     const { userId } = auth();
     const body = await req.json();
-    const { prompt, amount = 4, resolution = "512x512" } = body;
+    const { prompt, amount = 4, resolution = "256x256" } = body;
 
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -83,20 +83,7 @@ export async function POST(req: Request) {
       console.log('Error while decrementing credits:', error);
     }
 
-    //response.data.data contains the URL of the generated image
-    const imageUrl = response.data.data[0].url || '';
 
-    try {
-      // Save the image URL in your database
-      await prismadb.image.create({
-        data: {
-          userId,
-          imageUrl,
-        },
-      });
-    } catch (error) {
-      console.log('Error while saving in database:', error);
-    }
 
     return NextResponse.json(response.data.data);
   } catch (error) {

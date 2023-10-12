@@ -11,7 +11,7 @@ import {
 import { client, metadata } from "../../../lib/grpc-client";
 
 // Define your API key
-const apiKey = 'sk-s3DSd8wHGHG5JShqs0ulLaPfXfeelSeSAt91WXwTv4vNR6iv';
+const apiKey = 'sk-ibngopyoB22ObtegplMJ1XEHnXeV4PlpI2WEx3pExcs24cQH';
 console.log('API Key:', apiKey);
 
 // Create a function to make the API call and save the image
