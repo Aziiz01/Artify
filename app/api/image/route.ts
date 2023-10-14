@@ -4,7 +4,8 @@ import { Configuration, OpenAIApi } from "openai";
 import { checkSubscription } from "@/lib/subscription";
 import { incrementApiLimit, checkApiLimit } from "@/lib/api-limit";
 import prismadb from "@/lib/prismadb";
-
+import { getDoc , doc , updateDoc} from "firebase/firestore";
+import { db } from "@/firebase";
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -54,30 +55,18 @@ export async function POST(req: Request) {
       await incrementApiLimit();
     }
 
-    // Decrement the user's credit by 1
-    try {
-      const userSubscription = await prismadb.userSubscription.findUnique({
-        where: {
-          userId,
-        },
-        select: {
-          credits: true,
-        },
-      });
 
-      if (userSubscription) {
-        // Convert credits from a string to a number, decrement by 1, and store it back as a string
-        const currentCredits = parseInt(userSubscription.credits, 10);
+    try {
+  const docRef = await getDoc(doc(db, "userSubscription", userId));
+      if (docRef.exists()) {
+const productData = docRef.data(); 
+       const currentCredits = parseInt(productData.credits, 10);
         const updatedCredits = (currentCredits - amount).toString();
 
-        await prismadb.userSubscription.update({
-          where: {
-            userId,
-          },
-          data: {
-            credits: updatedCredits,
-          },
+        await updateDoc(doc(db, "UserApiLimit", userId), {
+          count: updatedCredits, 
         });
+        console.log("document updated");
       }
     } catch (error) {
       console.log('Error while decrementing credits:', error);

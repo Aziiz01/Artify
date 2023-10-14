@@ -2,30 +2,32 @@ import { auth } from "@clerk/nextjs";
 
 import prismadb from "@/lib/prismadb";
 import { MAX_FREE_COUNTS } from "@/constants";
-
+import { doc, serverTimestamp, updateDoc, getDoc, addDoc ,collection} from "firebase/firestore";
+import { db } from "@/firebase";
 export const incrementApiLimit = async () => {
   const { userId } = auth();
 
   if (!userId) {
     return;
   }
-
-  const userApiLimit = await prismadb.userApiLimit.findUnique({
-    where: { userId: userId },
-  });
-
-  if (userApiLimit) {
-    await prismadb.userApiLimit.update({
-      where: { userId: userId },
-      data: { count: userApiLimit.count + 1 },
+  const docRef = await getDoc(doc(db, "UserApiLimit", userId));
+  if (docRef.exists()) {
+    const productData = docRef.data();
+    await updateDoc(doc(db, "UserApiLimit", userId), {
+      timeStamp: serverTimestamp(),
+      count: productData.count + 1 
     });
+    console.log("document updated");
   } else {
-    await prismadb.userApiLimit.create({
-      data: { userId: userId, count: 1 },
-    });
+    await addDoc(collection(db, "UserApiLimit"), {
+      timeStamp: serverTimestamp(),
+      userId: userId,
+       count: 1   
+       });
+    console.log("document created");
   }
-};
 
+}
 export const checkApiLimit = async () => {
   const { userId } = auth();
 
@@ -33,15 +35,21 @@ export const checkApiLimit = async () => {
     return false;
   }
 
-  const userApiLimit = await prismadb.userApiLimit.findUnique({
-    where: { userId: userId },
-  });
+  const docRef = await getDoc(doc(db, "UserApiLimit", userId));
+  if (docRef.exists()) {
+    const productData = docRef.data();
+    if (productData.count < MAX_FREE_COUNTS)
+    {
+      return true;
+    }
+    else {
+      return false;
+    }
 
-  if (!userApiLimit || userApiLimit.count < MAX_FREE_COUNTS) {
-    return true;
   } else {
     return false;
   }
+
 };
 
 export const getApiLimitCount = async () => {
@@ -51,15 +59,14 @@ export const getApiLimitCount = async () => {
     return 0;
   }
 
-  const userApiLimit = await prismadb.userApiLimit.findUnique({
-    where: {
-      userId
-    }
-  });
+  const docRef = await getDoc(doc(db, "UserApiLimit", userId));
 
-  if (!userApiLimit) {
+
+  if (!docRef.exists()) {
     return 0;
-  }
+  } else {
+  const productData = docRef.data();
 
-  return userApiLimit.count;
+  return productData.count;
+  }
 };

@@ -5,7 +5,6 @@ import { ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import axios from 'axios';
 import { auth } from "@clerk/nextjs";
-import prismadb from "@/lib/prismadb";
 import { Card, CardFooter } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -121,8 +120,24 @@ export default function HomePage() {
           const generatedImages = await selectedApi(prompt);
           if (generatedImages !== null) {
             setImage(generatedImages);
-            console.log( generatedImages[0].src);
-            handleSaveSDXL(generatedImages[0].src);
+            const generatedImage = generatedImages[0].src;
+            console.log( generatedImage);
+          //  handleSaveSDXL(generatedImages[0].src);
+          const response = await fetch("/api/sdxlStorage", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ generatedImage}),
+          });
+    
+          if (response.status === 200) {
+            // Image uploaded successfully
+            console.log("Image uploaded successfully!");
+          } else {
+            // Something went wrong
+            console.log("Error uploading image:", response.statusText);
+          }
           }
         } else {
           // Handle the case where the selected model doesn't have a corresponding API

@@ -41,7 +41,7 @@ export async function POST(req: Request) {
         image: imageUrl,
         timeStamp: serverTimestamp(),
       });
-      return new NextResponse("cvn", { status: 200 });
+      return new NextResponse("mcheet", { status: 200 });
 
   }  catch (error) {
     console.log('[IMAGE_ERROR]', error);

@@ -1,5 +1,4 @@
 import axios from 'axios';
-import prismadb from '@/lib/prismadb'; // Import your Prisma Client instance
 import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
 import * as Generation from "../../../app/generation/generation_pb";

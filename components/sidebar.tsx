@@ -70,6 +70,12 @@ const routes = [
     color: "text-green-700",
     href: '/credits',
   },
+  {
+    label: 'Explore',
+    icon: CircleDollarSign,
+    color: "text-green-700",
+    href: '/explore',
+  },
 ];
 
 export const Sidebar = ({
