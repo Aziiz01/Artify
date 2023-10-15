@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import axios from 'axios';
@@ -106,6 +106,7 @@ export default function HomePage() {
       }
     }
   };
+  
   const generateImage = async () => {
     setIsLoading(true);
   
@@ -121,23 +122,17 @@ export default function HomePage() {
           if (generatedImages !== null) {
             setImage(generatedImages);
             const generatedImage = generatedImages[0].src;
-            console.log( generatedImage);
-          //  handleSaveSDXL(generatedImages[0].src);
-          const response = await fetch("/api/sdxlStorage", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ generatedImage}),
-          });
-    
-          if (response.status === 200) {
-            // Image uploaded successfully
-            console.log("Image uploaded successfully!");
-          } else {
-            // Something went wrong
-            console.log("Error uploading image:", response.statusText);
-          }
+            const base64Data = generatedImage.split(',')[1];
+
+ // console.log(base64Data)
+
+try {
+  const response = await axios.post('/api/sdxlStorage', { base64Data });
+  console.log(response.data); // The response from the API
+} catch (error) {
+  console.error(error);
+}           // handleSaveSDXL(generatedImage);
+         
           }
         } else {
           // Handle the case where the selected model doesn't have a corresponding API
@@ -149,12 +144,13 @@ export default function HomePage() {
       setIsLoading(false);
     }
   };
+
+
 // method working perfectly
   const handleSaveSDXL = async (imageData : any) => {
     try {
-      // Generate a unique filename based on the current timestamp
       const timestamp = Date.now();
-      const filename = `{userIdnew}/${timestamp}.jpg`; // Change the file extension as needed
+      const filename = `{userId}/${timestamp}.jpg`; // Change the file extension as needed
   
       // Extract the base64-encoded image data from the data URL
       const base64Data = imageData.split(',')[1];

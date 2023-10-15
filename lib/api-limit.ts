@@ -2,32 +2,42 @@ import { auth } from "@clerk/nextjs";
 
 import prismadb from "@/lib/prismadb";
 import { MAX_FREE_COUNTS } from "@/constants";
-import { doc, serverTimestamp, updateDoc, getDoc, addDoc ,collection} from "firebase/firestore";
+import { doc, serverTimestamp, updateDoc, getDoc, addDoc ,collection , setDoc , increment} from "firebase/firestore";
 import { db } from "@/firebase";
+
 export const incrementApiLimit = async () => {
   const { userId } = auth();
 
   if (!userId) {
     return;
   }
-  const docRef = await getDoc(doc(db, "UserApiLimit", userId));
-  if (docRef.exists()) {
-    const productData = docRef.data();
-    await updateDoc(doc(db, "UserApiLimit", userId), {
-      timeStamp: serverTimestamp(),
-      count: productData.count + 1 
-    });
-    console.log("document updated");
-  } else {
-    await addDoc(collection(db, "UserApiLimit"), {
-      timeStamp: serverTimestamp(),
-      userId: userId,
-       count: 1   
-       });
-    console.log("document created");
-  }
 
+  const docRef = doc(db, "UserApiLimit", userId);
+
+  try {
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      // Document exists, increment the count by 1
+      await setDoc(docRef, {
+        count: increment(1), // Increment the count by 1
+        timeStamp: serverTimestamp(),
+      }, { merge: true });
+      console.log("Document updated");
+    } else {
+      // Document doesn't exist, create a new one with count = 1
+      await setDoc(docRef, {
+        count: 1,
+        timeStamp: serverTimestamp(),
+        userId: userId,
+      });
+      console.log("Document created");
+    }
+  } catch (error) {
+    console.error("Error updating or creating the document:", error);
+  }
 }
+
 export const checkApiLimit = async () => {
   const { userId } = auth();
 
@@ -47,7 +57,7 @@ export const checkApiLimit = async () => {
     }
 
   } else {
-    return false;
+    return true;
   }
 
 };

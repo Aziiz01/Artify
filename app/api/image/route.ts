@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 import { Configuration, OpenAIApi } from "openai";
 import { checkSubscription } from "@/lib/subscription";
 import { incrementApiLimit, checkApiLimit } from "@/lib/api-limit";
-import prismadb from "@/lib/prismadb";
 import { getDoc , doc , updateDoc} from "firebase/firestore";
 import { db } from "@/firebase";
 const configuration = new Configuration({

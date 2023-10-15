@@ -3,7 +3,8 @@ import { NextResponse } from "next/server";
 import prismadb from "@/lib/prismadb";
 import { auth, currentUser } from "@clerk/nextjs";
 import { absoluteUrl } from "@/lib/utils";
-
+import { doc, serverTimestamp, updateDoc, getDoc, addDoc ,collection , setDoc , increment} from "firebase/firestore";
+import { db } from "@/firebase";
 const creditsUrl = absoluteUrl("/credits");
 
 export async function POST(request?: Request) {
@@ -14,16 +15,18 @@ export async function POST(request?: Request) {
     if (!userId || !user) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
+    const docRef = doc(db, "userSubscription", userId);
+    const docSnap = await getDoc(docRef);
 
-    const userSubscription = await prismadb.userSubscription.findUnique({
+   /* const userSubscription = await prismadb.userSubscription.findUnique({
       where: {
         userId,
       },
     });
-
-    if (userSubscription && userSubscription.stripeCustomerId) {
+*/
+    if (docSnap.exists() && docSnap.data().stripeCustomerId) {
       const stripeSession = await stripe.billingPortal.sessions.create({
-        customer: userSubscription.stripeCustomerId,
+        customer: docSnap.data().stripeCustomerId,
         return_url: creditsUrl,
       });
 

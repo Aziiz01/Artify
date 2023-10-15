@@ -5,7 +5,7 @@ import { NextResponse } from "next/server"
 import prismadb from "@/lib/prismadb"
 import { stripe } from "@/lib/stripe"
 import { db } from "@/firebase"
-import { addDoc ,collection, serverTimestamp, updateDoc, doc, query , where , getDocs , getDoc} from "firebase/firestore"
+import { addDoc ,collection, serverTimestamp, updateDoc, doc, query , where , getDocs , getDoc , setDoc} from "firebase/firestore"
 export async function POST(req: Request) {
   const body = await req.text()
   const signature = headers().get("Stripe-Signature") as string
@@ -31,8 +31,9 @@ export async function POST(req: Request) {
 
     if (!session?.metadata?.userId) {
       return new NextResponse("User id is required", { status: 400 });
-    }
-    await addDoc(collection(db, "userSubscription"), {
+    } 
+    //console.log(subscription.items.data[0].price.metadata.credits);
+    await setDoc(doc(db, "userSubscription", session?.metadata?.userId), {
       timeStamp: serverTimestamp(),
       userId: session?.metadata?.userId,
         stripeSubscriptionId: subscription.id,
@@ -41,8 +42,8 @@ export async function POST(req: Request) {
         stripeCurrentPeriodEnd: new Date(
           subscription.current_period_end * 1000
         ),
-         credits: subscription.items.data[0].price.metadata.credits,
-    });
+       credits: subscription.items.data[0].price.metadata.credits,
+    }, { merge: true });
     
   }
 
@@ -51,22 +52,23 @@ export async function POST(req: Request) {
       session.subscription as string
     )
 
-///////// TOOOOOO COMPLEEEETEEEEEEEEEEEEE
-
     const q = query(collection(db, "userSubscription"), where("stripeSubscriptionId", "==", subscription.id));
-
-const querySnapshot = await getDocs(q);
-querySnapshot.forEach((doc) =>  {
-  const docId = doc.id;
-   updateDoc(doc(db, "userSubscription", docId), {
-      
-    stripePriceId: subscription.items.data[0].price.id,
-    stripeCurrentPeriodEnd: new Date(
-      subscription.current_period_end * 1000
-    )
-    ,});
-console.log(doc.id, " => ", doc.data());
-});
+    const querySnapshot = await getDocs(q);
+    
+    querySnapshot.forEach((doc) => {
+      const docRef = doc.ref; // Get a reference to the document
+      const updateData = {
+        stripePriceId: subscription.items.data[0].price.id,
+        stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
+      };
+    
+      // Update the document with the new data
+      setDoc(docRef, updateData, { merge: true });
+    
+      console.log(doc.id, " => Document updated with new data");
+    });
+    
+/*
 
     await prismadb.userSubscription.update({
       where: {
@@ -79,7 +81,7 @@ console.log(doc.id, " => ", doc.data());
         ),
       },
     })
-  }
+  */}
 
   return new NextResponse(null, { status: 200 })
 };
