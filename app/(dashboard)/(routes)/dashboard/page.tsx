@@ -4,11 +4,9 @@ import React, { useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import axios from 'axios';
-import { auth } from "@clerk/nextjs";
 import { Card, CardFooter } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { tools } from "@/constants";
 import { useProModal } from "@/hooks/use-pro-modal";
 import Modal from 'react-modal'; // Import react-modal
 import { Button } from "@/components/ui/button"; // Import the Button component
@@ -16,58 +14,72 @@ import { Loader } from "@/components/loader";
 import { Empty } from "@/components/ui/empty";
 import { Download, ImageIcon } from "lucide-react";
 import { SDXLv1 } from '../../../api/sdxl-v1/route'; // Import the function
-import { SDXLv09 } from "@/app/api/sdxl-v0.9/route"; 
+import { SDXLv09 } from "@/app/api/sdxl-v0.9/route";
 import { SDXLv08 } from "@/app/api/sdxl-v0.8/route";
 import { SDXLv15 } from "@/app/api/sdxl-v1.5/route";
 import { SDXLv21 } from "@/app/api/sdxl-v2.1/route";
-import { amountOptions, formSchema, resolutionOptions } from "./constants";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { toast } from "react-hot-toast";
-import {promptOptions} from "./constants";
+import { promptOptions } from "./constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faLightbulb } from "@fortawesome/free-solid-svg-icons";
-import {SelectItem} from "@/components/ui/select";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { db } from '../../../../firebase';
-import { getDownloadURL, ref, uploadString } from 'firebase/storage';
-import { storage } from "../../../../firebase";
+
 export default function HomePage() {
   const router = useRouter();
   const proModal = useProModal();
   // State to manage modal visibility
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [image, setImage] =useState<HTMLImageElement[] | null>(null);
+  const [image, setImage] = useState<HTMLImageElement[] | null>(null);
   const [photos, setPhotos] = useState<string[]>([]);
   const [textInput, setTextInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState('');
   const [selectedModel, setSelectedModel] = useState('Stable Diffusion 2.1');
-
-  type SDXLModelApiMapping = {
-    [key: string]: (textInput: string) => Promise<any>;
+  const [height, setHeight] = useState(512);
+  const [width, setWidth] = useState(512);
+  const [selectedSamples , setSelectedSamples] = useState(1);
+  const [cfgScale, setCfgScale] = useState(0); // Set an initial value, e.g., 0
+  const [steps, setSteps] = useState(10); // Set an initial value, e.g., 0
+const [seed, setSeed] = useState(0);
+ const handleDimensions = (event : any) => {
+    const selectedValue = event.target.value;
+  
+    const [selectedHeight, selectedWidth] = selectedValue.split('*');
+  
+    setHeight(selectedHeight);
+    setWidth(selectedWidth);
   };
   
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      prompt: "",
-      amount: "1",
-      resolution: "512x512"
-    }
-  });
-  const SDXLmodelApiMapping : SDXLModelApiMapping  = {
-    "Stable Diffusion XL 1.0": SDXLv1,
-    "Stable Diffusion XL 0.9": SDXLv09,
+  
+  type SDXLModelApiMapping = {
+    [key: string]:  (
+      textInput: string,
+      selectedStyle: string,
+      height: number,
+      width: number,
+      selectedSamples: number,
+      cfgScale: number,
+      seed: number,
+      steps: number
+    )=> Promise<any>;
+  };
+  
+ 
+    const SDXLmodelApiMapping: SDXLModelApiMapping = {
+      "Stable Diffusion XL 1.0": SDXLv1,
+      "Stable Diffusion XL 0.9": SDXLv09,
     "Stable Diffusion XL 0.8": SDXLv08,
     "Stable Diffusion 2.1": SDXLv21,
     "Stable Diffusion 1.5": SDXLv15,
   };
-  
+  const handleSeed= (event: any) => {
+    setSeed(event.target.value);
+  };
   const handleStyleChange = (event: any) => {
     setSelectedStyle(event.target.value);
   };
+  const handleSamples = (event: any) => {
+    setSelectedSamples(event.target.value);
+  }
   const handleModelChange = (event: any) => {
     setSelectedModel(event.target.value);
   };
@@ -84,20 +96,20 @@ export default function HomePage() {
     }
   };
   const values = {
-    prompt:`${textInput} , ${selectedStyle}`,
+    prompt: `${textInput} , ${selectedStyle}`,
     amount: "1",
-   resolution: "512x512"
+    resolution: "512x512"
   }
-  const DALLE = async (values : any) => {
+  
+  const DALLE = async (values: any) => {
     try {
       setPhotos([]);
 
-      const prompt = `${textInput} , ${selectedStyle}`;
       const response = await axios.post('/api/image', values);
       const urls = response.data.map((image: { url: string }) => image.url);
       setPhotos(urls);
       localStorage.setItem('DallEgeneratedPhotos', JSON.stringify(urls));
-     
+await axios.post('/api/dalleStorage', urls)
     } catch (error: any) {
       if (error?.response?.status === 403) {
         proModal.onOpen();
@@ -106,11 +118,11 @@ export default function HomePage() {
       }
     }
   };
-  
+
   const generateImage = async () => {
     setIsLoading(true);
-  
-    const prompt = `${textInput} , ${selectedStyle}`;
+
+   
     try {
       if (selectedModel === 'DALL E2') {
         await DALLE(values);
@@ -118,21 +130,30 @@ export default function HomePage() {
         // Use the selected model to determine which API to call
         const selectedApi = SDXLmodelApiMapping[selectedModel];
         if (selectedApi) {
-          const generatedImages = await selectedApi(prompt);
+          const generatedImages = await selectedApi(textInput, selectedStyle,height,width,selectedSamples,cfgScale,seed,steps);
           if (generatedImages !== null) {
             setImage(generatedImages);
             const generatedImage = generatedImages[0].src;
             const base64Data = generatedImage.split(',')[1];
+            const dataToDB = {
+              base64Data,
+              textInput,
+              selectedModel,
+              selectedStyle,
+              height,
+              width,
+              selectedSamples,
+              cfgScale,
+              seed,
+              steps
+            };
+            try {
+              const response = await axios.post('/api/sdxlStorage', {base64Data,textInput, selectedStyle,height,width,selectedSamples,cfgScale,seed,steps});
+              console.log(response.data); // The response from the API
+            } catch (error) {
+              console.error(error);
+            }           // handleSaveSDXL(generatedImage);
 
- // console.log(base64Data)
-
-try {
-  const response = await axios.post('/api/sdxlStorage', { base64Data });
-  console.log(response.data); // The response from the API
-} catch (error) {
-  console.error(error);
-}           // handleSaveSDXL(generatedImage);
-         
           }
         } else {
           // Handle the case where the selected model doesn't have a corresponding API
@@ -145,41 +166,6 @@ try {
     }
   };
 
-
-// method working perfectly
-  const handleSaveSDXL = async (imageData : any) => {
-    try {
-      const timestamp = Date.now();
-      const filename = `{userId}/${timestamp}.jpg`; // Change the file extension as needed
-  
-      // Extract the base64-encoded image data from the data URL
-      const base64Data = imageData.split(',')[1];
-  
-      const storageRef = ref(storage, 'SDXL/' + filename);
-  
-      // Upload the base64-encoded image data to Firebase Storage
-      await uploadString(storageRef, base64Data, 'base64', { contentType: 'image/jpeg' });
-  
-      // Get the download URL for the uploaded image
-      const imageUrl = await getDownloadURL(storageRef);
-  
-      // Store the URL in Firestore
-      await addDoc(collection(db, "images"), {
-        userId: 'userId',
-        image: imageUrl,
-        timeStamp: serverTimestamp(),
-      });
-    } catch (err) {
-      console.log(err);
-    }
-  };
-  
-  
-  
-  
-  
-
-
   const handleGenerate = () => {
     generateImage();
   };
@@ -187,13 +173,24 @@ try {
   const openModal = () => {
     setIsModalOpen(true);
   };
-
-  // Function to close the modal
-  const closeModal = () => {
-    setIsModalOpen(false);
-  };
-
+  const handleCFG = (event : any) => {
+    // Get the selected cfg_scale value from the event
+    const selectedCFG = event.target.value;
   
+    // Set the cfgScale state variable with its setter
+    setCfgScale(selectedCFG);
+  };
+  const handleSteps = (event : any) => {
+    // Get the selected cfg_scale value from the event
+    const selectedSteps = event.target.value;
+  
+    // Set the cfgScale state variable with its setter
+    setSteps(selectedSteps);
+  };
+  
+  
+
+
   return (
     <div className="container mx-auto p-8">
       <div className="mb-8 space-y-4 text-center">
@@ -218,18 +215,18 @@ try {
           </button>
         </div>
         <div className="relative flex items-center">
-        <p className="text-gray-500 text-lg ">
-          Describe what you want the AI to create
-        </p>
-        {/* Add the "Surprise Me" button with Font Awesome icon */}
-        <button
-          className="bg-gray-200 text-gray-500 py-1 px-2 rounded-md ml-auto"
-          onClick={handleSurpriseMeClick}
-        >
-          <FontAwesomeIcon icon={faLightbulb} className="mr-1" /> {/* Font Awesome icon */}
-          Surprise Me
-        </button>
-      </div>
+          <p className="text-gray-500 text-lg ">
+            Describe what you want the AI to create
+          </p>
+          {/* Add the "Surprise Me" button with Font Awesome icon */}
+          <button
+            className="bg-gray-200 text-gray-500 py-1 px-2 rounded-md ml-auto"
+            onClick={handleSurpriseMeClick}
+          >
+            <FontAwesomeIcon icon={faLightbulb} className="mr-1" /> {/* Font Awesome icon */}
+            Surprise Me
+          </button>
+        </div>
         <input
           className="border rounded-md px-4 py-2 w-full" // Remove left padding
           type="text"
@@ -237,15 +234,17 @@ try {
           value={textInput}
           onChange={(e) => setTextInput(e.target.value)}
         />
-       
+
         <h2 className="text-2xl font-bold">
           Choose a style
         </h2>
         <select value={selectedStyle} onChange={handleStyleChange}>
-        <option value="">No Style</option>
-          <option value="Realistic">Realistic</option>
-          <option value="Anime">Anime</option>
-          <option value="Cosmic">Cosmic</option>
+          <option value="">many others to add </option>
+          <option value="3d-model">3d-model</option>
+          <option value="analog-film">analog-film </option>
+          <option value="anime cinematic">anime</option>
+          <option value="cinematic">cinematic</option>
+
         </select>
         <p>Selected Style: {selectedStyle}</p>
 
@@ -260,7 +259,63 @@ try {
           <option value="Stable Diffusion 1.5">Stable Diffusion 1.5</option>
           <option value="DALL E2">DALL E2</option>
         </select>
-        <p>Selected Style: {selectedModel}</p>
+        <p>Selected Model: {selectedModel}</p>
+        <h2 className="text-2xl font-bold">
+          Dimensions
+        </h2>
+        <select value={`${height}*${width}`} onChange={handleDimensions}>
+  <option value="512*512">512*512</option>
+  <option value="1024*1024">1024*1024</option>
+  <option value="2048*2048">2K</option>
+</select>
+<h2 className="text-2xl font-bold">
+          Samples
+        </h2>
+<select value={selectedSamples} onChange={handleSamples}>
+  <option value="1">1</option>
+  <option value="2">2</option>
+  <option value="4">4</option>
+  <option value="6">6</option>
+  <option value="8">8</option>
+  <option value="10">10</option>
+</select>
+<h2 className="text-2xl font-bold">
+          CFG_Scale
+ </h2>
+        <input
+  type="range"
+  id="cfgScale"
+  name="cfgScale"
+  min={0}
+  max={35}
+  value={cfgScale}
+  onChange={handleCFG}
+/>
+<p>{cfgScale}</p>
+<h2 className="text-2xl font-bold">
+          Steps
+ </h2>
+        <input
+  type="range"
+  id="steps"
+  name="steps"
+  min={10}
+  max={150}
+  value={steps}
+  onChange={handleSteps}
+/>
+<p>{steps}</p> 
+<h2 className="text-2xl font-bold">
+          Seed
+ </h2>  
+<input
+          className="" // Remove left padding
+          type="text"
+          placeholder="Seed"
+          value={seed}
+          onChange={handleSeed}
+        />
+
         <Button
           onClick={handleGenerate} disabled={isLoading}
           className="bg-black text-white py-2 px-4 rounded-md mt-4 w-full"
@@ -273,37 +328,38 @@ try {
             <Loader />
           </div>
         )}
-        {image == null  && !isLoading && photos == null && (
+        {image == null && !isLoading && photos == null && (
           <Empty label="No images generated." />
         )}
-       {image && (
-  image.map((img, index) => (
-    <Card key={index} className="rounded-lg overflow-hidden">
-      <div className="relative aspect-square">
-        <Image
-          fill
-          src={img.src}
-          alt={`Generated Image ${index + 1}`}
-        />
-      </div>
-      <CardFooter className="p-2">
-      <Button onClick={() => window.open(img.src)} variant="secondary" className="w-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-8">
+        {image !== null && (
+          image.map((img, index) => (
+            <Card key={index} className="rounded-lg overflow-hidden">
+              <div className="relative aspect-square">
+                <Image
+                  fill
+                  src={img.src}
+                  alt={`Generated Image ${index + 1}`}
+                />
+              </div>
+              <CardFooter className="p-2">
+                <Button onClick={() => window.open(img.src)} variant="secondary" className="w-full">
                   <Download className="h-4 w-4 mr-2" />
                   Open Image
                 </Button>
                 <Link href="/image-to-image">
-       <Button  variant="secondary" className="w-full">
-                  Enhance Image (Pro)
-                </Button>
+                  <Button variant="secondary" className="w-full">
+                    Enhance Image (Pro)
+                  </Button>
                 </Link>
-      </CardFooter>
-    </Card>
-  ))
-  )}
-
+              </CardFooter>
+            </Card>
+          ))
+        )}
+</div>
       </div>{/*DALLE PHOTOS */}
       {photos && (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-8">
           {photos.map((src) => (
             <Card key={src} className="rounded-lg overflow-hidden">
               <div className="relative aspect-square">
@@ -321,46 +377,9 @@ try {
               </CardFooter>
             </Card>
           ))}
-          </div>
+        </div>
       )}
-      <Modal
-        isOpen={isModalOpen}
-        onRequestClose={closeModal}
-        contentLabel="Help Modal"
-      >
-        {/* Modal content here */}
-        <h2 className="text-2xl font-bold mb-4">All about text prompts</h2>
-        <p className="text-gray-500">
-          The text prompt is a place for you to describe - in words - what you want the AI to create.
 
-          Use shuffle icon to generate random prompts. Try it. its fun!
-
-          Use grandiose words to get the AI to understand exactly what it is you want it to generate. For example, the term garden is a good prompt but lush garden or celestial garden better describes to the AI what it is exactly you would like it to make. If you’re still looking for more inspiration, try the random or choose options to create with one of our pre-written prompts.
-
-          Styles (Presets and Modifiers)
-          Modifiers are the descriptive words in a text prompt that describe to the AI what you want to make and how you want it to look. What art style are you going for? Oil painting? Pencil sketch? Art Deco? What color pallete do you want to show through the most? Do you want it to look more animated or realistic? Modifiers are how you can direct this all. If you’re still feeling uninspired, try our list of modifiers under the add modifiers button.
-
-          Presets are simply a bunch of modifiers, chosen by us, that are well tested and likely to achieve a good result.
-
-          Coherent
-          When using the Coherent algorithm, try to be more blunt and to the point when describing what it is you’d like to create. This helps to prevent the AI from straying off the path of what the subject of the creation is.
-
-          Artistic
-          When using the Artistic algorithm, try to describe as accurately as possible what it is you want to create. What artist styles, scenes, subjects, colors, and/or textures do you want to see in the final image? For example, the term garden can be used as a prompt but lush colorful garden full of flowers during a light drizzle or celestial garden with alien vegetation during an outdoor picnic better describes to the AI what it is exactly you would like it to make.
-
-          Try multiple prompt sets
-          In Advanced mode, turning on Try multiple prompt sets allows you to generate multiple creations in one go. One creation will be generated for each prompt set you specify.
-
-          Note that the reason its a prompt set and not just Try multiple prompts is that a single creation can itself have multiple prompts. That means that each prompt set will result in a single creation made up of one or more prompts.
-
-          When Try multiple prompt sets is turned on, you can duplicate an existing prompt set and then make whatever changes you like. For example, you might use a different modifier, or slightly change the prompt in other ways.        </p>
-        <button
-          className="bg-blue-500 text-white px-4 py-2 mt-4 rounded-md hover:bg-blue-600"
-          onClick={closeModal}
-        >
-          Close
-        </button>
-      </Modal>
     </div>
   );
 }

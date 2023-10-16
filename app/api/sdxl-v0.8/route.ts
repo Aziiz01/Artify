@@ -14,7 +14,7 @@ const apiKey = 'sk-ibngopyoB22ObtegplMJ1XEHnXeV4PlpI2WEx3pExcs24cQH';
 console.log('API Key:', apiKey);
 
 // Create a function to make the API call and save the image
-export async function SDXLv08(prompt: string) {
+export async function SDXLv08(prompt: string, selectedStyle : string,height : number,width : number, selectedSamples : number,cfgScale : number,seed :number, steps: number) {
   try {
     const request = buildGenerationRequest("stable-diffusion-xl-beta-v2-2-2", {
       type: "text-to-image",

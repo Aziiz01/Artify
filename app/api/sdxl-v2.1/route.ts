@@ -15,21 +15,21 @@ const apiKey = 'sk-ibngopyoB22ObtegplMJ1XEHnXeV4PlpI2WEx3pExcs24cQH';
 console.log('API Key:', apiKey);
 
 // Create a function to make the API call and save the image
-export async function SDXLv21(prompt: string) {
+export async function SDXLv21(textInput: string, selectedStyle : string,height : number,width : number, selectedSamples : number,cfgScale : number,seed :number, steps: number) {
   try {
     const request = buildGenerationRequest("stable-diffusion-512-v2-1", {
       type: "text-to-image",
       prompts: [
         {
-          text: prompt ,
+          text: `${textInput},${selectedStyle}` ,
         },
       ],
-      width: 512,
-      height: 512,
-      samples: 1,
-      cfgScale: 5,
-      steps: 30,
-      seed: 0,
+      width: width,
+      height: height,
+      samples: selectedSamples,
+      cfgScale: cfgScale,
+      steps: steps,
+      seed: seed,
       sampler: Generation.DiffusionSampler.SAMPLER_K_DPMPP_2M,
     });
     

@@ -3,8 +3,11 @@ import { NextResponse } from "next/server";
 import { Configuration, OpenAIApi } from "openai";
 import { checkSubscription } from "@/lib/subscription";
 import { incrementApiLimit, checkApiLimit } from "@/lib/api-limit";
-import { getDoc , doc , updateDoc} from "firebase/firestore";
-import { db } from "@/firebase";
+import { addDoc, collection, serverTimestamp, setDoc, getDoc , doc, updateDoc } from "firebase/firestore";
+import { db } from '../../../firebase';
+import { getDownloadURL, ref, uploadString } from 'firebase/storage';
+import { storage } from "../../../firebase";
+
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -56,20 +59,22 @@ export async function POST(req: Request) {
 
 
     try {
-  const docRef = await getDoc(doc(db, "userSubscription", userId));
+      const docRef = await getDoc(doc(db, "userSubscription", userId));
       if (docRef.exists()) {
-const productData = docRef.data(); 
-       const currentCredits = parseInt(productData.credits, 10);
-        const updatedCredits = (currentCredits - amount).toString();
-
+        const productData = docRef.data();
+        const currentCredits = parseInt(productData.credits, 10);
+        const updatedCredits = (currentCredits - 10).toString();
+        console.log(updatedCredits)
         await updateDoc(doc(db, "UserApiLimit", userId), {
-          count: updatedCredits, 
+          count: updatedCredits,
         });
         console.log("document updated");
       }
     } catch (error) {
       console.log('Error while decrementing credits:', error);
     }
+
+   
 
 
 

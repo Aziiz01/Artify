@@ -9,14 +9,14 @@ export const getCredits = async () => {
     return 0; // User is not authenticated, return 0 credits.
   }
 
-  const docRef = doc(db, "userSubscription", userId);
+  const docRef = doc(db, "UserApiLimit", userId);
   const docSnap = await getDoc(docRef);
 
   if (docSnap.exists()) {
     const productData = docSnap.data();
 
-    if (productData?.credits) {
-      return productData.credits;
+    if (productData?.count) {
+      return productData.count;
     }
   }
 

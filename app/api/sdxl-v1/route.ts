@@ -12,26 +12,23 @@ import { client, metadata } from "../../../lib/grpc-client";
 
 
 // Create a function to make the API call and save the image
-export async function SDXLv1(prompt: string) {
-  const { userId } = auth();
-  if (!userId) {
-    return new NextResponse("Unauthorized", { status: 401 });
-  }
+export async function SDXLv1(textInput: string, selectedStyle : string,height : number,width : number, selectedSamples : number,cfgScale : number,seed :number, steps: number ) {
+ 
   try {
     const request = buildGenerationRequest("stable-diffusion-xl-1024-v1-0", {
       
       type: "text-to-image",
       prompts: [
         {
-          text: prompt ,
+          text: `${textInput},${selectedStyle}` ,
         },
       ],
-      width: 1024,
-      height: 1024,
-      samples: 1,
-      cfgScale: 8,
-      steps: 30,
-      seed: 0,
+      width: width,
+      height: height,
+      samples: selectedSamples,
+      cfgScale: cfgScale,
+      steps: steps,
+      seed: seed,
       sampler: Generation.DiffusionSampler.SAMPLER_K_DPMPP_2M,
     });
     
