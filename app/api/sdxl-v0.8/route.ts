@@ -10,8 +10,8 @@ import {
 import { client, metadata } from "../../../lib/grpc-client";
 
 // Define your API key
-const apiKey = 'sk-ibngopyoB22ObtegplMJ1XEHnXeV4PlpI2WEx3pExcs24cQH';
-console.log('API Key:', apiKey);
+const apiKey = 'sk-ZArtaCDEPggaipkpUrrYJa31jo8giwqP2H0wdsLHmierPaHF';
+
 
 // Create a function to make the API call and save the image
 export async function SDXLv08(prompt: string, selectedStyle : string,height : number,width : number, selectedSamples : number,cfgScale : number,seed :number, steps: number) {

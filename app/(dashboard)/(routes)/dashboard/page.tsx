@@ -22,7 +22,7 @@ import { toast } from "react-hot-toast";
 import { promptOptions } from "./constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faLightbulb } from "@fortawesome/free-solid-svg-icons";
-
+import { PublishButton } from "@/components/publish_button";
 export default function HomePage() {
   const router = useRouter();
   const proModal = useProModal();
@@ -40,6 +40,8 @@ export default function HomePage() {
   const [cfgScale, setCfgScale] = useState(0); // Set an initial value, e.g., 0
   const [steps, setSteps] = useState(10); // Set an initial value, e.g., 0
 const [seed, setSeed] = useState(0);
+const [imageId, setImageId] = useState("");
+
  const handleDimensions = (event : any) => {
     const selectedValue = event.target.value;
   
@@ -97,10 +99,14 @@ const [seed, setSeed] = useState(0);
   };
   const values = {
     prompt: `${textInput} , ${selectedStyle}`,
-    amount: "1",
-    resolution: "512x512"
+    amount: selectedSamples,
+    resolution: `${height}x${width}`,
   }
-  
+  function generateRandomId() {
+    const timestamp = Date.now();
+    const randomPart = Math.floor(Math.random() * 1000000); // You can adjust the range as needed
+    return `${timestamp}-${randomPart}`;
+  }
   const DALLE = async (values: any) => {
     try {
       setPhotos([]);
@@ -108,8 +114,9 @@ const [seed, setSeed] = useState(0);
       const response = await axios.post('/api/image', values);
       const urls = response.data.map((image: { url: string }) => image.url);
       setPhotos(urls);
-      localStorage.setItem('DallEgeneratedPhotos', JSON.stringify(urls));
-await axios.post('/api/dalleStorage', urls)
+      const documentId = generateRandomId();
+      setImageId(documentId);
+      await axios.post('/api/dalleStorage', {urls,values,documentId})
     } catch (error: any) {
       if (error?.response?.status === 403) {
         proModal.onOpen();
@@ -135,20 +142,10 @@ await axios.post('/api/dalleStorage', urls)
             setImage(generatedImages);
             const generatedImage = generatedImages[0].src;
             const base64Data = generatedImage.split(',')[1];
-            const dataToDB = {
-              base64Data,
-              textInput,
-              selectedModel,
-              selectedStyle,
-              height,
-              width,
-              selectedSamples,
-              cfgScale,
-              seed,
-              steps
-            };
+            const documentId = generateRandomId();
+            setImageId(documentId);
             try {
-              const response = await axios.post('/api/sdxlStorage', {base64Data,textInput, selectedStyle,height,width,selectedSamples,cfgScale,seed,steps});
+              const response = await axios.post('/api/sdxlStorage', {documentId,textInput,selectedModel,selectedStyle,height,width,selectedSamples,cfgScale,seed,steps,base64Data});
               console.log(response.data); // The response from the API
             } catch (error) {
               console.error(error);
@@ -187,7 +184,6 @@ await axios.post('/api/dalleStorage', urls)
     // Set the cfgScale state variable with its setter
     setSteps(selectedSteps);
   };
-  
   
 
 
@@ -352,6 +348,10 @@ await axios.post('/api/dalleStorage', urls)
                     Enhance Image (Pro)
                   </Button>
                 </Link>
+                 <PublishButton imageId={imageId} />
+                  <Button variant="secondary" className="w-full">
+                    Like
+                  </Button>
               </CardFooter>
             </Card>
           ))
@@ -374,6 +374,7 @@ await axios.post('/api/dalleStorage', urls)
                   <Download className="h-4 w-4 mr-2" />
                   Open Image
                 </Button>
+                <PublishButton imageId={imageId} />
               </CardFooter>
             </Card>
           ))}

@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
-import { addDoc, collection, serverTimestamp, setDoc } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, setDoc ,doc } from "firebase/firestore";
 import { db } from '../../../firebase';
 import { getDownloadURL, ref, uploadString } from 'firebase/storage';
 import { storage } from "../../../firebase";
@@ -11,7 +11,6 @@ export async function POST(req: Request) {
     const body = await req.text();
     // Read the request body as text
     const variables = JSON.parse(body);
-
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
@@ -25,7 +24,7 @@ export async function POST(req: Request) {
 
     // Extract the base64-encoded image data and other variables from the data
     const base64Data = variables.base64Data;
-    const prompt = variables.prompt;
+    const prompt = variables.textInput;
     const Model = variables.selectedModel;
     const Style = variables.selectedStyle;
     const Samples = variables.selectedSamples;
@@ -33,8 +32,8 @@ export async function POST(req: Request) {
     const steps = variables.steps;
     const height = variables.height;
     const width = variables.width;
-    const cfg_scale = variables.cfg_scale;
-
+    const cfg_scale = variables.cfgScale;
+    const docID = variables.documentId;
     const storageRef = ref(storage, 'SDXL/' + filename);
 
     // Upload the base64-encoded image data to Firebase Storage
@@ -44,7 +43,7 @@ export async function POST(req: Request) {
     const imageUrl = await getDownloadURL(storageRef);
 
     try {
-      await addDoc(collection(db, "images"), {
+      await setDoc(doc(db, "images" ,docID), {
         userId: userId,
         image: imageUrl,
         prompt: prompt,
@@ -55,6 +54,8 @@ export async function POST(req: Request) {
         steps: steps,
         dimensions: `${height}*${width}`,
         cfg_scale: cfg_scale,
+        published: "false",
+        likes : 0,
         timeStamp: serverTimestamp(),
       });
       return new NextResponse("Image successfully uploaded", { status: 200 });

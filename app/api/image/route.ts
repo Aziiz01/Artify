@@ -5,8 +5,7 @@ import { checkSubscription } from "@/lib/subscription";
 import { incrementApiLimit, checkApiLimit } from "@/lib/api-limit";
 import { addDoc, collection, serverTimestamp, setDoc, getDoc , doc, updateDoc } from "firebase/firestore";
 import { db } from '../../../firebase';
-import { getDownloadURL, ref, uploadString } from 'firebase/storage';
-import { storage } from "../../../firebase";
+
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
@@ -18,7 +17,8 @@ export async function POST(req: Request) {
   try {
     const { userId } = auth();
     const body = await req.json();
-    const { prompt, amount = 4, resolution = "256x256" } = body;
+    const { prompt, amount, resolution} = body;
+    
 
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
