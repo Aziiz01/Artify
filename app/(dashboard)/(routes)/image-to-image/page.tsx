@@ -16,16 +16,42 @@ import { Download } from "lucide-react";
 import { Loader } from "@/components/loader";
 import { Empty } from "@/components/ui/empty";
 import { useEffect } from "react";
-
+import { useSearchParams } from 'next/navigation'
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/firebase";
 
 export default function ImageToImagePage() {
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
+  const [passedImage, setPassedImage] = useState('');
+
   const [generatedImage, setGeneratedImage] = useState<HTMLImageElement[] | null>(null);
   const [textInput, setTextInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState('');
+  const searchParams = useSearchParams()
+  const imageId = searchParams.get('imageId')
 
+  useEffect (() => {
+    const getImageFromId = async () => {
+      const docRef = doc(db, "images", `${imageId}`);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        // Check if the 'image' field exists in the document
+        if (docSnap.data().image) {
+          setPassedImage(docSnap.data().image);
+        } else {
+          // Handle the case where 'image' field is missing or empty
+          console.error("Image URL not found in Firestore.");
+        }
+      } else {
+        // Handle the case where the document doesn't exist
+        console.error("Document with imageId not found in Firestore.");
+      }
+  }
   
+    getImageFromId();
+  },[imageId])
 
   const handleStyleChange = (event: any) => {
     setSelectedStyle(event.target.value);
@@ -79,12 +105,16 @@ export default function ImageToImagePage() {
   }
 };
 
+
+
+
   return (
     <div className="container mx-auto p-8">
       <div className="mb-8 space-y-4 text-center">
         <h2 className="text-4xl font-bold">
-          Explore the Power of AI
+          Explore the Power of AI 
         </h2>
+       
         <p className="text-gray-500 text-lg">
           Chat with the Smartest AI - Experience the Power of AI
         </p>
@@ -113,13 +143,14 @@ export default function ImageToImagePage() {
           Input init image
         </h2>
                <input type="file" onChange={handleImageUpload} />
-               {uploadedImage &&
-               <Image 
-               width={512}
-               height={512}
-
-               src={uploadedImage ? URL.createObjectURL(uploadedImage) : ""} alt="Uploaded image" />
-}
+               {passedImage || uploadedImage ? (
+  <Image
+    width={512}
+    height={512}
+    src={passedImage || (uploadedImage ? URL.createObjectURL(uploadedImage) : "")}
+    alt="Uploaded image"
+  />
+) : null}
         <h2 className="text-2xl font-bold">
           Choose a style
         </h2>

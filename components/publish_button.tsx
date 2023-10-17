@@ -18,7 +18,6 @@ export const PublishButton =  ({ imageId}: { imageId: string }) => {
         const docRef = doc(db, "images", imageId);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          console.log("Document data:", docSnap.data().published);
           setIsPublished(docSnap.data().published);
         } else {
           // docSnap.data() will be undefined in this case

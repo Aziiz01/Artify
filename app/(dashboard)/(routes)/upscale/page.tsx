@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, ChangeEvent } from "react";
+import React, { useState, ChangeEvent , useEffect } from "react";
 import * as Generation from "../../../generation/generation_pb";
 import {
   executeGenerationRequest,
@@ -16,11 +16,39 @@ import { Card } from "@/components/ui/card";
 import { Empty } from "@/components/ui/empty";
 import { Loader } from "@/components/loader";
 import { models } from "./models";
-
+import { useSearchParams } from 'next/navigation'
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/firebase";
 export default function UpscalePage() {
+  const [passedImage, setPassedImage] = useState('');
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [generatedImage, setGeneratedImage] = useState<HTMLImageElement[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const searchParams = useSearchParams();
+  const imageId = searchParams.get('imageId');
+
+  useEffect (() => {
+    const getImageFromId = async () => {
+      const docRef = doc(db, "images", `${imageId}`);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        // Check if the 'image' field exists in the document
+        if (docSnap.data().image) {
+          setPassedImage(docSnap.data().image);
+        } else {
+          // Handle the case where 'image' field is missing or empty
+          console.error("Image URL not found in Firestore.");
+        }
+      } else {
+        // Handle the case where the document doesn't exist
+        console.error("Document with imageId not found in Firestore.");
+      }
+  }
+  
+    getImageFromId();
+  },[imageId])
+
 
 // Handle image upload
 const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
@@ -109,13 +137,14 @@ const handleUpscale = async () => {
 
       <h2 className="text-2xl font-bold">Image-to-Image Generator</h2>
       <input type="file" onChange={handleImageUpload} />
-               {uploadedImage &&
-               <Image 
-               width={512}
-               height={512}
-
-               src={uploadedImage ? URL.createObjectURL(uploadedImage) : ""} alt="Uploaded image" />
-}
+              {passedImage || uploadedImage ? (
+  <Image
+    width={512}
+    height={512}
+    src={passedImage || (uploadedImage ? URL.createObjectURL(uploadedImage) : "")}
+    alt="Uploaded image"
+  />
+) : null}
 <Button
           onClick={handleUpscale} disabled={isLoading}
           className="bg-black text-white py-2 px-4 rounded-md mt-4 w-full"

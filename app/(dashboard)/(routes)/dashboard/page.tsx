@@ -2,7 +2,6 @@
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
-import { useRouter } from "next/navigation";
 import axios from 'axios';
 import { Card, CardFooter } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -25,7 +24,6 @@ import { faLightbulb } from "@fortawesome/free-solid-svg-icons";
 import { PublishButton } from "@/components/publish_button";
 
 export default function HomePage() {
-
   const proModal = useProModal();
   // State to manage modal visibility
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -37,24 +35,24 @@ export default function HomePage() {
   const [selectedModel, setSelectedModel] = useState('Stable Diffusion 2.1');
   const [height, setHeight] = useState(512);
   const [width, setWidth] = useState(512);
-  const [selectedSamples , setSelectedSamples] = useState(1);
+  const [selectedSamples, setSelectedSamples] = useState(1);
   const [cfgScale, setCfgScale] = useState(0); // Set an initial value, e.g., 0
   const [steps, setSteps] = useState(10); // Set an initial value, e.g., 0
-const [seed, setSeed] = useState(0);
-const [imageId, setImageId] = useState("");
+  const [seed, setSeed] = useState(0);
+  const [imageId, setImageId] = useState("");
 
- const handleDimensions = (event : any) => {
+  const handleDimensions = (event: any) => {
     const selectedValue = event.target.value;
-  
+
     const [selectedHeight, selectedWidth] = selectedValue.split('*');
-  
+
     setHeight(selectedHeight);
     setWidth(selectedWidth);
   };
-  
+
   
   type SDXLModelApiMapping = {
-    [key: string]:  (
+    [key: string]: (
       textInput: string,
       selectedStyle: string,
       height: number,
@@ -63,18 +61,18 @@ const [imageId, setImageId] = useState("");
       cfgScale: number,
       seed: number,
       steps: number
-    )=> Promise<any>;
+    ) => Promise<any>;
   };
-  
- 
-    const SDXLmodelApiMapping: SDXLModelApiMapping = {
-      "Stable Diffusion XL 1.0": SDXLv1,
-      "Stable Diffusion XL 0.9": SDXLv09,
+
+
+  const SDXLmodelApiMapping: SDXLModelApiMapping = {
+    "Stable Diffusion XL 1.0": SDXLv1,
+    "Stable Diffusion XL 0.9": SDXLv09,
     "Stable Diffusion XL 0.8": SDXLv08,
     "Stable Diffusion 2.1": SDXLv21,
     "Stable Diffusion 1.5": SDXLv15,
   };
-  const handleSeed= (event: any) => {
+  const handleSeed = (event: any) => {
     setSeed(event.target.value);
   };
   const handleStyleChange = (event: any) => {
@@ -117,7 +115,7 @@ const [imageId, setImageId] = useState("");
       setPhotos(urls);
       const documentId = generateRandomId();
       setImageId(documentId);
-      await axios.post('/api/dalleStorage', {urls,values,documentId})
+      await axios.post('/api/dalleStorage', { urls, values, documentId })
     } catch (error: any) {
       if (error?.response?.status === 403) {
         proModal.onOpen();
@@ -130,7 +128,7 @@ const [imageId, setImageId] = useState("");
   const generateImage = async () => {
     setIsLoading(true);
 
-   
+
     try {
       if (selectedModel === 'DALL E2') {
         await DALLE(values);
@@ -138,7 +136,7 @@ const [imageId, setImageId] = useState("");
         // Use the selected model to determine which API to call
         const selectedApi = SDXLmodelApiMapping[selectedModel];
         if (selectedApi) {
-          const generatedImages = await selectedApi(textInput, selectedStyle,height,width,selectedSamples,cfgScale,seed,steps);
+          const generatedImages = await selectedApi(textInput, selectedStyle, height, width, selectedSamples, cfgScale, seed, steps);
           if (generatedImages !== null) {
             setImage(generatedImages);
             const generatedImage = generatedImages[0].src;
@@ -146,7 +144,7 @@ const [imageId, setImageId] = useState("");
             const documentId = generateRandomId();
             setImageId(documentId);
             try {
-              const response = await axios.post('/api/sdxlStorage', {documentId,textInput,selectedModel,selectedStyle,height,width,selectedSamples,cfgScale,seed,steps,base64Data});
+              const response = await axios.post('/api/sdxlStorage', { documentId, textInput, selectedModel, selectedStyle, height, width, selectedSamples, cfgScale, seed, steps, base64Data });
               console.log(response.data); // The response from the API
             } catch (error) {
               console.error(error);
@@ -171,21 +169,32 @@ const [imageId, setImageId] = useState("");
   const openModal = () => {
     setIsModalOpen(true);
   };
-  const handleCFG = (event : any) => {
+  const handleCFG = (event: any) => {
     // Get the selected cfg_scale value from the event
     const selectedCFG = event.target.value;
-  
+
     // Set the cfgScale state variable with its setter
     setCfgScale(selectedCFG);
   };
-  const handleSteps = (event : any) => {
+  const handleSteps = (event: any) => {
     // Get the selected cfg_scale value from the event
     const selectedSteps = event.target.value;
-  
+
     // Set the cfgScale state variable with its setter
     setSteps(selectedSteps);
   };
+  const handleEnhance = (event: any) => {
+    const url = `/image-to-image?imageId=${imageId}`;
+    
+    // Redirect to the new URL
+    window.location.href = url;
+};
+const handleUpscale = (event: any) => {
+  const url = `/upscale?imageId=${imageId}`;
   
+  // Redirect to the new URL
+  window.location.href = url;
+};
 
 
   return (
@@ -261,51 +270,51 @@ const [imageId, setImageId] = useState("");
           Dimensions
         </h2>
         <select value={`${height}*${width}`} onChange={handleDimensions}>
-  <option value="512*512">512*512</option>
-  <option value="1024*1024">1024*1024</option>
-  <option value="2048*2048">2K</option>
-</select>
-<h2 className="text-2xl font-bold">
+          <option value="512*512">512*512</option>
+          <option value="1024*1024">1024*1024</option>
+          <option value="2048*2048">2K</option>
+        </select>
+        <h2 className="text-2xl font-bold">
           Samples
         </h2>
-<select value={selectedSamples} onChange={handleSamples}>
-  <option value="1">1</option>
-  <option value="2">2</option>
-  <option value="4">4</option>
-  <option value="6">6</option>
-  <option value="8">8</option>
-  <option value="10">10</option>
-</select>
-<h2 className="text-2xl font-bold">
+        <select value={selectedSamples} onChange={handleSamples}>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="4">4</option>
+          <option value="6">6</option>
+          <option value="8">8</option>
+          <option value="10">10</option>
+        </select>
+        <h2 className="text-2xl font-bold">
           CFG_Scale
- </h2>
+        </h2>
         <input
-  type="range"
-  id="cfgScale"
-  name="cfgScale"
-  min={0}
-  max={35}
-  value={cfgScale}
-  onChange={handleCFG}
-/>
-<p>{cfgScale}</p>
-<h2 className="text-2xl font-bold">
+          type="range"
+          id="cfgScale"
+          name="cfgScale"
+          min={0}
+          max={35}
+          value={cfgScale}
+          onChange={handleCFG}
+        />
+        <p>{cfgScale}</p>
+        <h2 className="text-2xl font-bold">
           Steps
- </h2>
+        </h2>
         <input
-  type="range"
-  id="steps"
-  name="steps"
-  min={10}
-  max={150}
-  value={steps}
-  onChange={handleSteps}
-/>
-<p>{steps}</p> 
-<h2 className="text-2xl font-bold">
+          type="range"
+          id="steps"
+          name="steps"
+          min={10}
+          max={150}
+          value={steps}
+          onChange={handleSteps}
+        />
+        <p>{steps}</p>
+        <h2 className="text-2xl font-bold">
           Seed
- </h2>  
-<input
+        </h2>
+        <input
           className="" // Remove left padding
           type="text"
           placeholder="Seed"
@@ -329,33 +338,32 @@ const [imageId, setImageId] = useState("");
           <Empty label="No images generated." />
         )}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-8">
-        {image !== null && (
-          image.map((img, index) => (
-            <Card key={index} className="rounded-lg overflow-hidden">
-              <div className="relative aspect-square">
-                <Image
-                  fill
-                  src={img.src}
-                  alt={`Generated Image ${index + 1}`}
-                />
-              </div>
-              <CardFooter className="p-2">
-                <Button onClick={() => window.open(img.src)} variant="secondary" className="w-full">
-                  <Download className="h-4 w-4 mr-2" />
-                  Open Image
-                </Button>
-                <Link href="/image-to-image">
-                  <Button variant="secondary" className="w-full">
-                    Enhance Image (Pro)
+          {image !== null && (
+            image.map((img, index) => (
+              <Card key={index} className="">
+                <div className="relative aspect-square">
+                  <Image
+                    fill
+                    src={img.src}
+                    alt={`Generated Image ${index + 1}`}
+                  />
+                </div>
+                <CardFooter className="p-2">
+                  <Button onClick={() => window.open(img.src)} variant="secondary" className="w-full">
+                    <Download className="h-4 w-4 mr-2" />
+                    Open Image
                   </Button>
-                </Link>
-                 <PublishButton imageId={imageId} />
-                 
-              </CardFooter>
-            </Card>
-          ))
-        )}
-</div>
+                  <Button onClick={handleEnhance}> Enhance
+  </Button>        
+  <Button onClick={handleUpscale}> Upscale
+  </Button>       
+           <PublishButton imageId={imageId} />
+
+                </CardFooter>
+              </Card>
+            ))
+          )}
+        </div>
       </div>{/*DALLE PHOTOS */}
       {photos && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-8">
@@ -373,7 +381,11 @@ const [imageId, setImageId] = useState("");
                   <Download className="h-4 w-4 mr-2" />
                   Open Image
                 </Button>
-                <PublishButton imageId={imageId} />
+<Button onClick={handleEnhance}> Enhance
+  </Button>         
+  <Button onClick={handleUpscale}> Upscale
+  </Button> 
+         <PublishButton imageId={imageId} />
               </CardFooter>
             </Card>
           ))}
