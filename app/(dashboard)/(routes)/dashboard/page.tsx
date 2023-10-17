@@ -23,8 +23,9 @@ import { promptOptions } from "./constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faLightbulb } from "@fortawesome/free-solid-svg-icons";
 import { PublishButton } from "@/components/publish_button";
+
 export default function HomePage() {
-  const router = useRouter();
+
   const proModal = useProModal();
   // State to manage modal visibility
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -349,9 +350,7 @@ const [imageId, setImageId] = useState("");
                   </Button>
                 </Link>
                  <PublishButton imageId={imageId} />
-                  <Button variant="secondary" className="w-full">
-                    Like
-                  </Button>
+                 
               </CardFooter>
             </Card>
           ))

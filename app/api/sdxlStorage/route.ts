@@ -4,9 +4,14 @@ import { addDoc, collection, serverTimestamp, setDoc ,doc } from "firebase/fires
 import { db } from '../../../firebase';
 import { getDownloadURL, ref, uploadString } from 'firebase/storage';
 import { storage } from "../../../firebase";
+import { currentUser } from "@clerk/nextjs";
 
 export async function POST(req: Request) {
   try {
+    const user = await currentUser();
+    const user_email = user?.emailAddresses[0].emailAddress;
+    const firstName = user?.firstName;
+    const lastName =user?.lastName;
     const { userId } = auth();
     const body = await req.text();
     // Read the request body as text
@@ -44,6 +49,9 @@ export async function POST(req: Request) {
 
     try {
       await setDoc(doc(db, "images" ,docID), {
+        email_adress : user_email,
+        firstName : firstName,
+        lastName : lastName,
         userId: userId,
         image: imageUrl,
         prompt: prompt,
@@ -54,8 +62,8 @@ export async function POST(req: Request) {
         steps: steps,
         dimensions: `${height}*${width}`,
         cfg_scale: cfg_scale,
-        published: "false",
-        likes : 0,
+        published: false,
+        likes : [],
         timeStamp: serverTimestamp(),
       });
       return new NextResponse("Image successfully uploaded", { status: 200 });

@@ -5,9 +5,15 @@ import { db } from '../../../firebase';
 import { getDownloadURL, ref, uploadString } from 'firebase/storage';
 import { storage  } from "../../../firebase";
 import axios from 'axios'; // Import the axios library to make HTTP requests
+import { currentUser } from "@clerk/nextjs";
 
 export async function POST(req: Request) {
   try {
+    // Need to save the images with the user that created them
+    const user = await currentUser();
+const user_email = user?.emailAddresses[0].emailAddress;
+const firstName = user?.firstName;
+const lastName =user?.lastName;
     const { userId } = auth();
     const body = await req.json();
     const urls = body.urls;
@@ -15,7 +21,6 @@ const prompt = body.values.prompt;
 const amount = body.values.amount;
 const resolution = body.values.resolution;
 const docId = body.documentId;
-console.log(urls+prompt)
 
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -40,13 +45,16 @@ console.log(urls+prompt)
   try {
 
       await setDoc(doc(db, "images" ,docId), {
+        email_adress : user_email,
+        firstName : firstName,
+        lastName : lastName,
         userId: userId,
         image: imageUrl,
         prompt: prompt,
         amount : amount,
         resolution : resolution,
         published: false, 
-        likes : 0,
+        likes: [] ,
         timeStamp: serverTimestamp(),
       });
       return new NextResponse("Image successfully uploaded", { status: 200 });
