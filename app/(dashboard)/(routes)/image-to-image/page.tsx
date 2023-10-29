@@ -1,12 +1,11 @@
 'use client'
-
-import React, { useState, ChangeEvent } from "react";
+import React, { useState, ChangeEvent, useEffect } from "react";
 import * as Generation from "../../../generation/generation_pb";
 import {
   executeGenerationRequest,
   onGenerationComplete,
   buildGenerationRequest,
-}  from "../../../../lib/helpers";// Adjust the import path as needed
+} from "../../../../lib/helpers";
 import { client, metadata } from "../../../../lib/grpc-client";
 import Image from "next/image";
 import { CardFooter } from "@/components/ui/card";
@@ -15,7 +14,6 @@ import { Card } from "@/components/ui/card";
 import { Download } from "lucide-react";
 import { Loader } from "@/components/loader";
 import { Empty } from "@/components/ui/empty";
-import { useEffect } from "react";
 import { useSearchParams } from 'next/navigation'
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase";
@@ -23,7 +21,6 @@ import { db } from "@/firebase";
 export default function ImageToImagePage() {
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [passedImage, setPassedImage] = useState('');
-
   const [generatedImage, setGeneratedImage] = useState<HTMLImageElement[] | null>(null);
   const [textInput, setTextInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -31,82 +28,85 @@ export default function ImageToImagePage() {
   const searchParams = useSearchParams()
   const imageId = searchParams.get('imageId')
 
-  useEffect (() => {
+  useEffect(() => {
     const getImageFromId = async () => {
       const docRef = doc(db, "images", `${imageId}`);
       const docSnap = await getDoc(docRef);
-      
+
       if (docSnap.exists()) {
-        // Check if the 'image' field exists in the document
         if (docSnap.data().image) {
           setPassedImage(docSnap.data().image);
         } else {
-          // Handle the case where 'image' field is missing or empty
           console.error("Image URL not found in Firestore.");
         }
       } else {
-        // Handle the case where the document doesn't exist
         console.error("Document with imageId not found in Firestore.");
       }
-  }
-  
-    getImageFromId();
-  },[imageId])
+    }
 
-  const handleStyleChange = (event: any) => {
+    getImageFromId();
+  }, [imageId]);
+
+  const handleStyleChange = (event: ChangeEvent<HTMLSelectElement>) => {
     setSelectedStyle(event.target.value);
   };
 
   const imageStrength = 0.4;
-  // Handle image upload
+
   const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null;
     setUploadedImage(file);
   };
 
-  // Handle image generation
   const handleGenerate = async () => {
     setIsLoading(true);
 
-    if (uploadedImage) {
+    let initImage: Buffer | undefined;
 
-      try {
-        // Create a request object based on your requirements
-        // You may need to adjust the request parameters
-        const request = buildGenerationRequest("stable-diffusion-xl-1024-v1-0", {
-          type: "image-to-image",
-          prompts: [
-            {
-              text: textInput ,
-            },
-          ],
-          stepScheduleStart: 1 - imageStrength,
-          initImage: Buffer.from(await uploadedImage.arrayBuffer()), // Read the uploaded file
-          seed: 123463446,
-          samples: 1,
-          cfgScale: 5,
-          steps: 30,
-          sampler: Generation.DiffusionSampler.SAMPLER_K_DPMPP_2M,
-        });
+    if (typeof passedImage === "string") {
+      // Handle the case where passedImage is a string (e.g., a URL or base64 data)
+      // You can process it accordingly
+      // Example: Convert a base64 string to a Buffer
+      initImage = Buffer.from(passedImage, "base64");
+    } else if (uploadedImage instanceof Blob) {
+      // Handle the case where uploadedImage is a Blob or File
+      initImage = Buffer.from(await uploadedImage.arrayBuffer());
+    }
 
-        // Execute the gRPC request
-        const response = await executeGenerationRequest(client, request, metadata);
-      
-        // Update the generated images state with an array of HTML image elements
-        const generatedImages = onGenerationComplete(response);
+    // Provide a default value if initImage is still undefined
+    if (initImage === undefined) {
+      // You can set a default Buffer or handle this case according to your needs.
+      initImage = Buffer.from([]); // For example, create an empty Buffer.
+    }
 
-        // Set the generated image data in state
-        setGeneratedImage(generatedImages);
-        setIsLoading(false);
+    // Now, you can use the 'initImage' variable in your request object.
+    const request = buildGenerationRequest("stable-diffusion-xl-1024-v1-0", {
+      type: "image-to-image",
+      prompts: [
+        {
+          text: textInput,
+        },
+      ],
+      stepScheduleStart: 1 - imageStrength,
+      initImage, // Assign the value here
+      seed: 123463446,
+      samples: 1,
+      cfgScale: 5,
+      steps: 30,
+      sampler: Generation.DiffusionSampler.SAMPLER_K_DPMPP_2M,
+    });
 
-      } catch (error) {
-        console.error("Failed to make image-to-image request:", error);
+    try {
+      const response = await executeGenerationRequest(client, request, metadata);
+
+      const generatedImages = onGenerationComplete(response);
+
+      setGeneratedImage(generatedImages);
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Failed to make image-to-image request:", error);
     }
   }
-};
-
-
-
 
   return (
     <div className="container mx-auto p-8">

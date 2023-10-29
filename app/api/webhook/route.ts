@@ -2,16 +2,15 @@ import Stripe from "stripe"
 import { headers } from "next/headers"
 import { NextResponse } from "next/server"
 
-import prismadb from "@/lib/prismadb"
 import { stripe } from "@/lib/stripe"
 import { db } from "@/firebase"
-import { addDoc ,collection, serverTimestamp, updateDoc, doc, query , where , getDocs , getDoc , setDoc} from "firebase/firestore"
+import {collection, serverTimestamp, doc, query , where , getDocs ,setDoc, getDoc, updateDoc} from "firebase/firestore"
+
 export async function POST(req: Request) {
   const body = await req.text()
   const signature = headers().get("Stripe-Signature") as string
-
   let event: Stripe.Event
-
+  
   try {
     event = stripe.webhooks.constructEvent(
       body,
@@ -32,10 +31,9 @@ export async function POST(req: Request) {
     if (!session?.metadata?.userId) {
       return new NextResponse("User id is required", { status: 400 });
     } 
-    //console.log(subscription.items.data[0].price.metadata.credits);
     await setDoc(doc(db, "userSubscription", session?.metadata?.userId), {
       timeStamp: serverTimestamp(),
-      userId: session?.metadata?.userId,
+      payment_email: session?.customer_details?.email,
         stripeSubscriptionId: subscription.id,
         stripeCustomerId: subscription.customer as string,
         stripePriceId: subscription.items.data[0].price.id,
@@ -44,8 +42,19 @@ export async function POST(req: Request) {
         ),
        credits: subscription.items.data[0].price.metadata.credits,
     }, { merge: true });
-    
-  }
+    const ApiCountRef = doc(db, 'UserCredits', session?.metadata?.userId);
+    const docSnap = await getDoc(ApiCountRef);
+
+    if (docSnap.exists()){
+     const docData = docSnap.data();
+     const new_count = parseInt(docData.count, 10) + parseInt(subscription.items.data[0].price.metadata.credits, 10);
+     await updateDoc(ApiCountRef, {
+      count: new_count,
+  });
+    }else{
+setDoc(ApiCountRef, {
+   count: subscription.items.data[0].price.metadata.credits }, { merge: true });
+  }}
 
   if (event.type === "invoice.payment_succeeded") {
     const subscription = await stripe.subscriptions.retrieve(
@@ -66,6 +75,7 @@ export async function POST(req: Request) {
       setDoc(docRef, updateData, { merge: true });
     
       console.log(doc.id, " => Document updated with new data");
+
     });
     
 /*

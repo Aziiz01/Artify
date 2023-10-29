@@ -7,7 +7,7 @@ import { doc, serverTimestamp, updateDoc, getDoc, addDoc ,collection , setDoc , 
 import { db } from "@/firebase";
 const creditsUrl = absoluteUrl("/credits");
 
-export async function POST(request: Request) {
+export async function GET() {
   try {
     const { userId } = auth();
     const user = await currentUser();
@@ -15,32 +15,20 @@ export async function POST(request: Request) {
     if (!userId || !user) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
-    
-      let data = await request.json();
-      let priceId = data.priceId;
+    const docRef = doc(db, "userSubscription", userId);
+    const docSnap = await getDoc(docRef);
 
-      if (!priceId) {
-        return new NextResponse("Price ID is required", { status: 400 });
-      }
-  
-      const session = await stripe.checkout.sessions.create({
-        line_items: [
-          {
-            price: priceId,
-            quantity: 1,
-          },
-        ],
-        mode: "subscription",
-        success_url: creditsUrl,
-        cancel_url: creditsUrl,
-        
-        metadata: {
-          userId,
-        },
+
+    if (docSnap.exists() && docSnap.data().stripeCustomerId) {
+      const stripeSession = await stripe.billingPortal.sessions.create({
+        customer: docSnap.data().stripeCustomerId,
+        return_url: creditsUrl,
       });
-  
-      return NextResponse.json(session.url);
-    
+
+      return new NextResponse(JSON.stringify({ url: stripeSession.url }));
+    }
+
+   
   } catch (error) {
     console.log("[STRIPE_ERROR]", error);
     return new NextResponse("Internal Error", { status: 500 });

@@ -5,22 +5,23 @@ import { checkSubscription } from "@/lib/subscription";
 import { incrementApiLimit, checkApiLimit } from "@/lib/api-limit";
 import { addDoc, collection, serverTimestamp, setDoc, getDoc , doc, updateDoc } from "firebase/firestore";
 import { db } from '../../../firebase';
-
-
+import { clerkClient } from "@clerk/nextjs";
+import { currentUser } from "@clerk/nextjs";
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
 const openai = new OpenAIApi(configuration);
-
+//implement credti count fornt and back
 export async function POST(req: Request) {
   try {
     const { userId } = auth();
+    const user =await currentUser();
     const body = await req.json();
     const { prompt, amount, resolution} = body;
-    
-
-    if (!userId) {
+    //const users = await clerkClient.users.getUserList();
+    //console.log(users)
+    if (!userId || !user) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
@@ -55,17 +56,15 @@ export async function POST(req: Request) {
 
     if (!isPro) {
       await incrementApiLimit();
-    }
-
-
+    } else {
     try {
-      const docRef = await getDoc(doc(db, "userSubscription", userId));
+      const docRef = await getDoc(doc(db, "UserCredits", userId));
       if (docRef.exists()) {
         const productData = docRef.data();
-        const currentCredits = parseInt(productData.credits, 10);
-        const updatedCredits = (currentCredits - 10).toString();
+        const currentCredits = parseInt(productData.count, 10);
+        const updatedCredits = (currentCredits - 2).toString();
         console.log(updatedCredits)
-        await updateDoc(doc(db, "UserApiLimit", userId), {
+        await updateDoc(doc(db, "UserCredits", userId), {
           count: updatedCredits,
         });
         console.log("document updated");
@@ -73,11 +72,7 @@ export async function POST(req: Request) {
     } catch (error) {
       console.log('Error while decrementing credits:', error);
     }
-
-   
-
-
-
+  }
     return NextResponse.json(response.data.data);
   } catch (error) {
     console.log('[IMAGE_ERROR]', error);

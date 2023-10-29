@@ -6,7 +6,7 @@ import axios from 'axios';
 import { Card, CardFooter } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { useProModal } from "@/hooks/use-pro-modal";
+import { useProModal } from "@/hook/use-pro-modal";
 import Modal from 'react-modal'; // Import react-modal
 import { Button } from "@/components/ui/button"; // Import the Button component
 import { Loader } from "@/components/loader";
@@ -22,8 +22,11 @@ import { promptOptions } from "./constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faLightbulb } from "@fortawesome/free-solid-svg-icons";
 import { PublishButton } from "@/components/publish_button";
+import { clerkClient } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 
 export default function HomePage() {
+  const { isSignedIn, user, isLoaded } = useUser();
   const proModal = useProModal();
   // State to manage modal visibility
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -41,6 +44,12 @@ export default function HomePage() {
   const [seed, setSeed] = useState(0);
   const [imageId, setImageId] = useState("");
 
+  if (!isLoaded) {
+    return null;
+  }
+ 
+  
+
   const handleDimensions = (event: any) => {
     const selectedValue = event.target.value;
 
@@ -53,6 +62,7 @@ export default function HomePage() {
   
   type SDXLModelApiMapping = {
     [key: string]: (
+      userId : string,
       textInput: string,
       selectedStyle: string,
       height: number,
@@ -103,9 +113,11 @@ export default function HomePage() {
   }
   function generateRandomId() {
     const timestamp = Date.now();
-    const randomPart = Math.floor(Math.random() * 1000000); // You can adjust the range as needed
+    const randomPart = Math.floor(Math.random() * 1000000); 
     return `${timestamp}-${randomPart}`;
   }
+
+  
   const DALLE = async (values: any) => {
     try {
       setPhotos([]);
@@ -127,39 +139,44 @@ export default function HomePage() {
 
   const generateImage = async () => {
     setIsLoading(true);
-
-
-    try {
-      if (selectedModel === 'DALL E2') {
-        await DALLE(values);
-      } else {
-        // Use the selected model to determine which API to call
-        const selectedApi = SDXLmodelApiMapping[selectedModel];
-        if (selectedApi) {
-          const generatedImages = await selectedApi(textInput, selectedStyle, height, width, selectedSamples, cfgScale, seed, steps);
-          if (generatedImages !== null) {
-            setImage(generatedImages);
-            const generatedImage = generatedImages[0].src;
-            const base64Data = generatedImage.split(',')[1];
-            const documentId = generateRandomId();
-            setImageId(documentId);
-            try {
-              const response = await axios.post('/api/sdxlStorage', { documentId, textInput, selectedModel, selectedStyle, height, width, selectedSamples, cfgScale, seed, steps, base64Data });
-              console.log(response.data); // The response from the API
-            } catch (error) {
-              console.error(error);
-            }           // handleSaveSDXL(generatedImage);
-
-          }
+    if (isSignedIn) {
+      const userId= user.id;
+      try {
+        if (selectedModel === 'DALL E2') {
+          await DALLE(values);
         } else {
-          // Handle the case where the selected model doesn't have a corresponding API
-          // You can display an error message or take other appropriate actions.
-          console.error(`API for model ${selectedModel} not found.`);
+          // Use the selected model to determine which API to call
+          const selectedApi = SDXLmodelApiMapping[selectedModel];
+          if (selectedApi) {
+            const generatedImages = await selectedApi(userId,textInput, selectedStyle, height, width, selectedSamples, cfgScale, seed, steps);
+            if (generatedImages !== null) {
+              setImage(generatedImages);
+              const generatedImage = generatedImages[0].src;
+              const base64Data = generatedImage.split(',')[1];
+              const documentId = generateRandomId();
+              setImageId(documentId);
+              try {
+                const response = await axios.post('/api/sdxlStorage', { documentId, textInput, selectedModel, selectedStyle, height, width, selectedSamples, cfgScale, seed, steps, base64Data });
+                console.log(response.data); // The response from the API
+              } catch (error) {
+                console.error(error);
+              }           
+  
+            }
+          } else {
+            // Handle the case where the selected model doesn't have a corresponding API
+            // You can display an error message or take other appropriate actions.
+            console.error(`API for model ${selectedModel} not found.`);
+          }
         }
+      } finally {
+        setIsLoading(false);
       }
-    } finally {
-      setIsLoading(false);
+    }else {
+       console.log('You should sign in in order to continue !');
     }
+
+    
   };
 
   const handleGenerate = () => {

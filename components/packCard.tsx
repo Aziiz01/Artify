@@ -187,21 +187,28 @@ const PricingCard: React.FC<PricingCardProps> = ({ price }) => {
     }
   };
 
-  // POST request 
   const handleSubscription = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    const { data } = await axios.post('/api/stripe',
-      {
-        priceId: price.id
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
+    console.log("Sending POST request to /api/stripe with priceId:", price.id);
+   
+    try {
+      const { data } = await axios.post('/api/stripe',
+        {
+          priceId: price.id
         },
-      }
-    );
-    window.location.assign(data);
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      console.log("Received response from /api/stripe:", data);
+      window.location.assign(data);
+    } catch (error) {
+      console.error("Error while sending POST request:", error);
+    }
   };
+  
 
   return (
     <div className="border-gray-100 shadow-2xl border-4 text-center mt-10 max-w-[1040px]">

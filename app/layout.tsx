@@ -21,8 +21,8 @@ export default async function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
+    <ClerkProvider  afterSignInUrl='/dashboard' afterSignUpUrl='/dashboard'>
+      <html lang="en" suppressHydrationWarning={true}>
         <CrispProvider />
         <body className={font.className}>
           <ToasterProvider />

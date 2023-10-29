@@ -1,5 +1,5 @@
 import { auth } from "@clerk/nextjs";
-import { doc, serverTimestamp, updateDoc, getDoc, addDoc, collection, setDoc, increment } from "firebase/firestore";
+import { doc, getDoc} from "firebase/firestore";
 import { db } from "@/firebase";
 
 export const getCredits = async () => {
@@ -9,7 +9,7 @@ export const getCredits = async () => {
     return 0; // User is not authenticated, return 0 credits.
   }
 
-  const docRef = doc(db, "UserApiLimit", userId);
+  const docRef = doc(db, "UserCredits", userId);
   const docSnap = await getDoc(docRef);
 
   if (docSnap.exists()) {

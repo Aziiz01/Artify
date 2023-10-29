@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { auth } from "@clerk/nextjs";
+import { auth, currentUser } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
 import * as Generation from "../../../app/generation/generation_pb";
 import {
@@ -8,14 +8,22 @@ import {
   onGenerationComplete,
 } from "../../../lib/helpers";
 import { client, metadata } from "../../../lib/grpc-client";
+import { incrementApiLimit, checkApiLimit } from "@/lib/api-limit";
+import { checkSubscription } from "@/lib/subscription";
+import {  getDoc , doc, updateDoc } from "firebase/firestore";
+import { db } from '../../../firebase';
+import { useUser } from "@clerk/nextjs";
 
-// Define your API key
-const apiKey = 'sk-ZArtaCDEPggaipkpUrrYJa31jo8giwqP2H0wdsLHmierPaHF';
-
-
-// Create a function to make the API call and save the image
-export async function SDXLv08(prompt: string, selectedStyle : string,height : number,width : number, selectedSamples : number,cfgScale : number,seed :number, steps: number) {
+export async function SDXLv08(userId: string,prompt: string, selectedStyle : string,height : number,width : number, selectedSamples : number,cfgScale : number,seed :number, steps: number) {
+  
   try {
+    /*const freeTrial = await checkApiLimit();
+    const isPro = await checkSubscription();
+   
+    if (!freeTrial && !isPro) {
+      return new NextResponse("Free trial has expired. Please upgrade to pro.", { status: 403 });
+    }*/
+   
     const request = buildGenerationRequest("stable-diffusion-xl-beta-v2-2-2", {
       type: "text-to-image",
       prompts: [
@@ -34,6 +42,11 @@ export async function SDXLv08(prompt: string, selectedStyle : string,height : nu
     
     const response = await executeGenerationRequest(client, request, metadata);
         const generatedImageData = onGenerationComplete(response);
+       /* if (!isPro) {
+          await incrementApiLimit();
+        }*/
+        
+    
         return generatedImageData; // Return the generated image data
 
   } catch (error) {

@@ -1,7 +1,7 @@
 import { stripe } from "@/lib/stripe";
 import { NextResponse } from "next/server";
 
-export async function GET(request : Request) {
+export async function GET() {
     try {
         const prices = await stripe.prices.list({
             limit: 4,
