@@ -3,9 +3,10 @@ import { Heading } from "@/components/heading";
 import { SubscriptionButton } from "@/components/subscription-button";
 import { checkSubscription } from "@/lib/subscription";
 import { getCredits } from "@/lib/credits";
-
+import { auth } from "@clerk/nextjs";
 const SettingsPage = async () => {
-  const isPro = await checkSubscription();
+  const { userId } : { userId: string | null } = auth();
+  const isPro = await checkSubscription(userId);
  const credits = await getCredits(); // Corrected function call
 
   return ( 

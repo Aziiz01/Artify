@@ -14,10 +14,10 @@ import {
 import { db } from "@/firebase";
 const DAY_IN_MS = 86_400_000;
 
-export const checkSubscription = async () => {
-  const { userId } = auth();
+export const checkSubscription = async (userId: string | null) => {
 
   if (!userId) {
+    console.log("Unauthorized to check subscription!");
     return false;
   }
 

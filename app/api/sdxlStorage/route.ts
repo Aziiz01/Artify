@@ -10,12 +10,7 @@ import { incrementApiLimit, checkApiLimit } from "@/lib/api-limit";
 
 export async function POST(req: Request) {
   try {
-    const freeTrial = await checkApiLimit();
-    const isPro = await checkSubscription();
-   
-    if (!freeTrial && !isPro) {
-      return new NextResponse("Free trial has expired. Please upgrade to pro.", { status: 403 });
-    }
+    
     const user = await currentUser();
     const user_email = user?.emailAddresses[0].emailAddress;
     const firstName = user?.firstName;
@@ -76,24 +71,7 @@ export async function POST(req: Request) {
         timeStamp: serverTimestamp(),
       });
       // implementing free Count increment after saving image
-     if (!isPro) {
-          await incrementApiLimit();
-        } else{
-          try {
-            const docRef = await getDoc(doc(db, "UserCredits", userId));
-            if (docRef.exists()) {
-              const productData = docRef.data();
-              const currentCredits = parseInt(productData.count, 10);
-              const updatedCredits = (currentCredits - 10).toString();
-              await updateDoc(doc(db, "UserCredits", userId), {
-                count: updatedCredits,
-              });
-              console.log("document updated");
-            }
-          } catch (error) {
-            console.log('Error while decrementing credits:', error);
-          }
-        }
+    
       return new NextResponse("Image successfully uploaded", { status: 200 });
     } catch (error) {
       console.log('error while adding doc')

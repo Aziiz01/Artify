@@ -41,8 +41,8 @@ export async function POST(req: Request) {
       return new NextResponse("Resolution is required", { status: 400 });
     }
 
-    const freeTrial = await checkApiLimit();
-    const isPro = await checkSubscription();
+    const freeTrial = await checkApiLimit(userId);
+    const isPro = await checkSubscription(userId);
 
     if (!freeTrial && !isPro) {
       return new NextResponse("Free trial has expired. Please upgrade to pro.", { status: 403 });
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
     });
 
     if (!isPro) {
-      await incrementApiLimit();
+      await incrementApiLimit(userId);
     } else {
     try {
       const docRef = await getDoc(doc(db, "UserCredits", userId));

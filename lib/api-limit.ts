@@ -2,12 +2,10 @@ import { auth } from "@clerk/nextjs";
 
 import prismadb from "@/lib/prismadb";
 import { MAX_FREE_COUNTS } from "@/constants";
-import { doc, serverTimestamp, updateDoc, getDoc, addDoc ,collection , setDoc , increment} from "firebase/firestore";
+import { doc, serverTimestamp, getDoc, setDoc , increment} from "firebase/firestore";
 import { db } from "@/firebase";
 
-export const incrementApiLimit = async () => {
-  const { userId } = auth();
-
+export const incrementApiLimit = async (userId: string | null) => {
   if (!userId) {
     return;
   }
@@ -38,9 +36,7 @@ export const incrementApiLimit = async () => {
   }
 }
 
-export const checkApiLimit = async () => {
-  const { userId } = auth();
-
+export const checkApiLimit = async ( userId: string | null ) => {
   if (!userId) {
     return false;
   }
@@ -48,22 +44,17 @@ export const checkApiLimit = async () => {
   const docRef = await getDoc(doc(db, "UserApiLimit", userId));
   if (docRef.exists()) {
     const productData = docRef.data();
-    if (productData.count < MAX_FREE_COUNTS)
-    {
+    if (productData.count < MAX_FREE_COUNTS) {
       return true;
-    }
-    else {
+    } else {
       return false;
     }
-
   } else {
     return true;
   }
-
 };
 
-export const getApiLimitCount = async () => {
-  const { userId } = auth();
+export const getApiLimitCount = async (userId: string | null) => {
 
   if (!userId) {
     return 0;
@@ -71,12 +62,11 @@ export const getApiLimitCount = async () => {
 
   const docRef = await getDoc(doc(db, "UserApiLimit", userId));
 
-
   if (!docRef.exists()) {
     return 0;
   } else {
-  const productData = docRef.data();
+    const productData = docRef.data();
 
-  return productData.count;
+    return productData.count;
   }
 };

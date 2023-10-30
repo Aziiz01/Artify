@@ -15,18 +15,29 @@ import { Download } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Empty } from "@/components/ui/empty";
 import { Loader } from "@/components/loader";
-import { models } from "./models";
 import { useSearchParams } from 'next/navigation'
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc , updateDoc } from "firebase/firestore";
 import { db } from "@/firebase";
+import { useUser } from "@clerk/nextjs";
+import { checkApiLimit } from '@/lib/api-limit';
+import { checkSubscription } from '@/lib/subscription';
+import { incrementApiLimit } from '@/lib/api-limit';
+import toast from "react-hot-toast";
+import axios from "axios";
+import {useRouter} from "next/navigation";
+import { useProModal } from "@/hook/use-pro-modal";
+ 
 export default function UpscalePage() {
+  const proModal = useProModal();
   const [passedImage, setPassedImage] = useState('');
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [generatedImage, setGeneratedImage] = useState<HTMLImageElement[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const searchParams = useSearchParams();
   const imageId = searchParams.get('imageId');
-
+  const { isSignedIn, user, isLoaded } = useUser();
+  const router = useRouter();
+  const [f_image_id, setImageId] = useState("");
   useEffect (() => {
     const getImageFromId = async () => {
       const docRef = doc(db, "images", `${imageId}`);
@@ -74,11 +85,16 @@ const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
 };
 
 
+async function upscale () {
+  if (isSignedIn) {
+    const userId = user.id
+  const freeTrial = await checkApiLimit(userId);
+    const isPro = await checkSubscription(userId);
 
-
- // Handle image generation
-const handleUpscale = async () => {
-  setIsLoading(true);
+    if (!freeTrial && !isPro) {
+      // Return a 403 response immediately
+      return null;
+    }
   if (uploadedImage) {
     try {
       const imageElement = document.createElement("img");
@@ -92,12 +108,10 @@ const handleUpscale = async () => {
 
         if (width === 512 && height === 512) {
           selectedModel = "stable-diffusion-x4-latent-upscaler";
-          console.log(selectedModel)
         } else if (width === 1024 && height === 1024) {
           selectedModel = "esrgan-v1-x2plus";
-          console.log(selectedModel)
         } else {
-          console.error("Invalid image dimensions. Expected 512x512 or 1024x1024.");
+          toast.error('Invalid dimensions. Dimensions should be 512*512 or 1024*1024');
           setIsLoading(false);
           return;
         }
@@ -111,9 +125,26 @@ const handleUpscale = async () => {
         const response = await executeGenerationRequest(client, request, metadata);
 
         const generatedImages = onGenerationComplete(response);
-
-        setGeneratedImage(generatedImages);
-        setIsLoading(false);
+        if (!isPro) {
+          await incrementApiLimit(userId);
+        } else {
+          try {
+            const docRef = await getDoc(doc(db, "UserCredits", userId));
+            if (docRef.exists()) {
+              const productData = docRef.data();
+              const currentCredits = parseInt(productData.count, 10);
+              const updatedCredits = (currentCredits - 2).toString();
+              console.log(updatedCredits);
+              await updateDoc(doc(db, "UserCredits", userId), {
+                count: updatedCredits,
+              });
+              console.log("document updated");
+            }
+          } catch (error) {
+            console.log('Error while decrementing credits:', error);
+          }
+        }
+        return generatedImages;
       };
     } catch (error) {
       console.error("Failed to make image-upscale request:", error);
@@ -121,6 +152,44 @@ const handleUpscale = async () => {
   } else {
     console.log("No image uploaded. You can use 'client' here.");
   }
+} else {
+  console.log('You should sign in to continue.');
+}
+}
+function generateRandomId() {
+  const timestamp = Date.now();
+  const randomPart = Math.floor(Math.random() * 1000000);
+  return `${timestamp}-${randomPart}`;
+}
+ // Handle image generation
+const handleUpscale = async () => {
+  setIsLoading(true);
+  try  {
+    const response =await upscale();
+    if (response !== undefined && response !== null) {
+      setGeneratedImage(response);
+      const generatedImage = response[0]
+      console.log(generatedImage);
+      //const base64Data = generatedImage.split(',')[1];
+      const documentId = generateRandomId();
+   setImageId(documentId);
+      try {
+        const operation = await axios.post('/api/sdxlStorage', { f_image_id, generatedImage });
+        console.log(operation.data); // The response from the API
+        router.refresh();
+      } catch (error) {
+        console.error(error);
+        toast.error("Something went wrong.");
+      }
+  } else if (response == null) {
+    proModal.onOpen();
+    console.log('User is not eligible for this operation.');
+  } else {
+    toast.error("Something went wrong.");
+  }} finally  {
+    setIsLoading(false);
+  }
+ 
 };
 
 

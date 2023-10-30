@@ -24,13 +24,14 @@ import { faLightbulb } from "@fortawesome/free-solid-svg-icons";
 import { PublishButton } from "@/components/publish_button";
 import { clerkClient } from "@clerk/nextjs";
 import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 
 export default function HomePage() {
   const { isSignedIn, user, isLoaded } = useUser();
   const proModal = useProModal();
-  // State to manage modal visibility
+  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [image, setImage] = useState<HTMLImageElement[] | null>(null);
+  const [image, setImage] = useState<HTMLImageElement[]>([]);
   const [photos, setPhotos] = useState<string[]>([]);
   const [textInput, setTextInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -43,12 +44,17 @@ export default function HomePage() {
   const [steps, setSteps] = useState(10); // Set an initial value, e.g., 0
   const [seed, setSeed] = useState(0);
   const [imageId, setImageId] = useState("");
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   if (!isLoaded) {
     return null;
   }
- 
-  
+
+
 
   const handleDimensions = (event: any) => {
     const selectedValue = event.target.value;
@@ -59,11 +65,11 @@ export default function HomePage() {
     setWidth(selectedWidth);
   };
 
-  
+
   type SDXLModelApiMapping = {
     [key: string]: (
-      userId : string,
-      textInput: string,
+      userId: string,
+      prompt: string,
       selectedStyle: string,
       height: number,
       width: number,
@@ -113,11 +119,11 @@ export default function HomePage() {
   }
   function generateRandomId() {
     const timestamp = Date.now();
-    const randomPart = Math.floor(Math.random() * 1000000); 
+    const randomPart = Math.floor(Math.random() * 1000000);
     return `${timestamp}-${randomPart}`;
   }
 
-  
+
   const DALLE = async (values: any) => {
     try {
       setPhotos([]);
@@ -137,18 +143,21 @@ export default function HomePage() {
     }
   };
 
-  const generateImage = async () => {
-    setIsLoading(true);
-    if (isSignedIn) {
-      const userId= user.id;
-      try {
-        if (selectedModel === 'DALL E2') {
-          await DALLE(values);
-        } else {
-          // Use the selected model to determine which API to call
-          const selectedApi = SDXLmodelApiMapping[selectedModel];
-          if (selectedApi) {
-            const generatedImages = await selectedApi(userId,textInput, selectedStyle, height, width, selectedSamples, cfgScale, seed, steps);
+// Your client-side code
+const generateImage = async () => {
+  setIsLoading(true);
+  if (isSignedIn) {
+    const userId = user.id;
+    try {
+      if (selectedModel === 'DALL E2') {
+        await DALLE(values);
+      } else {
+        // Use the selected model to determine which API to call
+        const selectedApi = SDXLmodelApiMapping[selectedModel];
+        if (selectedApi) {
+          const prompt = `${textInput} , ${selectedStyle}`;
+          try {
+            const generatedImages = await selectedApi(userId, prompt, selectedStyle, height, width, selectedSamples, cfgScale, seed, steps);
             if (generatedImages !== null) {
               setImage(generatedImages);
               const generatedImage = generatedImages[0].src;
@@ -158,26 +167,37 @@ export default function HomePage() {
               try {
                 const response = await axios.post('/api/sdxlStorage', { documentId, textInput, selectedModel, selectedStyle, height, width, selectedSamples, cfgScale, seed, steps, base64Data });
                 console.log(response.data); // The response from the API
+                router.refresh();
               } catch (error) {
                 console.error(error);
-              }           
-  
+                toast.error("Something went wrong.");
+              }
+            } else {
+              proModal.onOpen();
+              console.log('User is not eligible for this operation.');
             }
-          } else {
-            // Handle the case where the selected model doesn't have a corresponding API
-            // You can display an error message or take other appropriate actions.
-            console.error(`API for model ${selectedModel} not found.`);
+          } catch (error : any) {
+            if (error.response && error.response.status === 403) {
+              // Handle the 403 error here by opening your modal
+              proModal.onOpen();
+            } else {
+              console.error("Something went wrong:", error);
+              toast.error("Something went wrong.");
+            }
           }
+        } else {
+          console.error(`API for model ${selectedModel} not found.`);
         }
-      } finally {
-        setIsLoading(false);
       }
-    }else {
-       console.log('You should sign in in order to continue !');
+    } finally {
+      setIsLoading(false);
     }
+  } else {
+    console.log('You should sign in to continue.');
+  }
+};
 
-    
-  };
+  
 
   const handleGenerate = () => {
     generateImage();
@@ -202,16 +222,16 @@ export default function HomePage() {
   };
   const handleEnhance = (event: any) => {
     const url = `/image-to-image?imageId=${imageId}`;
-    
+
     // Redirect to the new URL
     window.location.href = url;
-};
-const handleUpscale = (event: any) => {
-  const url = `/upscale?imageId=${imageId}`;
-  
-  // Redirect to the new URL
-  window.location.href = url;
-};
+  };
+  const handleUpscale = (event: any) => {
+    const url = `/upscale?imageId=${imageId}`;
+
+    // Redirect to the new URL
+    window.location.href = url;
+  };
 
 
   return (
@@ -347,41 +367,47 @@ const handleUpscale = (event: any) => {
           {isLoading ? 'Generating...' : 'Generate'}
         </Button>
         {isLoading && (
-          <div className="p-20">
-            <Loader />
-          </div>
-        )}
-        {image == null && !isLoading && photos == null && (
+  <div className="p-20">
+    <Loader />
+  </div>
+)}
+
+{(!image || image.length === 0) && !isLoading && photos === null && (
+  <Empty label="No images generated." />
+)}
+
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-8">
+  {(Array.isArray(image) && image.length > 0) ? (
+    image.map((img, index) => (
+      <Card key={index} className="">
+        <div className="relative aspect-square">
+          <Image
+            fill
+            src={img.src}
+            alt={`Generated Image ${index + 1}`}
+          />
+        </div>
+        <CardFooter className="p-2">
+          <Button onClick={() => window.open(img.src)} variant="secondary" className="w-full">
+            <Download className="h-4 w-4 mr-2" />
+            Open Image
+          </Button>
+          <Button onClick={handleEnhance}> Enhance </Button>
+          <Button onClick={handleUpscale}> Upscale </Button>
+          <PublishButton imageId={imageId} />
+        </CardFooter>
+      </Card>
+    ))
+  ) : !isLoading && photos === null ? (
+    <Empty label="No images generated." />
+  ) : null}
+</div>
+
+
+      </div>{/*DALLE PHOTOS */}
+      {photos.length === 0 && !isLoading && (
           <Empty label="No images generated." />
         )}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-8">
-          {image !== null && (
-            image.map((img, index) => (
-              <Card key={index} className="">
-                <div className="relative aspect-square">
-                  <Image
-                    fill
-                    src={img.src}
-                    alt={`Generated Image ${index + 1}`}
-                  />
-                </div>
-                <CardFooter className="p-2">
-                  <Button onClick={() => window.open(img.src)} variant="secondary" className="w-full">
-                    <Download className="h-4 w-4 mr-2" />
-                    Open Image
-                  </Button>
-                  <Button onClick={handleEnhance}> Enhance
-  </Button>        
-  <Button onClick={handleUpscale}> Upscale
-  </Button>       
-           <PublishButton imageId={imageId} />
-
-                </CardFooter>
-              </Card>
-            ))
-          )}
-        </div>
-      </div>{/*DALLE PHOTOS */}
       {photos && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-8">
           {photos.map((src) => (
@@ -398,11 +424,11 @@ const handleUpscale = (event: any) => {
                   <Download className="h-4 w-4 mr-2" />
                   Open Image
                 </Button>
-<Button onClick={handleEnhance}> Enhance
-  </Button>         
-  <Button onClick={handleUpscale}> Upscale
-  </Button> 
-         <PublishButton imageId={imageId} />
+                <Button onClick={handleEnhance}> Enhance
+                </Button>
+                <Button onClick={handleUpscale}> Upscale
+                </Button>
+                <PublishButton imageId={imageId} />
               </CardFooter>
             </Card>
           ))}
