@@ -5,8 +5,6 @@ import { db } from '../../../firebase';
 import { getDownloadURL, ref, uploadString } from 'firebase/storage';
 import { storage } from "../../../firebase";
 import { currentUser } from "@clerk/nextjs";
-import { checkSubscription } from "@/lib/subscription";
-import { incrementApiLimit, checkApiLimit } from "@/lib/api-limit";
 
 export async function POST(req: Request) {
   try {
@@ -32,15 +30,15 @@ export async function POST(req: Request) {
 
     // Extract the base64-encoded image data and other variables from the data
     const base64Data = variables.base64Data;
-    const prompt = variables.textInput;
+    const prompt = variables.textInput || "";
     const Model = variables.selectedModel;
-    const Style = variables.selectedStyle;
-    const Samples = variables.selectedSamples;
-    const seed = variables.seed;
-    const steps = variables.steps;
+    const Style = variables.selectedStyle || "";
+    const Samples = variables.selectedSamples || -1; 
+    const seed = variables.seed || "";
+    const steps = variables.steps || -1;
     const height = variables.height;
     const width = variables.width;
-    const cfg_scale = variables.cfgScale;
+    const cfg_scale = variables.cfgScale || -1;
     const docID = variables.documentId;
     const storageRef = ref(storage, 'SDXL/' + filename);
 

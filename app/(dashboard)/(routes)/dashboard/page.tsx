@@ -158,7 +158,7 @@ const generateImage = async () => {
           const prompt = `${textInput} , ${selectedStyle}`;
           try {
             const generatedImages = await selectedApi(userId, prompt, selectedStyle, height, width, selectedSamples, cfgScale, seed, steps);
-            if (generatedImages !== null) {
+            if (generatedImages !== null && generatedImages!== false) {
               setImage(generatedImages);
               const generatedImage = generatedImages[0].src;
               const base64Data = generatedImage.split(',')[1];
@@ -172,6 +172,9 @@ const generateImage = async () => {
                 console.error(error);
                 toast.error("Something went wrong.");
               }
+            }else if (generatedImages == false){
+              toast.error("You credit balance is insuffisant !");
+              proModal.onOpen();
             } else {
               proModal.onOpen();
               console.log('User is not eligible for this operation.');

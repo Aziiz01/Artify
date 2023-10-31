@@ -15,18 +15,19 @@ import { Download } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Empty } from "@/components/ui/empty";
 import { Loader } from "@/components/loader";
-import { useSearchParams } from 'next/navigation'
-import { doc, getDoc } from "firebase/firestore";
+import { useRouter, useSearchParams } from 'next/navigation'
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/firebase";
 import { useUser } from "@clerk/nextjs";
 import toast from "react-hot-toast";
-import { checkApiLimit } from "@/lib/api-limit";
-import { checkSubscription } from "@/lib/subscription";
+import { checkApiLimit, incrementApiLimit } from "@/lib/api-limit";
+import { checkSubscription, countCredit } from "@/lib/subscription";
 import { useProModal } from "@/hook/use-pro-modal";
+import axios from "axios";
 
 export default function UpscalePage() {
   const { isSignedIn, user, isLoaded } = useUser();
-
+const router = useRouter();
   const [passedImage, setPassedImage] = useState('');
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [generatedImage, setGeneratedImage] = useState<HTMLImageElement[] | null>(null);
@@ -34,7 +35,9 @@ export default function UpscalePage() {
   const searchParams = useSearchParams();
   const imageId = searchParams.get('imageId');
   const proModal = useProModal();
+  const [final_imageId,setImageId] = useState("");
 
+  const count = 3;
   useEffect (() => {
     const getImageFromId = async () => {
       const docRef = doc(db, "images",`${imageId}`);
@@ -81,7 +84,11 @@ const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
   }
 };
 
-
+function generateRandomId() {
+  const timestamp = Date.now();
+  const randomPart = Math.floor(Math.random() * 1000000);
+  return `${timestamp}-${randomPart}`;
+}
 
 
  // Handle image generation
@@ -116,11 +123,17 @@ const handleUpscale = async () => {
         const freeTrial = await checkApiLimit(userId);
     const isPro = await checkSubscription(userId);
   
-    if (!isPro) {
+    if (!isPro && !freeTrial) {
       proModal.onOpen();
       setIsLoading(false);
     } else {
-
+       // calcul
+      const calcul =await countCredit(userId,count);
+      if (!calcul){
+        toast.error("You credit balance is insuffisant !");
+        proModal.onOpen();
+        setIsLoading(false);
+      } else {
         const request = buildGenerationRequest(selectedModel, {
           type: 'upscaling',
           upscaler: Generation.Upscaler.UPSCALER_ESRGAN,
@@ -129,16 +142,29 @@ const handleUpscale = async () => {
 
         const response = await executeGenerationRequest(client, request, metadata);
 
-        const generatedImages = onGenerationComplete(response);
-
+        const generatedImages = onGenerationComplete(response);      
+if (generatedImage !== null) {
+  const base64Data = generatedImage.toString().split(',')[1];
+  const documentId = generateRandomId();
+  setImageId(documentId);
+  try {
+    const response = await axios.post('/api/sdxlStorage', {final_imageId, selectedModel, height, width, base64Data });
+    console.log(response.data); // The response from the API
+    router.refresh();
+  } catch (error) {
+    console.error(error);
+    toast.error("Something went wrong.");
+  }
+}
         setGeneratedImage(generatedImages);
         setIsLoading(false);
-      }}
+    }}}
     } catch (error) {
       console.error("Failed to make image-upscale request:", error);
     }
   } else {
-    console.log("No image uploaded. You can use 'client' here.");
+    toast.error("Please upload an image !")
+    console.log("No image uploaded.");
   }};
 }
 
