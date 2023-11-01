@@ -7,6 +7,7 @@ import { ModalProvider } from '@/components/modal-provider'
 import { CrispProvider } from '@/components/crisp-provider'
 
 import './globals.css'
+import { LoginModalProvider } from '@/components/login-modal-provider'
 
 const font = Inter({ subsets: ['latin'] });
 
@@ -27,7 +28,8 @@ export default async function RootLayout({
         <body className={font.className}>
           <ToasterProvider />
           <ModalProvider />
-          {children}
+         <LoginModalProvider/>      
+             {children}
         </body>
       </html>
     </ClerkProvider>

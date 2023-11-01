@@ -36,7 +36,6 @@ const router = useRouter();
   const imageId = searchParams.get('imageId');
   const proModal = useProModal();
   const [final_imageId,setImageId] = useState("");
-
   const count = 3;
   useEffect (() => {
     const getImageFromId = async () => {
@@ -142,7 +141,8 @@ const handleUpscale = async () => {
 
         const response = await executeGenerationRequest(client, request, metadata);
 
-        const generatedImages = onGenerationComplete(response);      
+        const generatedImages = onGenerationComplete(response);   
+        //save   
 if (generatedImage !== null) {
   const base64Data = generatedImage.toString().split(',')[1];
   const documentId = generateRandomId();

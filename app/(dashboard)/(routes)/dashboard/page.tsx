@@ -127,7 +127,7 @@ export default function HomePage() {
   const DALLE = async (values: any) => {
     try {
       setPhotos([]);
-
+//to test
       const response = await axios.post('/api/image', values);
       const urls = response.data.map((image: { url: string }) => image.url);
       setPhotos(urls);
@@ -137,6 +137,8 @@ export default function HomePage() {
     } catch (error: any) {
       if (error?.response?.status === 403) {
         proModal.onOpen();
+      } else if (error?.response?.status === 405){
+        toast.error("You credit balance is insuffisant !");
       } else {
         toast.error("Something went wrong.");
       }

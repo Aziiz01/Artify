@@ -31,13 +31,13 @@ export async function POST(req: Request) {
     // Extract the base64-encoded image data and other variables from the data
     const base64Data = variables.base64Data;
     const prompt = variables.textInput || "";
-    const Model = variables.selectedModel;
+    const Model = variables.selectedModel || "SDXL-v1";
     const Style = variables.selectedStyle || "";
     const Samples = variables.selectedSamples || -1; 
     const seed = variables.seed || "";
     const steps = variables.steps || -1;
-    const height = variables.height;
-    const width = variables.width;
+    const height = variables.height || -1;
+    const width = variables.width || -1;
     const cfg_scale = variables.cfgScale || -1;
     const docID = variables.documentId;
     const storageRef = ref(storage, 'SDXL/' + filename);

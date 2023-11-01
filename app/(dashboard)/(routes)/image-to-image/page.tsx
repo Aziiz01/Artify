@@ -1,11 +1,12 @@
 'use client'
-import React, { useState, ChangeEvent, useEffect } from "react";
+
+import React, { useState, ChangeEvent } from "react";
 import * as Generation from "../../../generation/generation_pb";
 import {
   executeGenerationRequest,
   onGenerationComplete,
   buildGenerationRequest,
-} from "../../../../lib/helpers";
+}  from "../../../../lib/helpers";// Adjust the import path as needed
 import { client, metadata } from "../../../../lib/grpc-client";
 import Image from "next/image";
 import { CardFooter } from "@/components/ui/card";
@@ -14,167 +15,160 @@ import { Card } from "@/components/ui/card";
 import { Download } from "lucide-react";
 import { Loader } from "@/components/loader";
 import { Empty } from "@/components/ui/empty";
-import { useSearchParams } from 'next/navigation'
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { useEffect } from "react";
+import { useRouter, useSearchParams } from 'next/navigation'
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase";
 import { useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
-import { checkApiLimit } from '@/lib/api-limit';
-import { checkSubscription } from '@/lib/subscription';
-import { incrementApiLimit } from '@/lib/api-limit';
 import { useProModal } from "@/hook/use-pro-modal";
-import { toast } from "react-hot-toast";
-import axios from 'axios';
-import { PublishButton } from "@/components/publish_button";
-import { imgtoimg } from "@/app/api/imagetoimage/route";
+import toast from "react-hot-toast";
+import { checkApiLimit } from "@/lib/api-limit";
+import { checkSubscription, countCredit } from "@/lib/subscription";
+import axios from "axios";
 
 export default function ImageToImagePage() {
-  const { isSignedIn, user, isLoaded } = useUser();
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [passedImage, setPassedImage] = useState('');
+  const { isSignedIn, user, isLoaded } = useUser();
+  const router = useRouter();
   const [generatedImage, setGeneratedImage] = useState<HTMLImageElement[] | null>(null);
   const [textInput, setTextInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState('');
+  const [selectedSamples, setSelectedSamples] = useState(1);
+  const [cfgScale, setCfgScale] = useState(5); // Set an initial value, e.g., 0
+  const [steps, setSteps] = useState(30); // Set an initial value, e.g., 0
+  const [seed, setSeed] = useState(123463446);
   const searchParams = useSearchParams()
   const imageId = searchParams.get('imageId')
+  const [final_imageId,setImageId] = useState("");
   const proModal = useProModal();
-  const [selectedSamples, setSelectedSamples] = useState(1);
-  const [cfgScale, setCfgScale] = useState(0); // Set an initial value, e.g., 0
-  const [steps, setSteps] = useState(10); // Set an initial value, e.g., 0
-  const [seed, setSeed] = useState(0);
-  const router = useRouter();
-  const [f_image_id, setImageId] = useState("");
-
-  useEffect(() => {
+  const count = 3;
+  useEffect (() => {
     const getImageFromId = async () => {
       const docRef = doc(db, "images", `${imageId}`);
       const docSnap = await getDoc(docRef);
-
+      
       if (docSnap.exists()) {
+        // Check if the 'image' field exists in the document
         if (docSnap.data().image) {
           setPassedImage(docSnap.data().image);
         } else {
+          // Handle the case where 'image' field is missing or empty
           console.error("Image URL not found in Firestore.");
         }
       } else {
+        // Handle the case where the document doesn't exist
         console.error("Document with imageId not found in Firestore.");
       }
-    }
-
+  }
     getImageFromId();
-  }, [imageId]);
+  },[imageId])
 
-  const handleStyleChange = (event: ChangeEvent<HTMLSelectElement>) => {
+  const handleStyleChange = (event: any) => {
     setSelectedStyle(event.target.value);
   };
-
-
+  const handleSeed = (event: any) => {
+    setSeed(event.target.value);
+  };
+  
+  const handleSamples = (event: any) => {
+    setSelectedSamples(event.target.value);
+  }
+  const handleCFG = (event: any) => {
+    const selectedCFG = event.target.value;
+    setCfgScale(selectedCFG);
+  };
+  const handleSteps = (event: any) => {
+    const selectedSteps = event.target.value;
+    setSteps(selectedSteps);
+  };
+  const imageStrength = 0.4;
+  // Handle image upload
   const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null;
     setUploadedImage(file);
   };
 
- async function IMG2IMG() {
+  function generateRandomId() {
+    const timestamp = Date.now();
+    const randomPart = Math.floor(Math.random() * 1000000);
+    return `${timestamp}-${randomPart}`;
   }
- function generateRandomId() {
-  const timestamp = Date.now();
-  const randomPart = Math.floor(Math.random() * 1000000);
-  return `${timestamp}-${randomPart}`;
-}
+  // Handle image generation
   const handleGenerate = async () => {
     setIsLoading(true);
-    try  {
-      if (isSignedIn) {
-       
-      let initImage: Buffer | undefined;
-    
-      if (typeof passedImage === "string") {
-        // Handle the case where passedImage is a string (e.g., a URL or base64 data)
-        // You can process it accordingly
-        // Example: Convert a base64 string to a Buffer
-        initImage = Buffer.from(passedImage, "base64");
-      } else if (uploadedImage instanceof Blob) {
-        // Handle the case where uploadedImage is a Blob or File
-        initImage = Buffer.from(await uploadedImage.arrayBuffer());
-      }
-    
-      if (initImage === undefined) {
-        // You can set a default Buffer or handle this case according to your needs.
-        initImage = Buffer.from([]); // For example, create an empty Buffer.
-      }
-    
-      
-       
-     const userId = user.id;
-     const freeTrial = await checkApiLimit(userId);
-       const isPro = await checkSubscription(userId);
-   
-       if (!freeTrial && !isPro) {
-         return null;
-       }
-    const response =await imgtoimg(userId,textInput,initImage,selectedSamples,cfgScale,seed,steps);
-    console.log(response)
-    if (response !== -1 && response !== null) {
-      setGeneratedImage(response);
-      const generatedImage = response[0].src;
-      const base64Data = generatedImage.split(',')[1];
-      const documentId = generateRandomId();
-   setImageId(documentId);
+ if (!isSignedIn) {
+    toast.error('uanthorized')
+   } else {
+    const userId = user.id;
+    if (uploadedImage) {
+
       try {
-        const operation = await axios.post('/api/sdxlStorage', { f_image_id, textInput,  selectedStyle, selectedSamples, cfgScale, seed, steps, base64Data });
-        console.log(operation.data); // The response from the API
-        router.refresh();
-      } catch (error) {
-        console.error(error);
-        toast.error("Something went wrong.");
-      }
-  } else if (response == -1) {
-    proModal.onOpen();
-    console.log('User is not eligible for this operation.');
+        const freeTrial = await checkApiLimit(userId);
+        const isPro = await checkSubscription(userId);
+      
+        if (!isPro && !freeTrial) {
+          proModal.onOpen();
+          setIsLoading(false);
+        } else {
+           // calcul
+          const calcul =await countCredit(userId,count);
+          if (!calcul){
+            toast.error("You credit balance is insuffisant !");
+            proModal.onOpen();
+            setIsLoading(false);
+          } else {
+        // Create a request object based on your requirements
+        // You may need to adjust the request parameters
+        const request = buildGenerationRequest("stable-diffusion-xl-1024-v1-0", {
+          type: "image-to-image",
+          prompts: [
+            {
+              text: textInput ,
+            },
+          ],
+          stepScheduleStart: 1 - imageStrength,
+          initImage: Buffer.from(await uploadedImage.arrayBuffer()), // Read the uploaded file
+          seed: seed,
+          samples: selectedSamples,
+          cfgScale: cfgScale,
+          steps: steps,
+          sampler: Generation.DiffusionSampler.SAMPLER_K_DPMPP_2M,
+        });
+
+        // Execute the gRPC request
+        const response = await executeGenerationRequest(client, request, metadata);
+      
+        // Update the generated images state with an array of HTML image elements
+        const generatedImages = onGenerationComplete(response);
+        if (generatedImage !== null) {
+          const base64Data = generatedImage.toString().split(',')[1];
+          const documentId = generateRandomId();
+          setImageId(documentId);
+          try {
+            const response = await axios.post('/api/sdxlStorage', {final_imageId,textInput,selectedStyle, selectedSamples, cfgScale, seed, steps, base64Data });
+            console.log(response.data); // The response from the API
+            router.refresh();
+          } catch (error) {
+            console.error(error);
+            toast.error("Something went wrong.");
+          }
+        }
+        // Set the generated image data in state
+        setGeneratedImage(generatedImages);
+        setIsLoading(false);
+
+      }}} catch (error) {
+        console.error("Failed to make image-to-image request:", error);
+    }
   } else {
-   toast.error("error somwhere")  
-} } else {
-    console.log('You should sign in to continue.');
+    toast.error("Please upload an image !")
+    console.log("No image uploaded.");
   }
-  } finally  {
-    setIsLoading(false);
-  }  
 }
-
-
-const handleSeed = (event: any) => {
-  setSeed(event.target.value);
 };
-const handleSamples = (event: any) => {
-  setSelectedSamples(event.target.value);
-}
-const handleCFG = (event: any) => {
-  // Get the selected cfg_scale value from the event
-  const selectedCFG = event.target.value;
 
-  // Set the cfgScale state variable with its setter
-  setCfgScale(selectedCFG);
-};
-const handleSteps = (event: any) => {
-  // Get the selected cfg_scale value from the event
-  const selectedSteps = event.target.value;
-
-  // Set the cfgScale state variable with its setter
-  setSteps(selectedSteps);
-};
-const handleEnhance = (event: any) => {
-  const url = `/image-to-image?imageId=${imageId}`;
-
-  // Redirect to the new URL
-  window.location.href = url;
-};
-const handleUpscale = (event: any) => {
-  const url = `/upscale?imageId=${imageId}`;
-
-  // Redirect to the new URL
-  window.location.href = url;
-};
   return (
     <div className="container mx-auto p-8">
       <div className="mb-8 space-y-4 text-center">
@@ -275,6 +269,7 @@ const handleUpscale = (event: any) => {
           value={seed}
           onChange={handleSeed}
         />
+
         <h2 className="text-2xl font-bold">
           Algorithm Model : STABLE DIFF SDXL V1
         </h2>
@@ -286,36 +281,33 @@ const handleUpscale = (event: any) => {
         >
           {isLoading ? 'Generating...' : 'Generate'}
         </Button>
-       
-{(!generatedImage || generatedImage.length === 0) && !isLoading  && (
-  <Empty label="No images generated." />
-)}
-
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-8">
-  {(Array.isArray(generatedImage) && generatedImage.length > 0) ? (
-    generatedImage.map((img, index) => (
-      <Card key={index} className="">
-        <div className="relative aspect-square">
-          <Image
-            fill
-            src={img.src}
-            alt={`Generated Image ${index + 1}`}
-          />
-        </div>
-        <CardFooter className="p-2">
-          <Button onClick={() => window.open(img.src)} variant="secondary" className="w-full">
-            <Download className="h-4 w-4 mr-2" />
-            Open Image
-          </Button>
-          <Button onClick={handleEnhance}> Enhance </Button>
-          <Button onClick={handleUpscale}> Upscale </Button>
-          <PublishButton imageId={f_image_id} />
-        </CardFooter>
-      </Card>
-    ))
-  ) : null}
-</div>
-
+        {isLoading && (
+          <div className="p-20">
+            <Loader />
+          </div>
+        )}
+        {generatedImage == null  && !isLoading && (
+          <Empty label="No images generated." />
+        )}
+       {generatedImage && (
+  generatedImage.map((img: any, index: any) => (
+    <Card key={index} className="rounded-lg overflow-hidden">
+      <div className="relative aspect-square">
+        <Image
+          fill
+          src={img.src}
+          alt={`Generated Image ${index + 1}`}
+        />
+      </div>
+      <CardFooter className="p-2">
+      <Button onClick={() => window.open(img.src)} variant="secondary" className="w-full">
+                  <Download className="h-4 w-4 mr-2" />
+                  Open Image
+                </Button>
+      </CardFooter>
+    </Card>
+  ))
+  )}
 
 
 
