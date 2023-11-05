@@ -1,5 +1,5 @@
 'use client'
-
+// to implement passedImage 
 import React, { useState, ChangeEvent , useEffect } from "react";
 import * as Generation from "../../../generation/generation_pb";
 import {
@@ -24,6 +24,7 @@ import { checkApiLimit, incrementApiLimit } from "@/lib/api-limit";
 import { checkSubscription, countCredit } from "@/lib/subscription";
 import { useProModal } from "@/hook/use-pro-modal";
 import axios from "axios";
+import { useLoginModal } from "@/hook/use-login-modal";
 
 export default function UpscalePage() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -36,6 +37,8 @@ const router = useRouter();
   const imageId = searchParams.get('imageId');
   const proModal = useProModal();
   const [final_imageId,setImageId] = useState("");
+  const loginModal = useLoginModal();
+
   const count = 3;
   useEffect (() => {
     const getImageFromId = async () => {
@@ -94,7 +97,7 @@ function generateRandomId() {
 const handleUpscale = async () => {
   setIsLoading(true);
   if (!isSignedIn) {
-    toast.error('uanthorized')
+            loginModal.onOpen();
    } else {
     const userId = user.id;
   if (uploadedImage) {
@@ -165,6 +168,7 @@ if (generatedImage !== null) {
   } else {
     toast.error("Please upload an image !")
     console.log("No image uploaded.");
+    setIsLoading(false);
   }};
 }
 
@@ -179,7 +183,7 @@ if (generatedImage !== null) {
         </p>
         </div>
 
-      <h2 className="text-2xl font-bold">Image-to-Image Generator</h2>
+      <h2 className="text-2xl font-bold">Image Upscaler</h2>
       <input type="file" onChange={handleImageUpload} />
               {passedImage || uploadedImage ? (
   <Image

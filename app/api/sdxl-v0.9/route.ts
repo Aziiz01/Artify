@@ -17,7 +17,7 @@ export async function SDXLv09(userId : string, prompt: string, selectedStyle : s
     const freeTrial = await checkApiLimit(userId);
     const isPro = await checkSubscription(userId);
   
-    const count=3;
+    const count=3*selectedSamples;
 
     if (!freeTrial && !isPro) {
       // Return a 403 response immediately

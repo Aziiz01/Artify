@@ -25,6 +25,7 @@ import toast from "react-hot-toast";
 import { checkApiLimit } from "@/lib/api-limit";
 import { checkSubscription, countCredit } from "@/lib/subscription";
 import axios from "axios";
+import { useLoginModal } from "@/hook/use-login-modal";
 
 export default function ImageToImagePage() {
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
@@ -43,6 +44,8 @@ export default function ImageToImagePage() {
   const imageId = searchParams.get('imageId')
   const [final_imageId,setImageId] = useState("");
   const proModal = useProModal();
+  const loginModal = useLoginModal();
+
   const count = 3;
   useEffect (() => {
     const getImageFromId = async () => {
@@ -99,7 +102,7 @@ export default function ImageToImagePage() {
   const handleGenerate = async () => {
     setIsLoading(true);
  if (!isSignedIn) {
-    toast.error('uanthorized')
+    loginModal.onOpen();
    } else {
     const userId = user.id;
     if (uploadedImage) {

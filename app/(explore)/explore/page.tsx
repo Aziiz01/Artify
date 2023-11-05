@@ -1,141 +1,252 @@
+////////TO DESIGN 
 'use client'
 import React, { useEffect, useState } from "react";
 import { collection, getDocs, query, where, doc, updateDoc } from "firebase/firestore";
 import { db } from "@/firebase";
 import Image from "next/image";
 import { useUser } from "@clerk/nextjs";
-import LikesList from "./LikesList"; // Import the LikesList component
+import LikesList from "./LikesList";
 import toast from "react-hot-toast";
 import { useLoginModal } from "@/hook/use-login-modal";
+import Modal from 'react-modal';
+import "./style.css";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faHeart } from "@fortawesome/free-solid-svg-icons";
+import { UserPopup } from "@/components/user_popup";
 
 interface ImageData {
-    id: string;
-    imageUrl: string;
-    prompt: string;
-    likes: string[]; // Update the type to an array of user emails
-    // Add more fields as needed
+  id: string;
+  imageUrl: string;
+  prompt: string;
+  likes: string[];
+  height: number;
+  width: number;
+  style : string,
+  model : string
 }
 
 const ExplorePage: React.FC = () => {
-    const [showLikesList, setShowLikesList] = useState(false);
-    const [images, setImages] = useState<ImageData[]>([]);
-    const [selectedImage, setSelectedImage] = useState<ImageData | null>(null);
-    const { isSignedIn, user, isLoaded } = useUser();
-    const loginModal = useLoginModal();
+  const [showLikesList, setShowLikesList] = useState(false);
+  const [images, setImages] = useState<ImageData[]>([]);
+  const [selectedImage, setSelectedImage] = useState<ImageData | null>(null);
+  const { isSignedIn, user, isLoaded } = useUser();
+  const loginModal = useLoginModal();
+  const [clickedImage, setClickedImage] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
+  const openModal = (image: ImageData) => {
+    setSelectedImage(image);
+    setIsModalOpen(true);
+  };
+  const closeModal = () => {
+    setSelectedImage(null);
+    setIsModalOpen(false);
+  };
+  
+  
+  const openLikesList = (image: ImageData) => {
+    setSelectedImage(image);
+    setShowLikesList(true);
+  };
 
-    const openLikesList = (image: ImageData) => {
-        setSelectedImage(image);
-        setShowLikesList(true);
+  const closeLikesList = () => {
+    setSelectedImage(null);
+    setShowLikesList(false);
+  };
+  
+  useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        const imagesRef = collection(db, "images");
+        const q = query(imagesRef, where("published", "==", true));
+        const querySnapshot = await getDocs(q);
+
+        const imageData: ImageData[] = [];
+        querySnapshot.forEach((doc) => {
+          imageData.push({
+            id: doc.id,
+            imageUrl: doc.data().image,
+            prompt: doc.data().prompt,
+            likes: doc.data().likes,
+            height: doc.data().height,
+            width: doc.data().width,
+            style : doc.data().Style,
+            model : doc.data().Model,
+          });
+        });
+
+        setImages(imageData);
+      } catch (error) {
+        console.error("Error fetching images:", error);
+      }
     };
 
-    const closeLikesList = () => {
-        setSelectedImage(null);
-        setShowLikesList(false);
-    };
+    fetchImages();
+  }, []);
 
-    useEffect(() => {
-        const fetchImages = async () => {
-            try {
-                const imagesRef = collection(db, "images");
-                const q = query(imagesRef, where("published", "==", true));
-                const querySnapshot = await getDocs(q);
+  const isLiked = (image: ImageData, user_email: string) => {
+    return image.likes.includes(user_email);
+  };
 
-                const imageData: ImageData[] = [];
-                querySnapshot.forEach((doc) => {
-                    imageData.push({
-                        id: doc.id,
-                        imageUrl: doc.data().image, // Assuming image is stored as a URL
-                        prompt: doc.data().prompt,
-                        likes: doc.data().likes, // Update to get the list of user emails who liked the image
-                        // Add more fields here
-                    });
-                });
+  const handleLike = async (imageId: string) => {
+    if (!isSignedIn) {
+      loginModal.onOpen();
+    } else {
+      try {
+        const user_email = user.emailAddresses[0].emailAddress;
+        const likedImage = images.find((image) => image.id === imageId);
+        if (likedImage) {
+          if (isLiked(likedImage, user_email)) {
+            const updatedLikes = likedImage.likes.filter((email) => email !== user_email);
+            await updateDoc(doc(db, "images", imageId), {
+              likes: updatedLikes,
+            });
 
-                setImages(imageData);
-            } catch (error) {
-                console.error("Error fetching images:", error);
-            }
-        };
-
-        fetchImages();
-    }, []);
-
-    const isLiked = (image: ImageData, user_email: string) => {
-        return image.likes.includes(user_email);
-    };
-
-    const handleLike = async (imageId: string) => {
-        if (!isSignedIn) {
-            loginModal.onOpen();
-        } else {
-            try {
-                const user_email = user.emailAddresses[0].emailAddress;
-                const likedImage = images.find((image) => image.id === imageId);
-                if (likedImage) {
-                    if (isLiked(likedImage, user_email)) {
-                        // Implement "Unlike" logic here
-                        const updatedLikes = likedImage.likes.filter(email => email !== user_email);
-                        await updateDoc(doc(db, "images", imageId), {
-                            likes: updatedLikes,
-                        });
-
-                        // Update local state to reflect the change
-                        setImages((prevImages) => prevImages.map((prevImage) =>
-                            prevImage.id === imageId ? {
-                                ...prevImage,
-                                likes: updatedLikes,
-                            } : prevImage
-                        ));
-                    } else {
-                        // Update Firestore to add the user's email to the "likes" array
-                        const updatedLikes = [...likedImage.likes, user_email];
-                        await updateDoc(doc(db, "images", imageId), {
-                            likes: updatedLikes,
-                        });
-
-                        // Update local state to reflect the change
-                        setImages((prevImages) => prevImages.map((prevImage) =>
-                            prevImage.id === imageId ? {
-                                ...prevImage,
-                                likes: updatedLikes,
-                            } : prevImage
-                        ));
+            setImages((prevImages) =>
+              prevImages.map((prevImage) =>
+                prevImage.id === imageId
+                  ? {
+                      ...prevImage,
+                      likes: updatedLikes,
                     }
-                }
-            } catch (error) {
-                console.error("Error handling like:", error);
-            }
+                  : prevImage
+              )
+            );
+          } else {
+            const updatedLikes = [...likedImage.likes, user_email];
+            await updateDoc(doc(db, "images", imageId), {
+              likes: updatedLikes,
+            });
+
+            setImages((prevImages) =>
+              prevImages.map((prevImage) =>
+                prevImage.id === imageId
+                  ? {
+                      ...prevImage,
+                      likes: updatedLikes,
+                    }
+                  : prevImage
+              )
+            );
+          }
         }
-    };
+      } catch (error) {
+        console.error("Error handling like:", error);
+      }
+    }
+  };
+  const halfBackgroundStyle = {
+    display: 'flex',
+    flex: 1,
+    background: 'white', // White background for the details half
+  };
+  const modalStyle = {
+    content: {
+      display: 'grid',
+      gridTemplateColumn:'50% 50%',
+      // Adjust the height as needed
+    },
+  };
+  const lineStyle = {
+    borderRight: '1px solid #ccc', 
+    margin: '10px 0', // Add some margin for spacing
 
-    return (
-        <div>
-            <h1>Explore Images</h1>
-            <div className="image-list">
-                {images.map((image) => (
-                    <div key={image.id} className="image-card">
-                        <Image src={image.imageUrl} alt={image.prompt} height={512} width={512} />
-                        <p>{image.prompt}</p>
-                        <button onClick={() => handleLike(image.id)}>
-                            {isSignedIn ? (
-                                isLiked(image, user.emailAddresses[0].emailAddress) ? "Unlike" : "Like"
-                            ) : (
-                                "Like"
-                            )}
-                        </button>
+  };
+  const horizontalLineStyle = {
+    borderBottom: '1px solid #ccc', // Grey horizontal line separating content
+    margin: '10px 0', // Add some margin for spacing
+  };
+  return (
+  <div>
+    <h1>Explore Images</h1>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {images.map((image) => (
+        <div key={image.id} className="grid gap-4 relative">
+          <div
+            onClick={() => openModal(image)}
+            className="image-container"
+            style={{ cursor: 'pointer' }}
+          >
+            
+            <Image
+              className="image h-auto max-w-full rounded-lg"
+              src={image.imageUrl}
+              alt={image.prompt}
+              height={image.height}
+              width={image.width}
 
-                        <span>{image.likes.length} Likes</span>
-                        <button onClick={() => openLikesList(image)}>See Likes</button>
-                    </div>
-                ))}
+            />
+            <div className="image-overlay" >
+            
+              <UserPopup imageId={image.id} />
+              <div
+                className={`like-icon ${!isSignedIn ? 'login-required' : isLiked(image, user.emailAddresses[0].emailAddress) ? 'liked' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent the click event from propagating
+                  if (!isSignedIn) {
+                    loginModal.onOpen();
+                  } else if (!isLiked(image, user.emailAddresses[0].emailAddress)) {
+                    handleLike(image.id); // Handle the like action
+                  }
+                }}
+                style={{ cursor: 'pointer' }}
+              >
+                <FontAwesomeIcon icon={faHeart} className="mr-1" />
+              </div>
+              <div className="like-count">
+                {image.likes.length} likes
+              </div>
             </div>
-
-            {showLikesList && selectedImage && (
-                <LikesList image={selectedImage} onClose={closeLikesList} />
-            )}
+          </div>
         </div>
-    );
+      ))}
+    </div>
+
+    {showLikesList && selectedImage && (
+      <LikesList image={selectedImage} onClose={closeLikesList} />
+    )}
+   <Modal
+  isOpen={isModalOpen}
+  onRequestClose={closeModal}
+  contentLabel="Image Modal"
+  style={modalStyle}
+>
+  {selectedImage && (
+    <div className="vertical-modal-container">
+      <div className="modal-image-container">
+        <Image
+          src={selectedImage.imageUrl}
+          alt={selectedImage.prompt}
+          height={selectedImage.height}
+          width={selectedImage.width}
+          className="image"
+        />
+      </div>
+      <div className="details-container">
+        <div className="text-container">
+          <h2 className="image-prompt artistic-text">{selectedImage.prompt}</h2>
+        </div>
+        <hr className="horizontal-line" />
+        <div className="buttons-container">
+          <button className="button pink-button artistic-button">
+            {selectedImage.model}
+          </button>
+          <button className="button purple-button artistic-button">
+            {selectedImage.style}
+          </button>
+          <button className="button teal-button artistic-button">
+            {selectedImage.height}*{selectedImage.width}
+          </button>
+        </div>
+      </div>
+    </div>
+  )}
+</Modal>
+
+  </div>
+);
+
 };
 
 export default ExplorePage;

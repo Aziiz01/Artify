@@ -33,12 +33,12 @@ export async function POST(req: Request) {
     const prompt = variables.textInput || "";
     const Model = variables.selectedModel || "SDXL-v1";
     const Style = variables.selectedStyle || "";
-    const Samples = variables.selectedSamples || -1; 
+    const Samples = variables.selectedSamples || 1; 
     const seed = variables.seed || "";
-    const steps = variables.steps || -1;
-    const height = variables.height || -1;
-    const width = variables.width || -1;
-    const cfg_scale = variables.cfgScale || -1;
+    const steps = variables.steps || 30;
+    const height = variables.height || 512;
+    const width = variables.width || 512;
+    const cfg_scale = variables.cfgScale || 0;
     const docID = variables.documentId;
     const storageRef = ref(storage, 'SDXL/' + filename);
 
@@ -59,6 +59,8 @@ export async function POST(req: Request) {
         prompt: prompt,
         Model: Model,
         Style: Style,
+        height : height,
+        width : width,
         samples: Samples,
         seed: seed,
         steps: steps,

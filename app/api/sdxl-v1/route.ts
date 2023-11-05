@@ -21,7 +21,7 @@ export async function SDXLv1(userId : string,prompt: string, selectedStyle : str
   try {
     const freeTrial = await checkApiLimit(userId);
     const isPro = await checkSubscription(userId);
-    const count=1;
+    const count=3*selectedSamples;
 
     if (!freeTrial && !isPro) {
       return null;

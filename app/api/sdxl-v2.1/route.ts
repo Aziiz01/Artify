@@ -10,13 +10,11 @@ import {
 import { client, metadata } from "../../../lib/grpc-client";
 import { incrementApiLimit, checkApiLimit } from "@/lib/api-limit";
 import { checkSubscription, countCredit } from "@/lib/subscription";
-import {  getDoc , doc, updateDoc } from "firebase/firestore";
-import { db } from '../../../firebase'
-import toast from 'react-hot-toast';
+
 // Create a function to make the API call and save the image
 export async function SDXLv21(userId : string,prompt: string, selectedStyle : string,height : number,width : number, selectedSamples : number,cfgScale : number,seed :number, steps: number) {
   try {
-    const count=3;
+    const count=1*selectedSamples;
     const freeTrial = await checkApiLimit(userId);
     const isPro = await checkSubscription(userId);
     if (!freeTrial && !isPro) {

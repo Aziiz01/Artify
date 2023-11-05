@@ -340,7 +340,7 @@ export function onGenerationComplete(response: GenerationResponse) {
       imgElement.src = imageDataUrl;
 
       // Append the <img> element to your DOM or do whatever you want with it
-      document.body.appendChild(imgElement);
+     // document.body.appendChild(imgElement);
 
       return imgElement;
     }
