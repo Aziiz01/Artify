@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 import { Loader } from "@/components/loader";
 import { UserAvatar } from "@/components/user-avatar";
 import { Empty } from "@/components/ui/empty";
-import { useProModal } from "@/hooks/use-pro-modal";
+import { useProModal } from "@/hook/use-pro-modal";
 
 import { formSchema } from "./constants";
 

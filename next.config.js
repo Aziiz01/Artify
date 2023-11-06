@@ -5,7 +5,8 @@ const nextConfig = {
       "googleusercontent.com",
       "oaidalleapiprodscus.blob.core.windows.net",
       "cdn.openai.com",
-      "firebasestorage.googleapis.com"
+      "firebasestorage.googleapis.com",
+      "tympanus.net"
     ]
   },
 }

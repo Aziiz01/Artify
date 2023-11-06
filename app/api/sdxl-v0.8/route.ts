@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { auth } from "@clerk/nextjs";
+import { auth, currentUser } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
 import * as Generation from "../../../app/generation/generation_pb";
 import {
@@ -8,34 +8,47 @@ import {
   onGenerationComplete,
 } from "../../../lib/helpers";
 import { client, metadata } from "../../../lib/grpc-client";
+import { checkApiLimit } from '@/lib/api-limit';
+import { checkSubscription, countCredit } from '@/lib/subscription';
+import { incrementApiLimit } from '@/lib/api-limit';
+import {doc, getDoc, updateDoc } from "firebase/firestore";
+import { db } from '@/firebase';
 
-// Define your API key
-const apiKey = 'sk-ZArtaCDEPggaipkpUrrYJa31jo8giwqP2H0wdsLHmierPaHF';
+export async function SDXLv08(userId: string, prompt: string, selectedStyle: string, height: number, width: number, selectedSamples: number, cfgScale: number, seed: number, steps: number) {
+ try{
+  const freeTrial = await checkApiLimit(userId);
+  const isPro = await checkSubscription(userId);
+  const count=1;
 
-
-// Create a function to make the API call and save the image
-export async function SDXLv08(prompt: string, selectedStyle : string,height : number,width : number, selectedSamples : number,cfgScale : number,seed :number, steps: number) {
-  try {
+  if (!freeTrial && !isPro) {
+    // Return a 403 response immediately
+    return null;
+  }
+  const calcul =await countCredit(userId,count);
+    if (!calcul){
+      return false;
+    } else {
+  
     const request = buildGenerationRequest("stable-diffusion-xl-beta-v2-2-2", {
       type: "text-to-image",
       prompts: [
         {
-          text: prompt ,
+          text: prompt,
         },
       ],
-      width: 512,
-      height: 512,
-      samples: 1,
-      cfgScale: 5,
-      steps: 30,
-      seed: 0,
+      width: width,
+      height: height,
+      samples: selectedSamples,
+      cfgScale: cfgScale,
+      steps: steps,
+      seed: seed,
       sampler: Generation.DiffusionSampler.SAMPLER_K_DPMPP_2M,
     });
-    
-    const response = await executeGenerationRequest(client, request, metadata);
-        const generatedImageData = onGenerationComplete(response);
-        return generatedImageData; // Return the generated image data
 
+    const response = await executeGenerationRequest(client, request, metadata);
+    const generatedImageData = onGenerationComplete(response);
+    return generatedImageData ; 
+  }
   } catch (error) {
     console.error('Failed to generate Text-To-Image, Error:', error);
     return null;

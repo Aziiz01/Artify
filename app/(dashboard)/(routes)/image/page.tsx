@@ -18,7 +18,7 @@ import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Loader } from "@/components/loader";
 import { Empty } from "@/components/ui/empty";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useProModal } from "@/hooks/use-pro-modal";
+import { useProModal } from "@/hook/use-pro-modal";
 
 import { amountOptions, formSchema, resolutionOptions } from "./constants";
 

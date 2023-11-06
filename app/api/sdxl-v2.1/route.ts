@@ -1,6 +1,5 @@
 import axios from 'axios';
 import prismadb from '@/lib/prismadb'; // Import your Prisma Client instance
-import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
 import * as Generation from "../../../app/generation/generation_pb";
 import {
@@ -9,19 +8,29 @@ import {
   onGenerationComplete,
 } from "../../../lib/helpers";
 import { client, metadata } from "../../../lib/grpc-client";
-
-// Define your API key
-const apiKey = 'sk-ZArtaCDEPggaipkpUrrYJa31jo8giwqP2H0wdsLHmierPaHF';
-
-
+import { incrementApiLimit, checkApiLimit } from "@/lib/api-limit";
+import { checkSubscription, countCredit } from "@/lib/subscription";
+import {  getDoc , doc, updateDoc } from "firebase/firestore";
+import { db } from '../../../firebase'
+import toast from 'react-hot-toast';
 // Create a function to make the API call and save the image
-export async function SDXLv21(textInput: string, selectedStyle : string,height : number,width : number, selectedSamples : number,cfgScale : number,seed :number, steps: number) {
+export async function SDXLv21(userId : string,prompt: string, selectedStyle : string,height : number,width : number, selectedSamples : number,cfgScale : number,seed :number, steps: number) {
   try {
+    const count=3;
+    const freeTrial = await checkApiLimit(userId);
+    const isPro = await checkSubscription(userId);
+    if (!freeTrial && !isPro) {
+      return null;
+    }
+    const calcul =await countCredit(userId,count);
+      if (!calcul){
+        return false;
+      } else {
     const request = buildGenerationRequest("stable-diffusion-512-v2-1", {
       type: "text-to-image",
       prompts: [
         {
-          text: `${textInput},${selectedStyle}` ,
+          text: prompt ,
         },
       ],
       width: width,
@@ -34,9 +43,9 @@ export async function SDXLv21(textInput: string, selectedStyle : string,height :
     });
     
     const response = await executeGenerationRequest(client, request, metadata);
-        const generatedImageData = onGenerationComplete(response);
+        const generatedImageData = onGenerationComplete(response);        
         return generatedImageData; // Return the generated image data
-
+  }
   } catch (error) {
     console.error('Failed to generate Text-To-Image, Error:', error);
     return null;

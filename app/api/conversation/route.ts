@@ -31,8 +31,8 @@ export async function POST(
       return new NextResponse("Messages are required", { status: 400 });
     }
 
-    const freeTrial = await checkApiLimit();
-    const isPro = await checkSubscription();
+    const freeTrial = await checkApiLimit(userId);
+    const isPro = await checkSubscription(userId);
 
     if (!freeTrial && !isPro) {
       return new NextResponse("Free trial has expired. Please upgrade to pro.", { status: 403 });
@@ -44,7 +44,7 @@ export async function POST(
     });
 
     if (!isPro) {
-      await incrementApiLimit();
+      await incrementApiLimit(userId);
     }
 
     return NextResponse.json(response.data.choices[0].message);

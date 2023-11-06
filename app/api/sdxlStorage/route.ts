@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
-import { addDoc, collection, serverTimestamp, setDoc ,doc } from "firebase/firestore";
+import { getDoc, updateDoc, serverTimestamp, setDoc ,doc } from "firebase/firestore";
 import { db } from '../../../firebase';
 import { getDownloadURL, ref, uploadString } from 'firebase/storage';
 import { storage } from "../../../firebase";
@@ -8,6 +8,7 @@ import { currentUser } from "@clerk/nextjs";
 
 export async function POST(req: Request) {
   try {
+    
     const user = await currentUser();
     const user_email = user?.emailAddresses[0].emailAddress;
     const firstName = user?.firstName;
@@ -29,15 +30,15 @@ export async function POST(req: Request) {
 
     // Extract the base64-encoded image data and other variables from the data
     const base64Data = variables.base64Data;
-    const prompt = variables.textInput;
-    const Model = variables.selectedModel;
-    const Style = variables.selectedStyle;
-    const Samples = variables.selectedSamples;
-    const seed = variables.seed;
-    const steps = variables.steps;
-    const height = variables.height;
-    const width = variables.width;
-    const cfg_scale = variables.cfgScale;
+    const prompt = variables.textInput || "";
+    const Model = variables.selectedModel || "SDXL-v1";
+    const Style = variables.selectedStyle || "";
+    const Samples = variables.selectedSamples || -1; 
+    const seed = variables.seed || "";
+    const steps = variables.steps || -1;
+    const height = variables.height || -1;
+    const width = variables.width || -1;
+    const cfg_scale = variables.cfgScale || -1;
     const docID = variables.documentId;
     const storageRef = ref(storage, 'SDXL/' + filename);
 
@@ -48,6 +49,7 @@ export async function POST(req: Request) {
     const imageUrl = await getDownloadURL(storageRef);
 
     try {
+      
       await setDoc(doc(db, "images" ,docID), {
         email_adress : user_email,
         firstName : firstName,
@@ -66,6 +68,8 @@ export async function POST(req: Request) {
         likes : [],
         timeStamp: serverTimestamp(),
       });
+      // implementing free Count increment after saving image
+    
       return new NextResponse("Image successfully uploaded", { status: 200 });
     } catch (error) {
       console.log('error while adding doc')

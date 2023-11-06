@@ -16,21 +16,34 @@ import { Download } from "lucide-react";
 import { Loader } from "@/components/loader";
 import { Empty } from "@/components/ui/empty";
 import { useEffect } from "react";
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase";
+import { useUser } from "@clerk/nextjs";
+import { useProModal } from "@/hook/use-pro-modal";
+import toast from "react-hot-toast";
+import { checkApiLimit } from "@/lib/api-limit";
+import { checkSubscription, countCredit } from "@/lib/subscription";
+import axios from "axios";
 
 export default function ImageToImagePage() {
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [passedImage, setPassedImage] = useState('');
-
+  const { isSignedIn, user, isLoaded } = useUser();
+  const router = useRouter();
   const [generatedImage, setGeneratedImage] = useState<HTMLImageElement[] | null>(null);
   const [textInput, setTextInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState('');
+  const [selectedSamples, setSelectedSamples] = useState(1);
+  const [cfgScale, setCfgScale] = useState(5); // Set an initial value, e.g., 0
+  const [steps, setSteps] = useState(30); // Set an initial value, e.g., 0
+  const [seed, setSeed] = useState(123463446);
   const searchParams = useSearchParams()
   const imageId = searchParams.get('imageId')
-
+  const [final_imageId,setImageId] = useState("");
+  const proModal = useProModal();
+  const count = 3;
   useEffect (() => {
     const getImageFromId = async () => {
       const docRef = doc(db, "images", `${imageId}`);
@@ -49,14 +62,27 @@ export default function ImageToImagePage() {
         console.error("Document with imageId not found in Firestore.");
       }
   }
-  
     getImageFromId();
   },[imageId])
 
   const handleStyleChange = (event: any) => {
     setSelectedStyle(event.target.value);
   };
-
+  const handleSeed = (event: any) => {
+    setSeed(event.target.value);
+  };
+  
+  const handleSamples = (event: any) => {
+    setSelectedSamples(event.target.value);
+  }
+  const handleCFG = (event: any) => {
+    const selectedCFG = event.target.value;
+    setCfgScale(selectedCFG);
+  };
+  const handleSteps = (event: any) => {
+    const selectedSteps = event.target.value;
+    setSteps(selectedSteps);
+  };
   const imageStrength = 0.4;
   // Handle image upload
   const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
@@ -64,13 +90,35 @@ export default function ImageToImagePage() {
     setUploadedImage(file);
   };
 
+  function generateRandomId() {
+    const timestamp = Date.now();
+    const randomPart = Math.floor(Math.random() * 1000000);
+    return `${timestamp}-${randomPart}`;
+  }
   // Handle image generation
   const handleGenerate = async () => {
     setIsLoading(true);
-
+ if (!isSignedIn) {
+    toast.error('uanthorized')
+   } else {
+    const userId = user.id;
     if (uploadedImage) {
 
       try {
+        const freeTrial = await checkApiLimit(userId);
+        const isPro = await checkSubscription(userId);
+      
+        if (!isPro && !freeTrial) {
+          proModal.onOpen();
+          setIsLoading(false);
+        } else {
+           // calcul
+          const calcul =await countCredit(userId,count);
+          if (!calcul){
+            toast.error("You credit balance is insuffisant !");
+            proModal.onOpen();
+            setIsLoading(false);
+          } else {
         // Create a request object based on your requirements
         // You may need to adjust the request parameters
         const request = buildGenerationRequest("stable-diffusion-xl-1024-v1-0", {
@@ -82,10 +130,10 @@ export default function ImageToImagePage() {
           ],
           stepScheduleStart: 1 - imageStrength,
           initImage: Buffer.from(await uploadedImage.arrayBuffer()), // Read the uploaded file
-          seed: 123463446,
-          samples: 1,
-          cfgScale: 5,
-          steps: 30,
+          seed: seed,
+          samples: selectedSamples,
+          cfgScale: cfgScale,
+          steps: steps,
           sampler: Generation.DiffusionSampler.SAMPLER_K_DPMPP_2M,
         });
 
@@ -94,19 +142,32 @@ export default function ImageToImagePage() {
       
         // Update the generated images state with an array of HTML image elements
         const generatedImages = onGenerationComplete(response);
-
+        if (generatedImage !== null) {
+          const base64Data = generatedImage.toString().split(',')[1];
+          const documentId = generateRandomId();
+          setImageId(documentId);
+          try {
+            const response = await axios.post('/api/sdxlStorage', {final_imageId,textInput,selectedStyle, selectedSamples, cfgScale, seed, steps, base64Data });
+            console.log(response.data); // The response from the API
+            router.refresh();
+          } catch (error) {
+            console.error(error);
+            toast.error("Something went wrong.");
+          }
+        }
         // Set the generated image data in state
         setGeneratedImage(generatedImages);
         setIsLoading(false);
 
-      } catch (error) {
+      }}} catch (error) {
         console.error("Failed to make image-to-image request:", error);
     }
+  } else {
+    toast.error("Please upload an image !")
+    console.log("No image uploaded.");
   }
+}
 };
-
-
-
 
   return (
     <div className="container mx-auto p-8">
@@ -161,6 +222,53 @@ export default function ImageToImagePage() {
           <option value="Cosmic">Cosmic</option>
         </select>
         <p>Selected Style: {selectedStyle}</p>
+        <h2 className="text-2xl font-bold">
+          Samples
+        </h2>
+        <select value={selectedSamples} onChange={handleSamples}>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="4">4</option>
+          <option value="6">6</option>
+          <option value="8">8</option>
+          <option value="10">10</option>
+        </select>
+        <h2 className="text-2xl font-bold">
+          CFG_Scale
+        </h2>
+        <input
+          type="range"
+          id="cfgScale"
+          name="cfgScale"
+          min={0}
+          max={35}
+          value={cfgScale}
+          onChange={handleCFG}
+        />
+        <p>{cfgScale}</p>
+        <h2 className="text-2xl font-bold">
+          Steps
+        </h2>
+        <input
+          type="range"
+          id="steps"
+          name="steps"
+          min={10}
+          max={150}
+          value={steps}
+          onChange={handleSteps}
+        />
+        <p>{steps}</p>
+        <h2 className="text-2xl font-bold">
+          Seed
+        </h2>
+        <input
+          className="" // Remove left padding
+          type="text"
+          placeholder="Seed"
+          value={seed}
+          onChange={handleSeed}
+        />
 
         <h2 className="text-2xl font-bold">
           Algorithm Model : STABLE DIFF SDXL V1

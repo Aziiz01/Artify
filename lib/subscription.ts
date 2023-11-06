@@ -12,12 +12,13 @@ import {
   where,
 } from "firebase/firestore";
 import { db } from "@/firebase";
+import { checkApiLimit, incrementApiLimit } from "./api-limit";
 const DAY_IN_MS = 86_400_000;
 
-export const checkSubscription = async () => {
-  const { userId } = auth();
+export const checkSubscription = async (userId: string | null) => {
 
   if (!userId) {
+    console.log("Unauthorized to check subscription!");
     return false;
   }
 
@@ -27,6 +28,7 @@ export const checkSubscription = async () => {
   if (docSnap.exists()) {
     const productData = docSnap.data();
     if (
+
       productData.stripePriceId &&
       productData.stripeCurrentPeriodEnd &&
       productData.stripeCurrentPeriodEnd.toDate().getTime() + DAY_IN_MS > Date.now()
@@ -40,3 +42,35 @@ export const checkSubscription = async () => {
     return false;
   }
 };
+export const countCredit = async (userId: string | null, count: number) => {
+  if (!userId) {
+    return false;
+  }
+  const isPro = await checkSubscription(userId);
+  if (!isPro) {
+    await incrementApiLimit(userId);
+  } else {
+    try {
+      const docRef = await getDoc(doc(db, "UserCredits", userId));
+      if (docRef.exists()) {
+        const productData = docRef.data();
+        const currentCredits = parseInt(productData.count, 10);
+        const credits = (currentCredits - count);
+        console.log(credits);
+        if (credits < 0) { 
+          return false 
+        } else {
+          const updatedCredits = credits.toString();
+          await updateDoc(doc(db, "UserCredits", userId), {
+            count: updatedCredits,
+          });
+          console.log("document updated");
+          return true;
+        }
+      }
+    } catch (error) {
+      console.log('Error while decrementing credits:', error);
+    }
+  }
+}
+
