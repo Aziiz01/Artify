@@ -81,4 +81,54 @@ body,
   body {
     @apply bg-background text-foreground;
   }
+}/* Your global styles */
+/* Add this CSS to your stylesheets */
+
+/* Styling for the buttons container */
+#middle-items {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row; /* Add this line to align the buttons horizontally */
+}
+
+/* Styling for the buttons */
+.nav-button {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: white;
+  margin: 0 10px; /* Adjust the margin as needed for spacing */
+  transition: color 0.3s, box-shadow 0.3s; /* Add smooth transitions for color and box-shadow */
+  padding: 10px 20px; /* Adjust padding for button size */
+}
+
+/* Hover effect */
+.nav-button:hover {
+  color: #64b5f6; /* Change the color on hover to your preferred color */
+  box-shadow: 0 0 10px 0 rgba(100, 181, 246, 0.7); /* Add a glowing box-shadow effect on hover */
+}
+
+
+/* Media query to hide middle items in mobile view */
+@media (max-width: 768px) {
+  #middle-items {
+    display: none;
+  }
+}
+/* Styling for the buttons */
+.nav-button {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: white;
+  margin: 0 10px; /* Adjust the margin as needed for spacing */
+  transition: color 0.3s, box-shadow 0.3s; /* Add smooth transitions for color and box-shadow */
+  padding: 10px 20px; /* Adjust padding for button size */
+}
+
+/* Hover effect */
+.nav-button:hover {
+  color: #64b5f6; /* Change the color on hover to your preferred color */
+  box-shadow: 0 0 10px 0 rgba(100, 181, 246, 0.7); /* Add a glowing box-shadow effect on hover */
 }

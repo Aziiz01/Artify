@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs";
 import { doc, getDoc} from "firebase/firestore";
 import { db } from "@/firebase";
-
+import { useRouter } from "next/navigation";
 export const getCredits = async () => {
   const { userId } = auth();
 

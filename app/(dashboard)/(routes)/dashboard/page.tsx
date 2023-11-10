@@ -1,13 +1,9 @@
 "use client";
-import Link from "next/link";
 import React, { useEffect, useState } from "react";
-import { ArrowRight } from "lucide-react";
 import axios from 'axios';
 import { Card, CardFooter } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { useProModal } from "@/hook/use-pro-modal";
-import Modal from 'react-modal'; // Import react-modal
 import { Button } from "@/components/ui/button"; // Import the Button component
 import { Loader } from "@/components/loader";
 import { Empty } from "@/components/ui/empty";
@@ -25,6 +21,8 @@ import { PublishButton } from "@/components/publish_button";
 import { clerkClient } from "@clerk/nextjs";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
+import { useLoginModal } from "@/hook/use-login-modal";
+import PickStyle from "@/components/ui/pickStyle";
 
 export default function HomePage() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -35,7 +33,7 @@ export default function HomePage() {
   const [photos, setPhotos] = useState<string[]>([]);
   const [textInput, setTextInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedStyle, setSelectedStyle] = useState('');
+  const [selectedStyle, setSelectedStyle] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState('Stable Diffusion 2.1');
   const [height, setHeight] = useState(512);
   const [width, setWidth] = useState(512);
@@ -45,6 +43,22 @@ export default function HomePage() {
   const [seed, setSeed] = useState(0);
   const [imageId, setImageId] = useState("");
   const [isMounted, setIsMounted] = useState(false);
+  const loginModal = useLoginModal();
+  const [mobileSize, setMobileSize] = useState(false) 
+
+  useEffect(() => {
+    const handleResize = () => {
+      const isMobile = window.innerWidth < 768;
+      setMobileSize(true);
+    };
+
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
   useEffect(() => {
     setIsMounted(true);
@@ -54,13 +68,13 @@ export default function HomePage() {
     return null;
   }
 
-
+  const handleSelectedStyleChange = (newSelectedStyle: string) => {
+    setSelectedStyle(newSelectedStyle);
+  };
 
   const handleDimensions = (event: any) => {
     const selectedValue = event.target.value;
-
     const [selectedHeight, selectedWidth] = selectedValue.split('*');
-
     setHeight(selectedHeight);
     setWidth(selectedWidth);
   };
@@ -79,7 +93,6 @@ export default function HomePage() {
       steps: number
     ) => Promise<any>;
   };
-
 
   const SDXLmodelApiMapping: SDXLModelApiMapping = {
     "Stable Diffusion XL 1.0": SDXLv1,
@@ -127,25 +140,30 @@ export default function HomePage() {
   const DALLE = async (values: any) => {
     try {
       setPhotos([]);
-//to test
       const response = await axios.post('/api/image', values);
       const urls = response.data.map((image: { url: string }) => image.url);
       setPhotos(urls);
-      const documentId = generateRandomId();
-      setImageId(documentId);
-      await axios.post('/api/dalleStorage', { urls, values, documentId })
+  
+      for (const url of urls) {
+        const documentId = generateRandomId();
+        setImageId(documentId);
+  
+        // Send a POST request for each URL separately
+        await axios.post('/api/dalleStorage', { url, values, documentId });
+      }
     } catch (error: any) {
       if (error?.response?.status === 403) {
         proModal.onOpen();
-      } else if (error?.response?.status === 405){
-        toast.error("You credit balance is insuffisant !");
+      } else if (error?.response?.status === 405) {
+        toast.error("Your credit balance is insufficient!");
       } else {
         toast.error("Something went wrong.");
       }
     }
   };
+  
 
-// Your client-side code
+
 const generateImage = async () => {
   setIsLoading(true);
   if (isSignedIn) {
@@ -160,22 +178,45 @@ const generateImage = async () => {
           const prompt = `${textInput} , ${selectedStyle}`;
           try {
             const generatedImages = await selectedApi(userId, prompt, selectedStyle, height, width, selectedSamples, cfgScale, seed, steps);
-            if (generatedImages !== null && generatedImages!== false) {
-              setImage(generatedImages);
-              const generatedImage = generatedImages[0].src;
-              const base64Data = generatedImage.split(',')[1];
-              const documentId = generateRandomId();
-              setImageId(documentId);
-              try {
-                const response = await axios.post('/api/sdxlStorage', { documentId, textInput, selectedModel, selectedStyle, height, width, selectedSamples, cfgScale, seed, steps, base64Data });
-                console.log(response.data); // The response from the API
-                router.refresh();
-              } catch (error) {
-                console.error(error);
-                toast.error("Something went wrong.");
-              }
-            }else if (generatedImages == false){
-              toast.error("You credit balance is insuffisant !");
+            if (generatedImages !== null && generatedImages !== false) {
+              const generatedImagePromises = generatedImages.map(async (img :any) => {
+                const generatedImage = img.src;
+                const base64Data = generatedImage.split(',')[1];
+                const documentId = generateRandomId();
+                setImageId(documentId);
+                try {
+                  await axios.post('/api/sdxlStorage', {
+                    documentId,
+                    textInput,
+                    selectedModel,
+                    selectedStyle,
+                    height,
+                    width,
+                    selectedSamples,
+                    cfgScale,
+                    seed,
+                    steps,
+                    base64Data,
+                  });
+                } catch (error) {
+                  console.error(error);
+                  toast.error("Something went wrong.");
+                }
+          
+                return img; // Return the image data after uploading
+              });
+          
+              // Wait for all image upload promises to resolve
+              const uploadedImages = await Promise.all(generatedImagePromises);
+          
+              // Set all the uploaded images at once
+              setImage(uploadedImages);
+          
+              // Additional actions or state updates can be placed here
+          
+              router.refresh();
+            } else if (generatedImages === false) {
+              toast.error("You credit balance is insufficient!");
               proModal.onOpen();
             } else {
               proModal.onOpen();
@@ -183,13 +224,13 @@ const generateImage = async () => {
             }
           } catch (error : any) {
             if (error.response && error.response.status === 403) {
-              // Handle the 403 error here by opening your modal
               proModal.onOpen();
             } else {
               console.error("Something went wrong:", error);
               toast.error("Something went wrong.");
             }
           }
+          
         } else {
           console.error(`API for model ${selectedModel} not found.`);
         }
@@ -198,7 +239,7 @@ const generateImage = async () => {
       setIsLoading(false);
     }
   } else {
-    console.log('You should sign in to continue.');
+   loginModal.onOpen();
   }
 };
 
@@ -206,11 +247,9 @@ const generateImage = async () => {
 
   const handleGenerate = () => {
     generateImage();
+    console.log("selected image style" + selectedStyle);
   };
-  // Function to open the modal
-  const openModal = () => {
-    setIsModalOpen(true);
-  };
+
   const handleCFG = (event: any) => {
     // Get the selected cfg_scale value from the event
     const selectedCFG = event.target.value;
@@ -238,208 +277,198 @@ const generateImage = async () => {
     window.location.href = url;
   };
 
-
+  const openImageInNewTab = (img : any) => {
+    if (img && img.src) {
+      const link = document.createElement('a');
+      link.href = img.src;
+      link.target = '_blank';
+      link.download = 'image.png'; // Provide a default name for the downloaded image
+      link.click();
+    }
+  };
+  
   return (
-    <div className="container mx-auto p-8">
+    <div style={{
+      display:'grid',
+      gridTemplateColumns: mobileSize ? '40% 60%' : undefined,
+      gridTemplateRows: !mobileSize ? '30% 70%' : undefined,
+    }}>
+
+    <div className="px-4 lg:px-8" style={{ overflowY: 'scroll', height: '850px' }}>
+      <div className="flex items-center">
+        <h2 className="text-2xl text-blue-900 font-extrabold">Text Prompt</h2>
+        <button className="ml-2 text-gray-500 hover:text-blue-500">
+          <span role="img" aria-label="Help">
+            ❓
+          </span>
+        </button>
+      </div>
+      <div className="relative flex items-center">
+        <p className=" text-gray-400 font-bold text-lg">
+          Describe what you want the AI to create
+        </p>
+        <button className="bg-gray-200 text-gray-500 py-1 px-2 rounded-md ml-auto"      
+       onClick={handleSurpriseMeClick}>
+          <FontAwesomeIcon icon={faLightbulb} className="mr-1" />
+          Surprise Me
+        </button>
+      </div>
+      <input
+        className="border rounded-md px-4 py-2 w-full"
+        type="text"
+        placeholder="Your text prompt"
+        value={textInput}
+        onChange={(e) => setTextInput(e.target.value)}
+      />
+
+      <h2 className="text-2xl pt-5 text-blue-900 font-extrabold">Choose a style</h2>
+      {/* <select value={selectedStyle} onChange={handleStyleChange}>
+        <option value="">many others to add</option>
+        <option value="3d-model">3D Model</option>
+        <option value="analog-film">Analog Film</option>
+        <option value="anime-cinematic">Anime Cinematic</option>
+        <option value="cinematic">Cinematic</option>
+      </select>
+      <p>Selected Style: {selectedStyle}</p> */}
+      <PickStyle onSelectedStyleChange={handleSelectedStyleChange} />
+      <p className=" text-blue-900 font-extrabold">Selected Style: {selectedStyle}</p>
+
+
+      <h2 className="text-2xl pt-5 text-blue-900 font-extrabold">Algorithm Model</h2>
+      <select value={selectedModel} onChange={handleModelChange}>
+        <option value="Stable Diffusion XL 1.0">Stable Diffusion XL 1.0 (Pro only)</option>
+        <option value="Stable Diffusion XL 0.9">Stable Diffusion XL 0.9 (Pro only)</option>
+        <option value="Stable Diffusion XL 0.8">Stable Diffusion XL 0.8</option>
+        <option value="Stable Diffusion 2.1">Stable Diffusion 2.1</option>
+        <option value="Stable Diffusion 1.5">Stable Diffusion 1.5</option>
+        <option value="DALL E2">DALL E2</option>
+      </select>
+      <p>Selected Model: {selectedModel}</p>
+
+      <h2 className="text-2xl pt-5 text-blue-900 font-extrabold">Dimensions</h2>
+      <select value={`${height}x${width}`} onChange={handleDimensions}>
+        <option value="512x512">512x512</option>
+        <option value="1024x1024">1024x1024</option>
+        <option value="2048x2048">2K</option>
+      </select>
+
+      <h2 className="text-2xl pt-5 text-blue-900 font-extrabold">Samples</h2>
+      <select value={selectedSamples} onChange={handleSamples}>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="4">4</option>
+        <option value="6">6</option>
+        <option value="8">8</option>
+        <option value="10">10</option>
+      </select>
+
+      <h2 className="text-2xl  pt-5 text-blue-900 font-extrabold">CFG_Scale</h2>
+      <input
+        type="range"
+        id="cfgScale"
+        name="cfgScale"
+        min={0}
+        max={35}
+        value={cfgScale}
+        onChange={handleCFG}
+      />
+      <p>{cfgScale}</p>
+
+      <h2 className="text-2xl pt-5 text-blue-900 font-extrabold">Steps</h2>
+      <input
+        type="range"
+        id="steps"
+        name="steps"
+        min={10}
+        max={150}
+        value={steps}
+        onChange={handleSteps}
+      />
+      <p>{steps}</p>
+
+      <h2 className="text-2xl text-blue-900 font-extrabold">Seed</h2>
+      <input
+        className="border rounded-md px-4 py-2 w-full"
+        type="text"
+        placeholder="Seed"
+        value={seed}
+        onChange={handleSeed}
+      />
+
+      <Button
+        onClick={handleGenerate}
+        disabled={isLoading}
+        className="mt-4 w-full relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-purple-500 group-hover:to-pink-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-purple-200 dark:focus:ring-purple-800"
+        // Attach the click event handler
+        >
+        <span className="w-full relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-opacity-0 ">
+         {isLoading ? 'Generating...' : 'Generate'}
+        </span>
+      </Button>
+    </div>
+    <div style={{ overflowY: 'scroll', height: '850px' }}>
       <div className="mb-8 space-y-4 text-center">
-        <h2 className="text-4xl font-bold">
-          Explore the Power of AI
-        </h2>
+        <h2 className="text-4xl font-bold">Explore the Power of AI</h2>
         <p className="text-gray-500 text-lg">
           Chat with the Smartest AI - Experience the Power of AI
         </p>
       </div>
-      <div className="">
-        <div className="flex items-center">
-          <h2 className="text-2xl font-bold">
-            Text Prompt
-          </h2>
-          <button
-            className="ml-2 text-gray-500 hover:text-blue-500"
-            onClick={openModal}>
-            <span role="img" aria-label="Help">
-              ❓
-            </span>
-          </button>
+      {isLoading && (
+        <div className="p-20">
+          <Loader />
         </div>
-        <div className="relative flex items-center">
-          <p className="text-gray-500 text-lg ">
-            Describe what you want the AI to create
-          </p>
-          {/* Add the "Surprise Me" button with Font Awesome icon */}
-          <button
-            className="bg-gray-200 text-gray-500 py-1 px-2 rounded-md ml-auto"
-            onClick={handleSurpriseMeClick}
-          >
-            <FontAwesomeIcon icon={faLightbulb} className="mr-1" /> {/* Font Awesome icon */}
-            Surprise Me
-          </button>
-        </div>
-        <input
-          className="border rounded-md px-4 py-2 w-full" // Remove left padding
-          type="text"
-          placeholder="Your text prompt"
-          value={textInput}
-          onChange={(e) => setTextInput(e.target.value)}
-        />
+      )}
 
-        <h2 className="text-2xl font-bold">
-          Choose a style
-        </h2>
-        <select value={selectedStyle} onChange={handleStyleChange}>
-          <option value="">many others to add </option>
-          <option value="3d-model">3d-model</option>
-          <option value="analog-film">analog-film </option>
-          <option value="anime cinematic">anime</option>
-          <option value="cinematic">cinematic</option>
+      {(!image || image.length === 0) && !isLoading && photos.length === 0 && (
+        <Empty label="No images generated." />
+      )}
 
-        </select>
-        <p>Selected Style: {selectedStyle}</p>
-
-        <h2 className="text-2xl font-bold">
-          Algorithm Model
-        </h2>
-        <select value={selectedModel} onChange={handleModelChange}>
-          <option value="Stable Diffusion XL 1.0">Stable Diffusion XL 1.0 (Pro only)</option>
-          <option value="Stable Diffusion XL 0.9">Stable Diffusion XL 0.9 (Pro only)</option>
-          <option value="Stable Diffusion XL 0.8">Stable Diffusion XL 0.8</option>
-          <option value="Stable Diffusion 2.1">Stable Diffusion 2.1</option>
-          <option value="Stable Diffusion 1.5">Stable Diffusion 1.5</option>
-          <option value="DALL E2">DALL E2</option>
-        </select>
-        <p>Selected Model: {selectedModel}</p>
-        <h2 className="text-2xl font-bold">
-          Dimensions
-        </h2>
-        <select value={`${height}*${width}`} onChange={handleDimensions}>
-          <option value="512*512">512*512</option>
-          <option value="1024*1024">1024*1024</option>
-          <option value="2048*2048">2K</option>
-        </select>
-        <h2 className="text-2xl font-bold">
-          Samples
-        </h2>
-        <select value={selectedSamples} onChange={handleSamples}>
-          <option value="1">1</option>
-          <option value="2">2</option>
-          <option value="4">4</option>
-          <option value="6">6</option>
-          <option value="8">8</option>
-          <option value="10">10</option>
-        </select>
-        <h2 className="text-2xl font-bold">
-          CFG_Scale
-        </h2>
-        <input
-          type="range"
-          id="cfgScale"
-          name="cfgScale"
-          min={0}
-          max={35}
-          value={cfgScale}
-          onChange={handleCFG}
-        />
-        <p>{cfgScale}</p>
-        <h2 className="text-2xl font-bold">
-          Steps
-        </h2>
-        <input
-          type="range"
-          id="steps"
-          name="steps"
-          min={10}
-          max={150}
-          value={steps}
-          onChange={handleSteps}
-        />
-        <p>{steps}</p>
-        <h2 className="text-2xl font-bold">
-          Seed
-        </h2>
-        <input
-          className="" // Remove left padding
-          type="text"
-          placeholder="Seed"
-          value={seed}
-          onChange={handleSeed}
-        />
-
-        <Button
-          onClick={handleGenerate} disabled={isLoading}
-          className="bg-black text-white py-2 px-4 rounded-md mt-4 w-full"
-        // Attach the click event handler
-        >
-          {isLoading ? 'Generating...' : 'Generate'}
-        </Button>
-        {isLoading && (
-  <div className="p-20">
-    <Loader />
-  </div>
-)}
-
-{(!image || image.length === 0) && !isLoading && photos === null && (
-  <Empty label="No images generated." />
-)}
-
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-8">
-  {(Array.isArray(image) && image.length > 0) ? (
-    image.map((img, index) => (
-      <Card key={index} className="">
-        <div className="relative aspect-square">
-          <Image
-            fill
-            src={img.src}
-            alt={`Generated Image ${index + 1}`}
-          />
-        </div>
-        <CardFooter className="p-2">
-          <Button onClick={() => window.open(img.src)} variant="secondary" className="w-full">
-            <Download className="h-4 w-4 mr-2" />
-            Open Image
-          </Button>
-          <Button onClick={handleEnhance}> Enhance </Button>
-          <Button onClick={handleUpscale}> Upscale </Button>
-          <PublishButton imageId={imageId} />
-        </CardFooter>
-      </Card>
-    ))
-  ) : !isLoading && photos === null ? (
-    <Empty label="No images generated." />
-  ) : null}
-</div>
-
-
-      </div>{/*DALLE PHOTOS */}
-      {photos.length === 0 && !isLoading && (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-8">
+        {Array.isArray(image) && image.length > 0 ? (
+          image.map((img, index) => (
+            <Card key={index} className="">
+            <div className="relative aspect-square">
+              <Image height={img.height} width={img.width} src={img.src} alt={`Generated Image ${index + 1}`} />
+            </div>
+            <CardFooter className="p-2">
+            <Button onClick={() => openImageInNewTab(img)} variant="secondary" className="w-full">
+                <Download className="h-4 w-4 mr-2" />
+                Download
+              </Button>
+              <Button onClick={handleEnhance}>Enhance</Button>
+              <Button onClick={handleUpscale}>Upscale</Button>
+              <PublishButton imageId={imageId} />
+            </CardFooter>
+          </Card>
+          ))
+        ) : !isLoading && photos === null ? (
           <Empty label="No images generated." />
-        )}
+        ) : null}
+      </div>
+  
+    
+
       {photos && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-8">
           {photos.map((src) => (
             <Card key={src} className="rounded-lg overflow-hidden">
-              <div className="relative aspect-square">
-                <Image
-                  fill
-                  alt="Generated"
-                  src={src}
-                />
-              </div>
-              <CardFooter className="p-2">
-                <Button onClick={() => window.open(src)} variant="secondary" className="w-full">
-                  <Download className="h-4 w-4 mr-2" />
-                  Open Image
-                </Button>
-                <Button onClick={handleEnhance}> Enhance
-                </Button>
-                <Button onClick={handleUpscale}> Upscale
-                </Button>
-                <PublishButton imageId={imageId} />
-              </CardFooter>
-            </Card>
+            <div className="relative aspect-square">
+              <Image fill alt="Generated" src={src} />
+            </div>
+            <CardFooter className="p-2">
+              <Button onClick={() => window.open(src)} variant="secondary" className="w-full">
+                <Download className="h-4 w-4 mr-2" />
+                Open Image
+              </Button>
+              <Button onClick={handleEnhance}>Enhance</Button>
+              <Button onClick={handleUpscale}>Upscale</Button>
+              <PublishButton imageId={imageId} />
+            </CardFooter>
+          </Card>
           ))}
-        </div>
-      )}
-
     </div>
-  );
-}
+      )}
+   </div>
+   </div>
+  )}
+
