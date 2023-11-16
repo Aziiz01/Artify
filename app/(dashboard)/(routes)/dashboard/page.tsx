@@ -1,13 +1,9 @@
 "use client";
-import Link from "next/link";
 import React, { useEffect, useState } from "react";
-import { ArrowRight } from "lucide-react";
 import axios from 'axios';
 import { Card, CardFooter } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { useProModal } from "@/hook/use-pro-modal";
-import Modal from 'react-modal'; // Import react-modal
 import { Button } from "@/components/ui/button"; // Import the Button component
 import { Loader } from "@/components/loader";
 import { Empty } from "@/components/ui/empty";
@@ -26,6 +22,7 @@ import { clerkClient } from "@clerk/nextjs";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useLoginModal } from "@/hook/use-login-modal";
+import PickStyle from "@/components/ui/pickStyle";
 
 export default function HomePage() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -36,7 +33,7 @@ export default function HomePage() {
   const [photos, setPhotos] = useState<string[]>([]);
   const [textInput, setTextInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedStyle, setSelectedStyle] = useState('');
+  const [selectedStyle, setSelectedStyle] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState('Stable Diffusion 2.1');
   const [height, setHeight] = useState(512);
   const [width, setWidth] = useState(512);
@@ -47,6 +44,21 @@ export default function HomePage() {
   const [imageId, setImageId] = useState("");
   const [isMounted, setIsMounted] = useState(false);
   const loginModal = useLoginModal();
+  const [mobileSize, setMobileSize] = useState(false) 
+
+  useEffect(() => {
+    const handleResize = () => {
+      const isMobile = window.innerWidth < 768;
+      setMobileSize(true);
+    };
+
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
   useEffect(() => {
     setIsMounted(true);
@@ -56,7 +68,9 @@ export default function HomePage() {
     return null;
   }
 
-
+  const handleSelectedStyleChange = (newSelectedStyle: string) => {
+    setSelectedStyle(newSelectedStyle);
+  };
 
   const handleDimensions = (event: any) => {
     const selectedValue = event.target.value;
@@ -233,6 +247,7 @@ const generateImage = async () => {
 
   const handleGenerate = () => {
     generateImage();
+    console.log("selected image style" + selectedStyle);
   };
 
   const handleCFG = (event: any) => {
@@ -273,16 +288,15 @@ const generateImage = async () => {
   };
   
   return (
-    <div className="container mx-auto p-8">
-    <div className="mb-8 space-y-4 text-center">
-      <h2 className="text-4xl font-bold">Explore the Power of AI</h2>
-      <p className="text-gray-500 text-lg">
-        Chat with the Smartest AI - Experience the Power of AI
-      </p>
-    </div>
-    <div className="">
+    <div style={{
+      display:'grid',
+      gridTemplateColumns: mobileSize ? '40% 60%' : undefined,
+      gridTemplateRows: !mobileSize ? '30% 70%' : undefined,
+    }}>
+
+    <div className="px-4 lg:px-8" style={{ overflowY: 'scroll', height: '850px' }}>
       <div className="flex items-center">
-        <h2 className="text-2xl font-bold">Text Prompt</h2>
+        <h2 className="text-2xl text-blue-900 font-extrabold">Text Prompt</h2>
         <button className="ml-2 text-gray-500 hover:text-blue-500">
           <span role="img" aria-label="Help">
             ❓
@@ -290,7 +304,7 @@ const generateImage = async () => {
         </button>
       </div>
       <div className="relative flex items-center">
-        <p className="text-gray-500 text-lg">
+        <p className=" text-gray-400 font-bold text-lg">
           Describe what you want the AI to create
         </p>
         <button className="bg-gray-200 text-gray-500 py-1 px-2 rounded-md ml-auto"      
@@ -307,17 +321,20 @@ const generateImage = async () => {
         onChange={(e) => setTextInput(e.target.value)}
       />
 
-      <h2 className="text-2xl font-bold">Choose a style</h2>
-      <select value={selectedStyle} onChange={handleStyleChange}>
+      <h2 className="text-2xl pt-5 text-blue-900 font-extrabold">Choose a style</h2>
+      {/* <select value={selectedStyle} onChange={handleStyleChange}>
         <option value="">many others to add</option>
         <option value="3d-model">3D Model</option>
         <option value="analog-film">Analog Film</option>
         <option value="anime-cinematic">Anime Cinematic</option>
         <option value="cinematic">Cinematic</option>
       </select>
-      <p>Selected Style: {selectedStyle}</p>
+      <p>Selected Style: {selectedStyle}</p> */}
+      <PickStyle onSelectedStyleChange={handleSelectedStyleChange} />
+      <p className=" text-blue-900 font-extrabold">Selected Style: {selectedStyle}</p>
 
-      <h2 className="text-2xl font-bold">Algorithm Model</h2>
+
+      <h2 className="text-2xl pt-5 text-blue-900 font-extrabold">Algorithm Model</h2>
       <select value={selectedModel} onChange={handleModelChange}>
         <option value="Stable Diffusion XL 1.0">Stable Diffusion XL 1.0 (Pro only)</option>
         <option value="Stable Diffusion XL 0.9">Stable Diffusion XL 0.9 (Pro only)</option>
@@ -328,14 +345,14 @@ const generateImage = async () => {
       </select>
       <p>Selected Model: {selectedModel}</p>
 
-      <h2 className="text-2xl font-bold">Dimensions</h2>
+      <h2 className="text-2xl pt-5 text-blue-900 font-extrabold">Dimensions</h2>
       <select value={`${height}x${width}`} onChange={handleDimensions}>
         <option value="512x512">512x512</option>
         <option value="1024x1024">1024x1024</option>
         <option value="2048x2048">2K</option>
       </select>
 
-      <h2 className="text-2xl font-bold">Samples</h2>
+      <h2 className="text-2xl pt-5 text-blue-900 font-extrabold">Samples</h2>
       <select value={selectedSamples} onChange={handleSamples}>
         <option value="1">1</option>
         <option value="2">2</option>
@@ -345,7 +362,7 @@ const generateImage = async () => {
         <option value="10">10</option>
       </select>
 
-      <h2 className="text-2xl font-bold">CFG_Scale</h2>
+      <h2 className="text-2xl  pt-5 text-blue-900 font-extrabold">CFG_Scale</h2>
       <input
         type="range"
         id="cfgScale"
@@ -357,7 +374,7 @@ const generateImage = async () => {
       />
       <p>{cfgScale}</p>
 
-      <h2 className="text-2xl font-bold">Steps</h2>
+      <h2 className="text-2xl pt-5 text-blue-900 font-extrabold">Steps</h2>
       <input
         type="range"
         id="steps"
@@ -369,7 +386,7 @@ const generateImage = async () => {
       />
       <p>{steps}</p>
 
-      <h2 className="text-2xl font-bold">Seed</h2>
+      <h2 className="text-2xl text-blue-900 font-extrabold">Seed</h2>
       <input
         className="border rounded-md px-4 py-2 w-full"
         type="text"
@@ -381,11 +398,21 @@ const generateImage = async () => {
       <Button
         onClick={handleGenerate}
         disabled={isLoading}
-        className="bg-black text-white py-2 px-4 rounded-md mt-4 w-full"
-      >
-        {isLoading ? 'Generating...' : 'Generate'}
+        className="mt-4 w-full relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-purple-500 group-hover:to-pink-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-purple-200 dark:focus:ring-purple-800"
+        // Attach the click event handler
+        >
+        <span className="w-full relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-opacity-0 ">
+         {isLoading ? 'Generating...' : 'Generate'}
+        </span>
       </Button>
-
+    </div>
+    <div style={{ overflowY: 'scroll', height: '850px' }}>
+      <div className="mb-8 space-y-4 text-center">
+        <h2 className="text-4xl font-bold">Explore the Power of AI</h2>
+        <p className="text-gray-500 text-lg">
+          Chat with the Smartest AI - Experience the Power of AI
+        </p>
+      </div>
       {isLoading && (
         <div className="p-20">
           <Loader />
@@ -418,28 +445,30 @@ const generateImage = async () => {
           <Empty label="No images generated." />
         ) : null}
       </div>
-    </div>
+  
     
-    {photos && (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-8">
-        {photos.map((src) => (
-          <Card key={src} className="rounded-lg overflow-hidden">
-          <div className="relative aspect-square">
-            <Image fill alt="Generated" src={src} />
-          </div>
-          <CardFooter className="p-2">
-            <Button onClick={() => window.open(src)} variant="secondary" className="w-full">
-              <Download className="h-4 w-4 mr-2" />
-              Open Image
-            </Button>
-            <Button onClick={handleEnhance}>Enhance</Button>
-            <Button onClick={handleUpscale}>Upscale</Button>
-            <PublishButton imageId={imageId} />
-          </CardFooter>
-        </Card>
-        ))}
-      </div>
-   )}
+
+      {photos && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-8">
+          {photos.map((src) => (
+            <Card key={src} className="rounded-lg overflow-hidden">
+            <div className="relative aspect-square">
+              <Image fill alt="Generated" src={src} />
+            </div>
+            <CardFooter className="p-2">
+              <Button onClick={() => window.open(src)} variant="secondary" className="w-full">
+                <Download className="h-4 w-4 mr-2" />
+                Open Image
+              </Button>
+              <Button onClick={handleEnhance}>Enhance</Button>
+              <Button onClick={handleUpscale}>Upscale</Button>
+              <PublishButton imageId={imageId} />
+            </CardFooter>
+          </Card>
+          ))}
+    </div>
+      )}
+   </div>
    </div>
   )}
 

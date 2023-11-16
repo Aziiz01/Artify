@@ -38,6 +38,22 @@ const router = useRouter();
   const proModal = useProModal();
   const [final_imageId,setImageId] = useState("");
   const loginModal = useLoginModal();
+  const [mobileSize, setMobileSize] = useState(false) 
+
+  useEffect(() => {
+    const handleResize = () => {
+      const isMobile = window.innerWidth < 768;
+      setMobileSize(true);
+    };
+
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
 
   const count = 3;
   useEffect (() => {
@@ -173,68 +189,78 @@ if (generatedImage !== null) {
 }
 
   return (
-<div className="container mx-auto p-8">
-<div className="mb-8 space-y-4 text-center">
-<h2 className="text-4xl font-bold">
-          Explore the Power of AI
-        </h2>
-        <p className="text-gray-500 text-lg">
-          Chat with the Smartest AI - Experience the Power of AI
-        </p>
+    <div style={{
+      display:'grid',
+      gridTemplateColumns: mobileSize ? '40% 60%' : undefined,
+      gridTemplateRows: !mobileSize ? '30% 70%' : undefined,
+      backgroundColor:'transparent'
+    }}>
+      <div className="px-4 lg:px-8 bg-transparent" style={{ overflowY: 'scroll', height: '850px' }}>
+        <h2 className="text-2xl mt-5 text-gray-200 font-extrabold">Image Upscaler</h2>
+        <input type="file" onChange={handleImageUpload} className="mt-4 "/>
+          {passedImage || uploadedImage ? (
+          <Image
+              width={512}
+              height={512}
+              src={passedImage || (uploadedImage ? URL.createObjectURL(uploadedImage) : "")}
+              alt="Uploaded image"
+            />
+          ) : null}
+          <Button
+            onClick={handleUpscale} disabled={isLoading}
+            className="mt-4 w-full relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-purple-500 group-hover:to-pink-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-purple-200 dark:focus:ring-purple-800"
+          // Attach the click event handler
+          >
+              <span className="w-full relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-opacity-0 ">
+                {isLoading ? 'Upscaling...' : 'Upscale'}
+              </span>
+          </Button>
+      </div>
+      <div style={{ overflowY: 'scroll', height: '800px' }}>
+        <div className="mb-8 space-y-4 text-center">
+          <h2 className="text-4xl mt-5 text-gray-200 font-extrabold">
+            Explore the Power of AI
+          </h2>
+          <p className="text-gray-500 text-lg">
+            Chat with the Smartest AI - Experience the Power of AI
+          </p>
         </div>
-
-      <h2 className="text-2xl font-bold">Image Upscaler</h2>
-      <input type="file" onChange={handleImageUpload} />
-              {passedImage || uploadedImage ? (
-  <Image
-    width={512}
-    height={512}
-    src={passedImage || (uploadedImage ? URL.createObjectURL(uploadedImage) : "")}
-    alt="Uploaded image"
-  />
-) : null}
-<Button
-          onClick={handleUpscale} disabled={isLoading}
-          className="bg-black text-white py-2 px-4 rounded-md mt-4 w-full"
-        // Attach the click event handler
-        >
-          {isLoading ? 'Upscaling...' : 'Upscale'}
-        </Button>
-        {isLoading && (
-          <div className="p-8 rounded-lg w-full flex items-center justify-center bg-muted">
-            <Loader />
-          </div>
-        )}
-        {generatedImage == null  && !isLoading && (
-          <Empty label="No images generated." />
-        )}   
-      {uploadedImage && (
-        <>
-               <br />
-          {generatedImage && (
-            <>
-              <h2>Upscaled Image:</h2>
-              {generatedImage.map((image, index) => (
-                <Card key={index} className="rounded-lg overflow-hidden">
-                <div className="relative aspect-square">
-                  <Image
-                    fill
-                    src={image.src}
-                    alt={`Generated Image ${index + 1}`}
-                  />
-                </div>
-                <CardFooter className="p-2">
-                <Button onClick={() => window.open(image.src)} variant="secondary" className="w-full">
-                            <Download className="h-4 w-4 mr-2" />
-                            Open Image
-                          </Button>
-                </CardFooter>
-              </Card>
-              ))}
-            </>
+          {isLoading && (
+            <div className="p-8 rounded-lg w-full flex items-center justify-center bg-muted">
+              <Loader />
+            </div>
           )}
-        </>
-      )}
+          {generatedImage == null  && !isLoading && (
+            <Empty label="No images generated." />
+          )}   
+        {uploadedImage && (
+          <>
+                <br />
+            {generatedImage && (
+              <>
+                <h2>Upscaled Image:</h2>
+                {generatedImage.map((image, index) => (
+                  <Card key={index} className="rounded-lg overflow-hidden">
+                  <div className="relative aspect-square">
+                    <Image
+                      fill
+                      src={image.src}
+                      alt={`Generated Image ${index + 1}`}
+                    />
+                  </div>
+                  <CardFooter className="p-2">
+                  <Button onClick={() => window.open(image.src)} variant="secondary" className="w-full">
+                              <Download className="h-4 w-4 mr-2" />
+                              Open Image
+                            </Button>
+                  </CardFooter>
+                </Card>
+                ))}
+              </>
+            )}
+          </>
+        )}
+      </div>
     </div> 
   );
               }

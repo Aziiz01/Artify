@@ -5,6 +5,7 @@ import { ClerkProvider } from '@clerk/nextjs'
 import { ToasterProvider } from '@/components/toaster-provider'
 import { ModalProvider } from '@/components/modal-provider'
 import { CrispProvider } from '@/components/crisp-provider'
+import "react-responsive-carousel/lib/styles/carousel.min.css"; // requires a loader
 
 import './globals.css'
 import { LoginModalProvider } from '@/components/login-modal-provider'
@@ -25,7 +26,7 @@ export default async function RootLayout({
     <ClerkProvider  afterSignInUrl='/dashboard' afterSignUpUrl='/dashboard'>
       <html lang="en" suppressHydrationWarning={true}>
         <CrispProvider />
-        <body className={font.className}>
+        <body className="">
           <ToasterProvider />
           <ModalProvider />
          <LoginModalProvider/>      
