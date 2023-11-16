@@ -1,7 +1,3 @@
-import axios from 'axios';
-import prismadb from '@/lib/prismadb'; // Import your Prisma Client instance
-import { currentUser } from "@clerk/nextjs";
-import { NextResponse } from "next/server";
 import * as Generation from "../../../app/generation/generation_pb";
 import {
   buildGenerationRequest,
@@ -11,8 +7,7 @@ import {
 import { client, metadata } from "../../../lib/grpc-client";
 import { checkSubscription, countCredit } from "@/lib/subscription";
 import { incrementApiLimit, checkApiLimit } from "@/lib/api-limit";
-import {  getDoc , doc, updateDoc } from "firebase/firestore";
-import { db } from '../../../firebase'
+
 
 
 // Create a function to make the API call and save the image
@@ -49,8 +44,7 @@ export async function SDXLv1(userId : string,prompt: string, selectedStyle : str
     
     const response = await executeGenerationRequest(client, request, metadata);
         const generatedImageData = onGenerationComplete(response);
-        return generatedImageData; // Return the generated image data
-
+        return generatedImageData;
   } 
 
   } catch (error) {

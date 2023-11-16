@@ -70,7 +70,6 @@ export async function POST(req: Request) {
         likes : [],
         timeStamp: serverTimestamp(),
       });
-      // implementing free Count increment after saving image
     
       return new NextResponse("Image successfully uploaded", { status: 200 });
     } catch (error) {

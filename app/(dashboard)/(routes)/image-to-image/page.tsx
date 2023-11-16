@@ -99,40 +99,55 @@ export default function ImageToImagePage() {
     return `${timestamp}-${randomPart}`;
   }
   // Handle image generation
-  const handleGenerate = async () => {
-    setIsLoading(true);
- if (!isSignedIn) {
-    loginModal.onOpen();
-   } else {
-    const userId = user.id;
-    if (uploadedImage) {
+ // Handle image generation
+const handleGenerate = async () => {
+  setIsLoading(true);
 
-      try {
-        const freeTrial = await checkApiLimit(userId);
-        const isPro = await checkSubscription(userId);
-      
-        if (!isPro && !freeTrial) {
-          proModal.onOpen();
-          setIsLoading(false);
+  if (!isSignedIn) {
+    loginModal.onOpen();
+  } else {
+    const userId = user.id;
+
+    try {
+      const freeTrial = await checkApiLimit(userId);
+      const isPro = await checkSubscription(userId);
+
+      if (!isPro && !freeTrial) {
+        proModal.onOpen();
+        setIsLoading(false);
+      } else {
+        let initImageBuffer;
+
+        if (uploadedImage) {
+          initImageBuffer = Buffer.from(await uploadedImage.arrayBuffer());
+        } else if (passedImage) {
+          // Fetch the image from the URL and convert it to a buffer
+          
+            const response = await fetch(passedImage);
+            if (response.ok) {
+              const imageArrayBuffer = await response.arrayBuffer();
+              initImageBuffer = Buffer.from(imageArrayBuffer);
+            } else {
+              toast.error("Failed to fetch the image from the provided URL.");
+              setIsLoading(false);
+              return;
+            }
+         
         } else {
-           // calcul
-          const calcul =await countCredit(userId,count);
-          if (!calcul){
-            toast.error("You credit balance is insuffisant !");
-            proModal.onOpen();
-            setIsLoading(false);
-          } else {
-        // Create a request object based on your requirements
-        // You may need to adjust the request parameters
+          toast.error("Please upload an image or provide a valid passedImage URL!");
+          setIsLoading(false);
+          return;
+        }
+
         const request = buildGenerationRequest("stable-diffusion-xl-1024-v1-0", {
           type: "image-to-image",
           prompts: [
             {
-              text: textInput ,
+              text: textInput,
             },
           ],
           stepScheduleStart: 1 - imageStrength,
-          initImage: Buffer.from(await uploadedImage.arrayBuffer()), // Read the uploaded file
+          initImage: initImageBuffer,
           seed: seed,
           samples: selectedSamples,
           cfgScale: cfgScale,
@@ -140,36 +155,40 @@ export default function ImageToImagePage() {
           sampler: Generation.DiffusionSampler.SAMPLER_K_DPMPP_2M,
         });
 
-        // Execute the gRPC request
         const response = await executeGenerationRequest(client, request, metadata);
-      
+
         // Update the generated images state with an array of HTML image elements
         const generatedImages = onGenerationComplete(response);
-        if (generatedImage !== null) {
-          const base64Data = generatedImage.toString().split(',')[1];
+        if (generatedImages !== null) {
+          const base64Data = generatedImages.toString().split(',')[1];
           const documentId = generateRandomId();
           setImageId(documentId);
           try {
-            const response = await axios.post('/api/sdxlStorage', {final_imageId,textInput,selectedStyle, selectedSamples, cfgScale, seed, steps, base64Data });
+            const response = await axios.post('/api/sdxlStorage', {
+              final_imageId,
+              textInput,
+              selectedStyle,
+              selectedSamples,
+              cfgScale,
+              seed,
+              steps,
+              base64Data,
+            });
             console.log(response.data); // The response from the API
-            router.refresh();
+            //router.refresh();
           } catch (error) {
             console.error(error);
             toast.error("Something went wrong.");
           }
         }
-        // Set the generated image data in state
         setGeneratedImage(generatedImages);
         setIsLoading(false);
-
-      }}} catch (error) {
-        console.error("Failed to make image-to-image request:", error);
+      }
+    } catch (error) {
+      setIsLoading(true);
+      console.error("Failed to make image-to-image request:", error);
     }
-  } else {
-    toast.error("Please upload an image !")
-    console.log("No image uploaded.");
   }
-}
 };
 
   return (
@@ -303,19 +322,15 @@ export default function ImageToImagePage() {
         />
       </div>
       <CardFooter className="p-2">
-      <Button onClick={() => window.open(img.src)} variant="secondary" className="w-full">
-                  <Download className="h-4 w-4 mr-2" />
-                  Open Image
-                </Button>
+    <Button onClick={() => window.open(img.src)} variant="secondary" className="w-full">
+    <Download className="h-4 w-4 mr-2" />
+    Open Image
+    </Button>
       </CardFooter>
     </Card>
   ))
   )}
-
-
-
-      </div>{/*DALLE PHOTOS */}
-     
-    </div>
+ </div>
+ </div>
   );
 }

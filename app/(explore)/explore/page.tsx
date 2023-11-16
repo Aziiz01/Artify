@@ -6,7 +6,6 @@ import { db } from "@/firebase";
 import Image from "next/image";
 import { useUser } from "@clerk/nextjs";
 import LikesList from "./LikesList";
-import toast from "react-hot-toast";
 import { useLoginModal } from "@/hook/use-login-modal";
 import Modal from 'react-modal';
 import "./style.css";
@@ -31,9 +30,7 @@ const ExplorePage: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<ImageData | null>(null);
   const { isSignedIn, user, isLoaded } = useUser();
   const loginModal = useLoginModal();
-  const [clickedImage, setClickedImage] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const openModal = (image: ImageData) => {
     setSelectedImage(image);
@@ -136,11 +133,7 @@ const ExplorePage: React.FC = () => {
       }
     }
   };
-  const halfBackgroundStyle = {
-    display: 'flex',
-    flex: 1,
-    background: 'white', // White background for the details half
-  };
+ 
   const modalStyle = {
     content: {
       display: 'grid',
@@ -148,15 +141,7 @@ const ExplorePage: React.FC = () => {
       // Adjust the height as needed
     },
   };
-  const lineStyle = {
-    borderRight: '1px solid #ccc', 
-    margin: '10px 0', // Add some margin for spacing
-
-  };
-  const horizontalLineStyle = {
-    borderBottom: '1px solid #ccc', // Grey horizontal line separating content
-    margin: '10px 0', // Add some margin for spacing
-  };
+  
   return (
   <div>
     <h1>Explore Images</h1>
