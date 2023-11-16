@@ -26,6 +26,8 @@ import { checkApiLimit } from "@/lib/api-limit";
 import { checkSubscription, countCredit } from "@/lib/subscription";
 import axios from "axios";
 import { useLoginModal } from "@/hook/use-login-modal";
+import PickStyle from "@/components/ui/pickStyle";
+
 
 export default function ImageToImagePage() {
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
@@ -50,7 +52,7 @@ export default function ImageToImagePage() {
   useEffect(() => {
     const handleResize = () => {
       const isMobile = window.innerWidth < 768;
-      setMobileSize(true);
+      setMobileSize(isMobile);
     };
 
     window.addEventListener('resize', handleResize);
@@ -60,6 +62,10 @@ export default function ImageToImagePage() {
       window.removeEventListener('resize', handleResize);
     };
   }, []);
+
+  const handleSelectedStyleChange = (newSelectedStyle: string) => {
+    setSelectedStyle(newSelectedStyle);
+  };
 
   const count = 3;
   useEffect (() => {
@@ -190,10 +196,11 @@ export default function ImageToImagePage() {
   return (
     <div style={{
       display:'grid',
-      gridTemplateColumns: mobileSize ? '40% 60%' : undefined,
-      gridTemplateRows: !mobileSize ? '30% 70%' : undefined,
+      height:!mobileSize ? '850px' : '2000px',
+      gridTemplateColumns: !mobileSize ? '40% 60%' : undefined,
+      gridTemplateRows: mobileSize ? '50% 50%' : undefined,
     }}>
-      <div className="px-4 lg:px-8" style={{ overflowY: 'scroll', height: '850px' }}>
+      <div className="px-4 lg:px-8 bg-transparent" style={{ overflowY: !mobileSize ? 'scroll' : undefined, height:'850px' }}>
         <div className="flex items-center">
           <h2 className="text-2xl text-blue-900 font-extrabold ">
             Text Prompt
@@ -205,7 +212,7 @@ export default function ImageToImagePage() {
           </p>
         </div>
           <input
-            className="border rounded-md px-4 py-2 w-full" // Remove left padding
+            className=" bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-red-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"// Remove left padding
             type="text"
             placeholder="Your text prompt"
             value={textInput}
@@ -214,7 +221,8 @@ export default function ImageToImagePage() {
           <h2 className="text-2xl mt-5 text-blue-900  font-extrabold">
             Input init image
           </h2>
-          <input type="file" className="text-grat-200 " onChange={handleImageUpload} />
+          
+          <input type="file" className="block w-full text-lg text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" onChange={handleImageUpload} />
              {passedImage || uploadedImage ? (
               <Image
                 width={512}
@@ -223,7 +231,9 @@ export default function ImageToImagePage() {
                 alt="Uploaded image"
               />
               ) : null}
-          <h2 className="text-2xl mt-5 text-blue-900  font-extrabold ">
+          <h2 className="text-2xl pt-5 text-blue-900 font-extrabold">Choose a style : <span className="text-1xl ">{selectedStyle}</span> </h2>
+          <PickStyle onSelectedStyleChange={handleSelectedStyleChange} />
+          {/* <h2 className="text-2xl mt-5 text-blue-900  font-extrabold ">
             Choose a style
           </h2>
           <select value={selectedStyle} onChange={handleStyleChange}>
@@ -232,54 +242,62 @@ export default function ImageToImagePage() {
             <option value="Anime">Anime</option>
             <option value="Cosmic">Cosmic</option>
           </select>
-          <p>Selected Style: {selectedStyle}</p>
-          <h2 className="text-2xl  mt-5 text-blue-900  font-extrabold">
-            Samples
-          </h2>
-          <select value={selectedSamples} onChange={handleSamples}>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="4">4</option>
-            <option value="6">6</option>
-            <option value="8">8</option>
-            <option value="10">10</option>
-          </select>
-          <h2 className="text-2xl  mt-5 text-blue-900 font-extrabold">
-            CFG_Scale
-          </h2>
-          <input
-            type="range"
-            id="cfgScale"
-            name="cfgScale"
-            min={0}
-            max={35}
-            value={cfgScale}
-            onChange={handleCFG}
-          />
-          <p>{cfgScale}</p>
-          <h2 className="text-2xl mt-5 text-blue-900 font-extrabold">
-            Steps
-          </h2>
-          <input
-            type="range"
-            id="steps"
-            name="steps"
-            min={10}
-            max={150}
-            value={steps}
-            onChange={handleSteps}
-          />
-          <p>{steps}</p>
-          <h2 className="text-2xl mt-5 text-blue-900 font-extrabold">
-            Seed
-          </h2>
-          <input
-            className="" // Remove left padding
-            type="text"
-            placeholder="Seed"
-            value={seed}
-            onChange={handleSeed}
-          />
+          <p>Selected Style: {selectedStyle}</p> */}
+          <div className="flex gap-10">
+            <h2 className="text-2xl  mt-5 text-blue-900  font-extrabold">
+              Samples
+            </h2>
+            <select className="bloc w-200 px-4 mt-4 text-base text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-900 focus:border-red-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={selectedSamples} onChange={handleSamples}>
+              <option value="1"><h1 className="text-2xl">1</h1></option>
+              <option value="2"><h1 className="text-2xl">2</h1></option>
+              <option value="4"><h1 className="text-2xl">4</h1></option>
+              <option value="6"><h1 className="text-2xl">6</h1></option>
+              <option value="8"><h1 className="text-2xl">8</h1></option>
+              <option value="10"><h1>10</h1></option>
+            </select>
+          </div>
+          <div className="flex gap-3 mt-5">
+            <h2 className="text-2xl text-blue-900 font-extrabold">
+              CFG_Scale
+            </h2>
+            <input
+              type="range"
+              id="cfgScale"
+              name="cfgScale"
+              min={0}
+              max={35}
+              value={cfgScale}
+              onChange={handleCFG}
+            />
+            <h4 className="text-1xl">{cfgScale}</h4>
+          </div>
+          <div className="flex mt-5 gap-3">
+            <h2 className="text-2xl text-blue-900 font-extrabold">
+              Steps
+            </h2>
+            <input
+              type="range"
+              id="steps"
+              name="steps"
+              min={10}
+              max={150}
+              value={steps}
+              onChange={handleSteps}
+            />
+            <h4>{steps}</h4>
+          </div>
+          <div className="flex mt-5 gap-3">
+            <h2 className="text-2xl mt-1 text-blue-900 font-extrabold">
+              Seed
+            </h2>
+            <input
+              className=" bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-red-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"// Remove left padding
+              type="text"
+              placeholder="Seed"
+              value={seed}
+              onChange={handleSeed}
+            />
+          </div>
    
           <h2 className="text-2xl  mt-5 text-gray-400 font-bold">
             Algorithm Model : STABLE DIFF SDXL V1
@@ -296,7 +314,7 @@ export default function ImageToImagePage() {
           </Button>
       </div>
      
-      <div style={{ overflowY: 'scroll', height: '800px' }}>
+      <div  style={{ overflowY: !mobileSize ? 'scroll' : undefined, height:'850px' }}>
       <div className="mb-8 space-y-4 text-center">
         <h2 className="text-4xl font-bold">
           Explore the Power of AI 

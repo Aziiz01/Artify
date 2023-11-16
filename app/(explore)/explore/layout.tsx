@@ -1,4 +1,5 @@
 import { LandingNavbar } from "@/components/landing-navbar";
+import Navbar from "@/components/navbar";
 
 const ExploreLayout = ({
   children
@@ -8,7 +9,7 @@ const ExploreLayout = ({
   return (
     <main className="h-full bg-[#ffffff] overflow-auto">
       <div className="bg-gray-900 ">
-            <LandingNavbar />
+            <Navbar />
             </div>
       <div className="mx-auto max-w-screen-xl h-full w-full">
         {children}

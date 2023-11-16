@@ -49,7 +49,7 @@ export default function HomePage() {
   useEffect(() => {
     const handleResize = () => {
       const isMobile = window.innerWidth < 768;
-      setMobileSize(true);
+      setMobileSize(isMobile);
     };
 
     window.addEventListener('resize', handleResize);
@@ -290,11 +290,11 @@ const generateImage = async () => {
   return (
     <div style={{
       display:'grid',
-      gridTemplateColumns: mobileSize ? '40% 60%' : undefined,
-      gridTemplateRows: !mobileSize ? '30% 70%' : undefined,
+      height:!mobileSize ? '850px' : '2000px',
+      gridTemplateColumns: !mobileSize ? '40% 60%' : undefined,
+      gridTemplateRows: mobileSize ? '50% 50%' : undefined,
     }}>
-
-    <div className="px-4 lg:px-8" style={{ overflowY: 'scroll', height: '850px' }}>
+      <div className="px-4 lg:px-8 bg-transparent" style={{ overflowY: !mobileSize ? 'scroll' : undefined, height:'850px'  }}>
       <div className="flex items-center">
         <h2 className="text-2xl text-blue-900 font-extrabold">Text Prompt</h2>
         <button className="ml-2 text-gray-500 hover:text-blue-500">
@@ -314,14 +314,15 @@ const generateImage = async () => {
         </button>
       </div>
       <input
-        className="border rounded-md px-4 py-2 w-full"
+        className=" bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-red-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"// Remove left padding
         type="text"
         placeholder="Your text prompt"
         value={textInput}
         onChange={(e) => setTextInput(e.target.value)}
       />
 
-      <h2 className="text-2xl pt-5 text-blue-900 font-extrabold">Choose a style</h2>
+      <h2 className="text-2xl pt-5 text-blue-900 font-extrabold">Choose a style : <span className="text-1xl ">{selectedStyle}</span> </h2>
+      <PickStyle onSelectedStyleChange={handleSelectedStyleChange} />
       {/* <select value={selectedStyle} onChange={handleStyleChange}>
         <option value="">many others to add</option>
         <option value="3d-model">3D Model</option>
@@ -330,70 +331,80 @@ const generateImage = async () => {
         <option value="cinematic">Cinematic</option>
       </select>
       <p>Selected Style: {selectedStyle}</p> */}
-      <PickStyle onSelectedStyleChange={handleSelectedStyleChange} />
-      <p className=" text-blue-900 font-extrabold">Selected Style: {selectedStyle}</p>
+      {/* <p className=" text-blue-900 font-extrabold">Selected Style: {selectedStyle}</p> */}
 
+      <div className="flex gap-3">
+        <h2 className="text-2xl pt-5 text-blue-900 font-extrabold">Algorithm Model</h2>
+        <div>
+          <select className="bloc w-200 px-4 mt-4 text-base text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-900 focus:border-red-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={selectedModel} onChange={handleModelChange}>
+            <option value="Stable Diffusion XL 1.0">Stable Diffusion XL 1.0 (Pro only)</option>
+            <option value="Stable Diffusion XL 0.9">Stable Diffusion XL 0.9 (Pro only)</option>
+            <option value="Stable Diffusion XL 0.8">Stable Diffusion XL 0.8</option>
+            <option value="Stable Diffusion 2.1">Stable Diffusion 2.1</option>
+            <option value="Stable Diffusion 1.5">Stable Diffusion 1.5</option>
+            <option value="DALL E2">DALL E2</option>
+          </select>
+          <p>Selected Model: {selectedModel}</p>
+        </div>
+      </div>
 
-      <h2 className="text-2xl pt-5 text-blue-900 font-extrabold">Algorithm Model</h2>
-      <select value={selectedModel} onChange={handleModelChange}>
-        <option value="Stable Diffusion XL 1.0">Stable Diffusion XL 1.0 (Pro only)</option>
-        <option value="Stable Diffusion XL 0.9">Stable Diffusion XL 0.9 (Pro only)</option>
-        <option value="Stable Diffusion XL 0.8">Stable Diffusion XL 0.8</option>
-        <option value="Stable Diffusion 2.1">Stable Diffusion 2.1</option>
-        <option value="Stable Diffusion 1.5">Stable Diffusion 1.5</option>
-        <option value="DALL E2">DALL E2</option>
-      </select>
-      <p>Selected Model: {selectedModel}</p>
+      <div className="flex gap-3 mt-7">
+        <h2 className="text-2xl  text-blue-900 font-extrabold">Dimensions</h2>
+        <select className="bloc w-200 px-4 text-base text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-900 focus:border-red-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={`${height}x${width}`} onChange={handleDimensions}>
+          <option value="512x512">512x512</option>
+          <option value="1024x1024">1024x1024</option>
+          <option value="2048x2048">2K</option>
+        </select>
+      </div>
+      <div className="flex gap-3 mt-7">
+        <h2 className="text-2xl pt-5 text-blue-900 font-extrabold">Samples</h2>
+        <select className="bloc w-200 px-4 mt-2 text-base text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-900 focus:border-red-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={selectedSamples} onChange={handleSamples}>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="4">4</option>
+          <option value="6">6</option>
+          <option value="8">8</option>
+        </select>
+      </div>
 
-      <h2 className="text-2xl pt-5 text-blue-900 font-extrabold">Dimensions</h2>
-      <select value={`${height}x${width}`} onChange={handleDimensions}>
-        <option value="512x512">512x512</option>
-        <option value="1024x1024">1024x1024</option>
-        <option value="2048x2048">2K</option>
-      </select>
+      <div className="flex mt-7 gap-3">
+        <h2 className="text-2xl text-blue-900 font-extrabold">CFG_Scale</h2>
+        <input
+          type="range"
+          id="cfgScale"
+          name="cfgScale"
+          min={0}
+          max={35}
+          value={cfgScale}
+          onChange={handleCFG}
+        />
+        <p>{cfgScale}</p>
+      </div>
 
-      <h2 className="text-2xl pt-5 text-blue-900 font-extrabold">Samples</h2>
-      <select value={selectedSamples} onChange={handleSamples}>
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="4">4</option>
-        <option value="6">6</option>
-        <option value="8">8</option>
-        <option value="10">10</option>
-      </select>
+      <div className="flex mt-7 gap-3">
+        <h2 className="text-2xl text-blue-900 font-extrabold">Steps</h2>
+        <input
+          type="range"
+          id="steps"
+          name="steps"
+          min={10}
+          max={150}
+          value={steps}
+          onChange={handleSteps}
+        />
+        <p>{steps}</p>
+      </div>
 
-      <h2 className="text-2xl  pt-5 text-blue-900 font-extrabold">CFG_Scale</h2>
-      <input
-        type="range"
-        id="cfgScale"
-        name="cfgScale"
-        min={0}
-        max={35}
-        value={cfgScale}
-        onChange={handleCFG}
-      />
-      <p>{cfgScale}</p>
-
-      <h2 className="text-2xl pt-5 text-blue-900 font-extrabold">Steps</h2>
-      <input
-        type="range"
-        id="steps"
-        name="steps"
-        min={10}
-        max={150}
-        value={steps}
-        onChange={handleSteps}
-      />
-      <p>{steps}</p>
-
-      <h2 className="text-2xl text-blue-900 font-extrabold">Seed</h2>
-      <input
-        className="border rounded-md px-4 py-2 w-full"
-        type="text"
-        placeholder="Seed"
-        value={seed}
-        onChange={handleSeed}
-      />
+      <div className="flex mt-7 gap-3">
+        <h2 className="text-2xl text-blue-900 font-extrabold">Seed</h2>
+        <input
+          className="w-50 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-red-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"// Remove left padding
+          type="text"
+          placeholder="Seed"
+          value={seed}
+          onChange={handleSeed}
+        />
+      </div>
 
       <Button
         onClick={handleGenerate}
@@ -406,7 +417,7 @@ const generateImage = async () => {
         </span>
       </Button>
     </div>
-    <div style={{ overflowY: 'scroll', height: '850px' }}>
+    <div  style={{ overflowY: !mobileSize ? 'scroll' : undefined, height:'850px' }}>
       <div className="mb-8 space-y-4 text-center">
         <h2 className="text-4xl font-bold">Explore the Power of AI</h2>
         <p className="text-gray-500 text-lg">

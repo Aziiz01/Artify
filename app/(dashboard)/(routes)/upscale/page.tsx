@@ -43,7 +43,7 @@ const router = useRouter();
   useEffect(() => {
     const handleResize = () => {
       const isMobile = window.innerWidth < 768;
-      setMobileSize(true);
+      setMobileSize(isMobile);
     };
 
     window.addEventListener('resize', handleResize);
@@ -191,13 +191,14 @@ if (generatedImage !== null) {
   return (
     <div style={{
       display:'grid',
-      gridTemplateColumns: mobileSize ? '40% 60%' : undefined,
-      gridTemplateRows: !mobileSize ? '30% 70%' : undefined,
+      height:!mobileSize ? '850px' : '2000px',
+      gridTemplateColumns: !mobileSize ? '40% 60%' : undefined,
+      gridTemplateRows: mobileSize ? '10% 90%' : undefined,
       backgroundColor:'transparent'
     }}>
-      <div className="px-4 lg:px-8 bg-transparent" style={{ overflowY: 'scroll', height: '850px' }}>
-        <h2 className="text-2xl mt-5 text-gray-200 font-extrabold">Image Upscaler</h2>
-        <input type="file" onChange={handleImageUpload} className="mt-4 "/>
+      <div className="px-4 lg:px-8 bg-transparent" style={{ overflowY: !mobileSize ? 'scroll' : undefined, height:'850px'}}>
+        <h2 className="text-2xl mt-5 text-blue-900 font-extrabold">Image Upscaler</h2>
+        <input type="file" onChange={handleImageUpload} className="mt-4 block w-full text-lg text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"/>
           {passedImage || uploadedImage ? (
           <Image
               width={512}
@@ -216,9 +217,9 @@ if (generatedImage !== null) {
               </span>
           </Button>
       </div>
-      <div style={{ overflowY: 'scroll', height: '800px' }}>
+      <div  style={{ overflowY: !mobileSize ? 'scroll' : undefined, height:'850px'}}>
         <div className="mb-8 space-y-4 text-center">
-          <h2 className="text-4xl mt-5 text-gray-200 font-extrabold">
+          <h2 className="text-4xl mt-5 text-blue-900 font-extrabold">
             Explore the Power of AI
           </h2>
           <p className="text-gray-500 text-lg">
