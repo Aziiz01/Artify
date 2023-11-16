@@ -114,97 +114,93 @@ export default function ImageToImagePage() {
     return `${timestamp}-${randomPart}`;
   }
   // Handle image generation
- // Handle image generation
-const handleGenerate = async () => {
-  setIsLoading(true);
-
-  if (!isSignedIn) {
-    loginModal.onOpen();
-  } else {
-    const userId = user.id;
-
-    try {
-      const freeTrial = await checkApiLimit(userId);
-      const isPro = await checkSubscription(userId);
-
-      if (!isPro && !freeTrial) {
-        proModal.onOpen();
-        setIsLoading(false);
-      } else {
-        let initImageBuffer;
-
-        if (uploadedImage) {
-          initImageBuffer = Buffer.from(await uploadedImage.arrayBuffer());
-        } else if (passedImage) {
-          // Fetch the image from the URL and convert it to a buffer
-          
-            const response = await fetch(passedImage);
-            if (response.ok) {
-              const imageArrayBuffer = await response.arrayBuffer();
-              initImageBuffer = Buffer.from(imageArrayBuffer);
-            } else {
-              toast.error("Failed to fetch the image from the provided URL.");
-              setIsLoading(false);
-              return;
-            }
-         
-        } else {
-          toast.error("Please upload an image or provide a valid passedImage URL!");
+  const handleGenerate = async () => {
+    setIsLoading(true);
+  
+    if (!isSignedIn) {
+      loginModal.onOpen();
+    } else {
+      const userId = user.id;
+      try {
+        const freeTrial = await checkApiLimit(userId);
+        const isPro = await checkSubscription(userId);
+  
+        if (!isPro && !freeTrial) {
+          proModal.onOpen();
           setIsLoading(false);
-          return;
-        }
-
-        const request = buildGenerationRequest("stable-diffusion-xl-1024-v1-0", {
-          type: "image-to-image",
-          prompts: [
-            {
-              text: textInput,
-            },
-          ],
-          stepScheduleStart: 1 - imageStrength,
-          initImage: initImageBuffer,
-          seed: seed,
-          samples: selectedSamples,
-          cfgScale: cfgScale,
-          steps: steps,
-          sampler: Generation.DiffusionSampler.SAMPLER_K_DPMPP_2M,
-        });
-
-        const response = await executeGenerationRequest(client, request, metadata);
-
-        // Update the generated images state with an array of HTML image elements
-        const generatedImages = onGenerationComplete(response);
-        if (generatedImages !== null) {
-          const base64Data = generatedImages.toString().split(',')[1];
-          const documentId = generateRandomId();
-          setImageId(documentId);
-          try {
-            const response = await axios.post('/api/sdxlStorage', {
-              final_imageId,
-              textInput,
-              selectedStyle,
-              selectedSamples,
-              cfgScale,
-              seed,
-              steps,
-              base64Data,
-            });
-            console.log(response.data); // The response from the API
-            //router.refresh();
-          } catch (error) {
-            console.error(error);
-            toast.error("Something went wrong.");
+        } else {
+          let initImageBuffer;
+  
+          if (uploadedImage) {
+            initImageBuffer = Buffer.from(await uploadedImage.arrayBuffer());
+          } else if (passedImage) {        
+              const response = await fetch(`${passedImage}`);
+              if (response.ok) {
+                const imageArrayBuffer = await response.arrayBuffer();
+                initImageBuffer = Buffer.from(imageArrayBuffer);
+              } else {
+                toast.error("Failed to fetch the image from the provided URL.");
+                setIsLoading(false);
+                return;
+              }
+           
+          } else {
+            toast.error("Please upload an image or provide a valid passedImage URL!");
+            setIsLoading(false);
+            return;
           }
+  
+          const request = buildGenerationRequest("stable-diffusion-xl-1024-v1-0", {
+            type: "image-to-image",
+            prompts: [
+              {
+                text: textInput,
+              },
+            ],
+            stepScheduleStart: 1 - imageStrength,
+            initImage: initImageBuffer,
+            seed: seed,
+            samples: selectedSamples,
+            cfgScale: cfgScale,
+            steps: steps,
+            sampler: Generation.DiffusionSampler.SAMPLER_K_DPMPP_2M,
+          });
+  
+          const response = await executeGenerationRequest(client, request, metadata);
+  
+          // Update the generated images state with an array of HTML image elements
+          const generatedImages = onGenerationComplete(response);
+          if (generatedImages !== null) {
+            const base64Data = generatedImages.toString().split(',')[1];
+            const documentId = generateRandomId();
+            setImageId(documentId);
+            try {
+              const response = await axios.post('/api/sdxlStorage', {
+                final_imageId,
+                textInput,
+                selectedStyle,
+                selectedSamples,
+                cfgScale,
+                seed,
+                steps,
+                base64Data,
+              });
+              console.log(response.data); // The response from the API
+              //router.refresh();
+            } catch (error) {
+              console.error(error);
+              toast.error("Something went wrong.");
+            }
+          }
+          setGeneratedImage(generatedImages);
+          setIsLoading(false);
         }
-        setGeneratedImage(generatedImages);
-        setIsLoading(false);
+      } catch (error) {
+        setIsLoading(true);
+        console.error("Failed to make image-to-image request:", error);
       }
-    } catch (error) {
-      setIsLoading(true);
-      console.error("Failed to make image-to-image request:", error);
     }
-  }
-};
+  };
 
   return (
     <div style={{
@@ -353,121 +349,11 @@ const handleGenerate = async () => {
     ))
     )}
       </div>
-        <input
-          className="border rounded-md px-4 py-2 w-full" // Remove left padding
-          type="text"
-          placeholder="Your text prompt"
-          value={textInput}
-          onChange={(e) => setTextInput(e.target.value)}
-        />
-        <h2 className="text-2xl font-bold">
-          Input init image
-        </h2>
-               <input type="file" onChange={handleImageUpload} />
-               {passedImage || uploadedImage ? (
-  <Image
-    width={512}
-    height={512}
-    src={passedImage || (uploadedImage ? URL.createObjectURL(uploadedImage) : "")}
-    alt="Uploaded image"
-  />
-) : null}
-        <h2 className="text-2xl font-bold">
-          Choose a style
-        </h2>
-        <select value={selectedStyle} onChange={handleStyleChange}>
-        <option value="">No Style</option>
-          <option value="Realistic">Realistic</option>
-          <option value="Anime">Anime</option>
-          <option value="Cosmic">Cosmic</option>
-        </select>
-        <p>Selected Style: {selectedStyle}</p>
-        <h2 className="text-2xl font-bold">
-          Samples
-        </h2>
-        <select value={selectedSamples} onChange={handleSamples}>
-          <option value="1">1</option>
-          <option value="2">2</option>
-          <option value="4">4</option>
-          <option value="6">6</option>
-          <option value="8">8</option>
-          <option value="10">10</option>
-        </select>
-        <h2 className="text-2xl font-bold">
-          CFG_Scale
-        </h2>
-        <input
-          type="range"
-          id="cfgScale"
-          name="cfgScale"
-          min={0}
-          max={35}
-          value={cfgScale}
-          onChange={handleCFG}
-        />
-        <p>{cfgScale}</p>
-        <h2 className="text-2xl font-bold">
-          Steps
-        </h2>
-        <input
-          type="range"
-          id="steps"
-          name="steps"
-          min={10}
-          max={150}
-          value={steps}
-          onChange={handleSteps}
-        />
-        <p>{steps}</p>
-        <h2 className="text-2xl font-bold">
-          Seed
-        </h2>
-        <input
-          className="" // Remove left padding
-          type="text"
-          placeholder="Seed"
-          value={seed}
-          onChange={handleSeed}
-        />
 
-        <h2 className="text-2xl font-bold">
-          Algorithm Model : STABLE DIFF SDXL V1
-        </h2>
-       
-        <Button
-          onClick={handleGenerate} disabled={isLoading}
-          className="bg-black text-white py-2 px-4 rounded-md mt-4 w-full"
-        // Attach the click event handler
-        >
-          {isLoading ? 'Generating...' : 'Generate'}
-        </Button>
-        {isLoading && (
-          <div className="p-20">
-            <Loader />
-          </div>
-        )}
-        {generatedImage == null  && !isLoading && (
-          <Empty label="No images generated." />
-        )}
-       {generatedImage && (
-  generatedImage.map((img: any, index: any) => (
-    <Card key={index} className="rounded-lg overflow-hidden">
-      <div className="relative aspect-square">
-        <Image
-          fill
-          src={img.src}
-          alt={`Generated Image ${index + 1}`}
-        />
-      </div>
-      <CardFooter className="p-2">
-    <Button onClick={() => window.open(img.src)} variant="secondary" className="w-full">
-    <Download className="h-4 w-4 mr-2" />
-    Open Image
-    </Button>
-      </CardFooter>
-    </Card>
-  ))
-  )}
- </div>
+
+
+      {/*DALLE PHOTOS */}
+     
+    </div>
   );
 }
