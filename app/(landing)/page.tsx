@@ -8,18 +8,15 @@
   import CardModel from "@/components/ui/cardModel";
   import CarouselComponent from "@/components/ui/carousel";
   import TyperWriter from "@/components/ui/typerWriter";
-
-  import img2 from '@/public/img2.jpg'
-  import img1 from '@/public/img1.jpg'
   import horizon from '@/public/horizon.jpg';
   import robot from '@/public/robot.jpg';
   import Discover from "@/components/ui/discoverTransition";
-
+import front from '@/public/front.jpg'
 
   const cardData = [
     {
       url: '/dashboard',
-      imageSrc: robot.src,
+      imageSrc: front.src,
       title: 'Card 1',
       description: 'Description for Card 1',
     },
@@ -72,7 +69,7 @@
               <InstructionCard title="  AI-Powered Image Generation"
                 description=" Unleash Your Imagination with AI! Enter a prompt, and watch as our cutting-edge AI models craft high-quality images tailored to your creativity. From dreamlike landscapes to unique artworks, let your ideas come to life with just a few words."
               />
-              <InstructionImage backgroundImage={robot.src} gridColumn="2 / 3" gridRow="1 / 3"/>
+              <InstructionImage backgroundImage={front.src} gridColumn="2 / 3" gridRow="1 / 3"/>
           </ParallaxLayer>
           <ParallaxLayer offset={2}
            style={{

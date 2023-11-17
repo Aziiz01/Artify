@@ -49,6 +49,7 @@ export const countCredit = async (userId: string | null, count: number) => {
   const isPro = await checkSubscription(userId);
   if (!isPro) {
     await incrementApiLimit(userId);
+    return true;
   } else {
     try {
       const docRef = await getDoc(doc(db, "UserCredits", userId));
@@ -70,6 +71,7 @@ export const countCredit = async (userId: string | null, count: number) => {
       }
     } catch (error) {
       console.log('Error while decrementing credits:', error);
+      return false;
     }
   }
 }

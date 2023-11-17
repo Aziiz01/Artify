@@ -122,76 +122,91 @@ export default function ImageToImagePage() {
   // Handle image generation
   const handleGenerate = async () => {
     setIsLoading(true);
- if (!isSignedIn) {
-    loginModal.onOpen();
-   } else {
-    const userId = user.id;
-    if (uploadedImage) {
-
+  
+    if (!isSignedIn) {
+      loginModal.onOpen();
+    } else {
+      const userId = user.id;
       try {
         const freeTrial = await checkApiLimit(userId);
         const isPro = await checkSubscription(userId);
-      
+  
         if (!isPro && !freeTrial) {
           proModal.onOpen();
           setIsLoading(false);
         } else {
-           // calcul
-          const calcul =await countCredit(userId,count);
-          if (!calcul){
-            toast.error("You credit balance is insuffisant !");
-            proModal.onOpen();
-            setIsLoading(false);
+          let initImageBuffer;
+  
+          if (uploadedImage) {
+            initImageBuffer = Buffer.from(await uploadedImage.arrayBuffer());
+          } else if (passedImage) {        
+              const response = await fetch(`${passedImage}`);
+              if (response.ok) {
+                const imageArrayBuffer = await response.arrayBuffer();
+                initImageBuffer = Buffer.from(imageArrayBuffer);
+              } else {
+                toast.error("Failed to fetch the image from the provided URL.");
+                setIsLoading(false);
+                return;
+              }
+           
           } else {
-        // Create a request object based on your requirements
-        // You may need to adjust the request parameters
-        const request = buildGenerationRequest("stable-diffusion-xl-1024-v1-0", {
-          type: "image-to-image",
-          prompts: [
-            {
-              text: textInput ,
-            },
-          ],
-          stepScheduleStart: 1 - imageStrength,
-          initImage: Buffer.from(await uploadedImage.arrayBuffer()), // Read the uploaded file
-          seed: seed,
-          samples: selectedSamples,
-          cfgScale: cfgScale,
-          steps: steps,
-          sampler: Generation.DiffusionSampler.SAMPLER_K_DPMPP_2M,
-        });
-
-        // Execute the gRPC request
-        const response = await executeGenerationRequest(client, request, metadata);
-      
-        // Update the generated images state with an array of HTML image elements
-        const generatedImages = onGenerationComplete(response);
-        if (generatedImage !== null) {
-          const base64Data = generatedImage.toString().split(',')[1];
-          const documentId = generateRandomId();
-          setImageId(documentId);
-          try {
-            const response = await axios.post('/api/sdxlStorage', {final_imageId,textInput,selectedStyle, selectedSamples, cfgScale, seed, steps, base64Data });
-            console.log(response.data); // The response from the API
-            router.refresh();
-          } catch (error) {
-            console.error(error);
-            toast.error("Something went wrong.");
+            toast.error("Please upload an image or provide a valid passedImage URL!");
+            setIsLoading(false);
+            return;
           }
+  
+          const request = buildGenerationRequest("stable-diffusion-xl-1024-v1-0", {
+            type: "image-to-image",
+            prompts: [
+              {
+                text: textInput,
+              },
+            ],
+            stepScheduleStart: 1 - imageStrength,
+            initImage: initImageBuffer,
+            seed: seed,
+            samples: selectedSamples,
+            cfgScale: cfgScale,
+            steps: steps,
+            sampler: Generation.DiffusionSampler.SAMPLER_K_DPMPP_2M,
+          });
+  
+          const response = await executeGenerationRequest(client, request, metadata);
+  
+          // Update the generated images state with an array of HTML image elements
+          const generatedImages = onGenerationComplete(response);
+          if (generatedImages !== null) {
+            const base64Data = generatedImages.toString().split(',')[1];
+            const documentId = generateRandomId();
+            setImageId(documentId);
+            try {
+              const response = await axios.post('/api/sdxlStorage', {
+                final_imageId,
+                textInput,
+                selectedStyle,
+                selectedSamples,
+                cfgScale,
+                seed,
+                steps,
+                base64Data,
+              });
+              console.log(response.data); // The response from the API
+              //router.refresh();
+            } catch (error) {
+              console.error(error);
+              toast.error("Something went wrong.");
+            }
+          }
+          setGeneratedImage(generatedImages);
+          setIsLoading(false);
         }
-        // Set the generated image data in state
-        setGeneratedImage(generatedImages);
-        setIsLoading(false);
-
-      }}} catch (error) {
+      } catch (error) {
+        setIsLoading(true);
         console.error("Failed to make image-to-image request:", error);
+      }
     }
-  } else {
-    toast.error("Please upload an image !")
-    console.log("No image uploaded.");
-  }
-}
-};
+  };
 
   return (
     <div style={{

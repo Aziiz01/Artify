@@ -1,3 +1,4 @@
+
 import { UserButton } from "@clerk/nextjs";
 import Image from "next/image";
 import Link from "next/link";
@@ -5,6 +6,7 @@ import { MobileSidebar } from "@/components/mobile-sidebar";
 import { getApiLimitCount } from "@/lib/api-limit";
 import { checkSubscription } from "@/lib/subscription";
 import { auth } from "@clerk/nextjs";
+import { FreeCounter } from "./free-counter";
 
 const Navbar = async () => {
   const { userId } : { userId: string | null } = auth();
@@ -47,6 +49,11 @@ const Navbar = async () => {
             <Link href="/blog" className="block py-2 pl-3 pr-4 text-gray-100 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent dark:border-gray-700 font-extrabold">Blog</Link>
           </li>
         </ul>
+      
+        <FreeCounter
+        apiLimitCount={apiLimitCount} 
+        isPro={isPro}
+      />
       </div>
       </div>
     </nav>

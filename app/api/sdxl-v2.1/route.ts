@@ -21,6 +21,7 @@ export async function SDXLv21(userId : string,prompt: string, selectedStyle : st
       return null;
     }
     const calcul =await countCredit(userId,count);
+    console.log(calcul)
       if (!calcul){
         return false;
       } else {

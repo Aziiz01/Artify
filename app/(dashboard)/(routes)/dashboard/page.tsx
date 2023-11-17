@@ -164,85 +164,83 @@ export default function HomePage() {
   
 
 
-const generateImage = async () => {
-  setIsLoading(true);
-  if (isSignedIn) {
-    const userId = user.id;
-    try {
-      if (selectedModel === 'DALL E2') {
-        await DALLE(values);
-      } else {
-        // Use the selected model to determine which API to call
-        const selectedApi = SDXLmodelApiMapping[selectedModel];
-        if (selectedApi) {
-          const prompt = `${textInput} , ${selectedStyle}`;
-          try {
-            const generatedImages = await selectedApi(userId, prompt, selectedStyle, height, width, selectedSamples, cfgScale, seed, steps);
-            if (generatedImages !== null && generatedImages !== false) {
-              const generatedImagePromises = generatedImages.map(async (img :any) => {
-                const generatedImage = img.src;
-                const base64Data = generatedImage.split(',')[1];
-                const documentId = generateRandomId();
-                setImageId(documentId);
-                try {
-                  await axios.post('/api/sdxlStorage', {
-                    documentId,
-                    textInput,
-                    selectedModel,
-                    selectedStyle,
-                    height,
-                    width,
-                    selectedSamples,
-                    cfgScale,
-                    seed,
-                    steps,
-                    base64Data,
-                  });
-                } catch (error) {
-                  console.error(error);
-                  toast.error("Something went wrong.");
-                }
-          
-                return img; // Return the image data after uploading
-              });
-          
-              // Wait for all image upload promises to resolve
-              const uploadedImages = await Promise.all(generatedImagePromises);
-          
-              // Set all the uploaded images at once
-              setImage(uploadedImages);
-          
-              // Additional actions or state updates can be placed here
-          
-              router.refresh();
-            } else if (generatedImages === false) {
-              toast.error("You credit balance is insufficient!");
-              proModal.onOpen();
-            } else {
-              proModal.onOpen();
-              console.log('User is not eligible for this operation.');
-            }
-          } catch (error : any) {
-            if (error.response && error.response.status === 403) {
-              proModal.onOpen();
-            } else {
-              console.error("Something went wrong:", error);
-              toast.error("Something went wrong.");
-            }
-          }
-          
+  const generateImage = async () => {
+    setIsLoading(true);
+    if (isSignedIn) {
+      const userId = user.id;
+      try {
+        if (selectedModel === 'DALL E2') {
+          await DALLE(values);
         } else {
-          console.error(`API for model ${selectedModel} not found.`);
+          // Use the selected model to determine which API to call
+          const selectedApi = SDXLmodelApiMapping[selectedModel];
+          if (selectedApi) {
+            const prompt = `${textInput} , ${selectedStyle}`;
+            try {
+              const generatedImages = await selectedApi(userId, prompt, selectedStyle, height, width, selectedSamples, cfgScale, seed, steps);
+              if (generatedImages !== null && generatedImages !== false) {
+                const generatedImagePromises = generatedImages.map(async (img :any) => {
+                  const generatedImage = img.src;
+                  const base64Data = generatedImage.split(',')[1];
+                  const documentId = generateRandomId();
+                  setImageId(documentId);
+                  try {
+                    await axios.post('/api/sdxlStorage', {
+                      documentId,
+                      textInput,
+                      selectedModel,
+                      selectedStyle,
+                      height,
+                      width,
+                      selectedSamples,
+                      cfgScale,
+                      seed,
+                      steps,
+                      base64Data,
+                    });
+                  } catch (error) {
+                    console.error(error);
+                    toast.error("Something went wrong.");
+                  }
+            
+                  return img; // Return the image data after uploading
+                });
+            
+                // Wait for all image upload promises to resolve
+                const uploadedImages = await Promise.all(generatedImagePromises);
+            
+                // Set all the uploaded images at once
+                setImage(uploadedImages);
+            
+                router.refresh();
+              } else if (generatedImages === false) {
+                toast.error("You credit balance is insufficient!");
+                proModal.onOpen();
+              } else {
+                proModal.onOpen();
+                console.log('User is not eligible for this operation.');
+              }
+            } catch (error : any) {
+              if (error.response && error.response.status === 403) {
+                proModal.onOpen();
+              } else {
+                console.error("Something went wrong:", error);
+                toast.error("Something went wrong.");
+              }
+            }
+            
+          } else {
+            console.error(`API for model ${selectedModel} not found.`);
+          }
         }
+      } finally {
+        setIsLoading(false);
       }
-    } finally {
-      setIsLoading(false);
+    } else {
+     loginModal.onOpen();
     }
-  } else {
-   loginModal.onOpen();
-  }
-};
-
+  };
+  
   
 
   const handleGenerate = () => {

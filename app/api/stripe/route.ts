@@ -3,8 +3,7 @@ import { NextResponse } from "next/server";
 import prismadb from "@/lib/prismadb";
 import { auth, currentUser } from "@clerk/nextjs";
 import { absoluteUrl } from "@/lib/utils";
-import { doc, serverTimestamp, updateDoc, getDoc, addDoc ,collection , setDoc , increment} from "firebase/firestore";
-import { db } from "@/firebase";
+
 const creditsUrl = absoluteUrl("/credits");
 
 export async function POST(request: Request) {
