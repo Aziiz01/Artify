@@ -25,7 +25,8 @@ import { checkSubscription, countCredit } from "@/lib/subscription";
 import { useProModal } from "@/hook/use-pro-modal";
 import axios from "axios";
 import { useLoginModal } from "@/hook/use-login-modal";
-
+import { PublishButton } from "@/components/publish_button";
+import corsModule from 'cors';
 export default function UpscalePage() {
   const { isSignedIn, user, isLoaded } = useUser();
 const router = useRouter();
@@ -36,9 +37,10 @@ const router = useRouter();
   const searchParams = useSearchParams();
   const imageId = searchParams.get('imageId');
   const proModal = useProModal();
-  const [final_imageId,setImageId] = useState("");
+  const [documentId,setImageId] = useState("");
   const loginModal = useLoginModal();
   const [mobileSize, setMobileSize] = useState(false) 
+ // const cors = corsModule({origin:true})
 
   useEffect(() => {
     const handleResize = () => {
@@ -101,7 +103,15 @@ const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
     reader.readAsDataURL(file);
   }
 };
-
+const openImageInNewTab = (img : any) => {
+  if (img && img.src) {
+    const link = document.createElement('a');
+    link.href = img.src;
+    link.target = '_blank';
+    link.download = 'image.png'; // Provide a default name for the downloaded image
+    link.click();
+  }
+};
 function generateRandomId() {
   const timestamp = Date.now();
   const randomPart = Math.floor(Math.random() * 1000000);
@@ -109,84 +119,142 @@ function generateRandomId() {
 }
 
 
- // Handle image generation
-const handleUpscale = async () => {
+
+
+
+const handleEnhance = (event: any) => {
+  const url = `/image-to-image?imageId=${imageId}`;
+  window.location.href = url;
+};
+
+ const handleUpscale = async () => {
   setIsLoading(true);
+
   if (!isSignedIn) {
-            loginModal.onOpen();
-   } else {
+    loginModal.onOpen();
+    return;
+  } else {
     const userId = user.id;
-  if (uploadedImage) {
+if (passedImage == '' && uploadedImage == null){
+  toast.error('Please insert an image')
+  setIsLoading(false);
+}
     try {
       const imageElement = document.createElement("img");
-      imageElement.src = URL.createObjectURL(uploadedImage);
+      if (passedImage){
+        imageElement.src = passedImage; 
+      } 
+      else if (uploadedImage) {
+      imageElement.src = URL.createObjectURL(uploadedImage)
+    }
 
       imageElement.onload = async () => {
+        console.log("Image dimensions:", imageElement.width, imageElement.height);
+
         const width = imageElement.width;
         const height = imageElement.height;
 
-        let selectedModel = null;
+        let selectedModel;
 
         if (width === 512 && height === 512) {
           selectedModel = "stable-diffusion-x4-latent-upscaler";
-          console.log(selectedModel)
         } else if (width === 1024 && height === 1024) {
           selectedModel = "esrgan-v1-x2plus";
-          console.log(selectedModel)
         } else {
           console.error("Invalid image dimensions. Expected 512x512 or 1024x1024.");
           setIsLoading(false);
           return;
         }
+
         const freeTrial = await checkApiLimit(userId);
-    const isPro = await checkSubscription(userId);
-  
-    if (!isPro && !freeTrial) {
-      proModal.onOpen();
+        const isPro = await checkSubscription(userId);
+
+        if (!isPro && !freeTrial) {
+          proModal.onOpen();
+          setIsLoading(false);
+        } else {
+          const calcul = await countCredit(userId, count);
+
+          if (!calcul) {
+            toast.error("Your credit balance is insufficient!");
+            proModal.onOpen();
+            setIsLoading(false);
+          } else {
+            let initImageBuffer: Buffer;
+
+  if (passedImage) {
+    // If using passedImage, fetch base64 data from the URL
+    try{
+      const response = await axios.post('/api/data-fetch', { passedImage : passedImage}, { responseType: 'json' });
+      const  base64Data  =  response.data;
+    initImageBuffer = Buffer.from(base64Data, 'base64');
+    } catch {
       setIsLoading(false);
-    } else {
-       // calcul
-      const calcul =await countCredit(userId,count);
-      if (!calcul){
-        toast.error("You credit balance is insuffisant !");
-        proModal.onOpen();
-        setIsLoading(false);
-      } else {
-        const request = buildGenerationRequest(selectedModel, {
-          type: 'upscaling',
-          upscaler: Generation.Upscaler.UPSCALER_ESRGAN,
-          initImage: Buffer.from(await uploadedImage.arrayBuffer()),
-        });
-
-        const response = await executeGenerationRequest(client, request, metadata);
-
-        const generatedImages = onGenerationComplete(response);   
-        //save   
-if (generatedImage !== null) {
-  const base64Data = generatedImage.toString().split(',')[1];
-  const documentId = generateRandomId();
-  setImageId(documentId);
-  try {
-    const response = await axios.post('/api/sdxlStorage', {final_imageId, selectedModel, height, width, base64Data });
-    console.log(response.data); // The response from the API
-    router.refresh();
-  } catch (error) {
-    console.error(error);
-    toast.error("Something went wrong.");
-  }
-}
-        setGeneratedImage(generatedImages);
-        setIsLoading(false);
-    }}}
-    } catch (error) {
-      console.error("Failed to make image-upscale request:", error);
     }
+  } else if (uploadedImage) {
+    // If using uploadedImage, get base64 data from the file
+    const file = uploadedImage as File;
+    const arrayBuffer = await file.arrayBuffer();
+    initImageBuffer = Buffer.from(arrayBuffer);
   } else {
-    toast.error("Please upload an image !")
-    console.log("No image uploaded.");
+    toast.error('Please upload an image or provide an image URL!');
     setIsLoading(false);
-  }};
-}
+    return;
+  }
+            const request = buildGenerationRequest(selectedModel, {
+              type: "upscaling",
+              upscaler: Generation.Upscaler.UPSCALER_ESRGAN,
+              initImage: initImageBuffer! || null,
+            });
+
+
+            try {
+              const response = await executeGenerationRequest(client, request, metadata);
+
+              console.log("Generation Response:", response);
+
+              const generatedImages = onGenerationComplete(response);
+
+              setGeneratedImage(generatedImages);
+
+              if (generatedImages !== null && generatedImages.length > 0) {
+                const base64Data = generatedImages[0].src.split(",")[1];
+                const documentId = generateRandomId();
+                setImageId(documentId);
+                const height = 2048;
+                const width = 2048;
+                try {
+                  const response = await axios.post("/api/sdxlStorage", {
+                    documentId,
+                    selectedModel,
+                    base64Data,
+                    height,
+                    width
+                  });
+                  console.log(response.data);
+                  router.refresh();
+                } catch (error) {
+                  console.error(error);
+                  toast.error("Something went wrong.");
+                }
+              }
+
+              setIsLoading(false);
+            } catch (error) {
+              console.error("Failed to make image-upscale request:", error);
+              setIsLoading(false);
+            }
+          }
+        }
+      };
+    } catch (error) {
+      console.error("Error handling image:", error);
+      setIsLoading(false);
+    }
+  }
+};
+
+
 
   return (
     <div style={{
@@ -201,6 +269,7 @@ if (generatedImage !== null) {
         <input type="file" onChange={handleImageUpload} className="mt-4 block w-full text-lg text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"/>
           {passedImage || uploadedImage ? (
           <Image
+          priority={true}
               width={512}
               height={512}
               src={passedImage || (uploadedImage ? URL.createObjectURL(uploadedImage) : "")}
@@ -234,33 +303,31 @@ if (generatedImage !== null) {
           {generatedImage == null  && !isLoading && (
             <Empty label="No images generated." />
           )}   
-        {uploadedImage && (
+        
           <>
                 <br />
             {generatedImage && (
               <>
                 <h2>Upscaled Image:</h2>
-                {generatedImage.map((image, index) => (
-                  <Card key={index} className="rounded-lg overflow-hidden">
-                  <div className="relative aspect-square">
-                    <Image
-                      fill
-                      src={image.src}
-                      alt={`Generated Image ${index + 1}`}
-                    />
-                  </div>
-                  <CardFooter className="p-2">
-                  <Button onClick={() => window.open(image.src)} variant="secondary" className="w-full">
-                              <Download className="h-4 w-4 mr-2" />
-                              Open Image
-                            </Button>
-                  </CardFooter>
-                </Card>
+                {generatedImage.map((img, index) => (
+                   <Card key={index} className="">
+                   <div className="relative aspect-square">
+                     <Image priority={false} height={img.height} width={img.width} src={img.src} alt={`Generated Image ${index + 1}`} />
+                   </div>
+                   <CardFooter className="p-2">
+                   <Button onClick={() => openImageInNewTab(img)} variant="secondary" className="w-full">
+                       <Download className="h-4 w-4 mr-2" />
+                       Download
+                     </Button>
+                     <Button onClick={handleEnhance}>Enhance</Button>
+                     <PublishButton imageId={documentId} />
+                   </CardFooter>
+                 </Card>
                 ))}
               </>
             )}
           </>
-        )}
+        
       </div>
     </div> 
   );

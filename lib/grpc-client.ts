@@ -12,7 +12,7 @@ console.log("After dotenv.config()");
 GRPCWeb.setDefaultTransport(NodeHttpTransport());
 
 // Retrieve the 'API_KEY' from the environment
-export const apiKey = "sk-dSIGoQEkPEKRoDEzQMRLnXuoTY8dPP1DAEY88jk8Wx9iveDC";
+export const apiKey = "sk-6NoWpvUXGEKd2J5M1G0bDgLNZTzPPvwOfzdXhgHqQGBptoBX";
 
 if (!apiKey) {
   throw new Error("API_KEY environment variable is not set.");

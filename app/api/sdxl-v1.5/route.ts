@@ -29,7 +29,7 @@ export async function SDXLv15(userId : string,prompt: string, selectedStyle : st
       if (!calcul){
         return false;
       } else {
-    const request = buildGenerationRequest("stable-diffusion-v1-5", {
+    const request = buildGenerationRequest("stable-diffusion-v1-6", {
       type: "text-to-image",
       prompts: [
         {

@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     // Extract the base64-encoded image data and other variables from the data
     const base64Data = variables.base64Data;
     const prompt = variables.textInput || "";
-    const Model = variables.selectedModel || "SDXL-v1";
+    const Model = variables.selectedModel || "SDXL-v1-enhanced";
     const Style = variables.selectedStyle || "";
     const Samples = variables.selectedSamples || 1; 
     const seed = variables.seed || "";

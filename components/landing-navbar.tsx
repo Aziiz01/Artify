@@ -23,7 +23,7 @@ export const LandingNavbar = () => {
             <Image fill alt="Logo" src="/logo.png" />
           </div>
           <h1 className={cn("text-2xl font-bold text-white", font.className)}>
-            Genius
+            Imaginify
           </h1>
         </Link>
       </div>
@@ -37,7 +37,7 @@ export const LandingNavbar = () => {
         </Link>
         <Link href={isSignedIn ? "/dashboard" : "/sign-up"}>
           <Button variant="outline" className="rounded-full">
-            Get Started      <FontAwesomeIcon icon={faRocket} className="ml-2" />
+            Dashboard      <FontAwesomeIcon icon={faRocket} className="ml-2" />
           </Button>
         </Link>
       </div>

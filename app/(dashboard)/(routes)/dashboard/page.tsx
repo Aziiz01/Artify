@@ -74,7 +74,7 @@ export default function HomePage() {
 
   const handleDimensions = (event: any) => {
     const selectedValue = event.target.value;
-    const [selectedHeight, selectedWidth] = selectedValue.split('*');
+    const [selectedHeight, selectedWidth] = selectedValue.split('x');
     setHeight(selectedHeight);
     setWidth(selectedWidth);
   };
@@ -245,7 +245,6 @@ export default function HomePage() {
 
   const handleGenerate = () => {
     generateImage();
-    console.log("selected image style" + selectedStyle);
   };
 
   const handleCFG = (event: any) => {

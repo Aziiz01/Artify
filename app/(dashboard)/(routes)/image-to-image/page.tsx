@@ -27,8 +27,9 @@ import { checkSubscription, countCredit } from "@/lib/subscription";
 import axios from "axios";
 import { useLoginModal } from "@/hook/use-login-modal";
 import PickStyle from "@/components/ui/pickStyle";
-
-
+import { PublishButton } from "@/components/publish_button";
+import "./style.css";
+import { Clock } from "lucide-react";
 export default function ImageToImagePage() {
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [passedImage, setPassedImage] = useState('');
@@ -44,10 +45,12 @@ export default function ImageToImagePage() {
   const [seed, setSeed] = useState(123463446);
   const searchParams = useSearchParams()
   const imageId = searchParams.get('imageId')
-  const [final_imageId,setImageId] = useState("");
+  const [f_imageId,setImageId] = useState("");
   const proModal = useProModal();
   const loginModal = useLoginModal();
   const [mobileSize, setMobileSize] = useState(false) 
+  const [displayImagesImmediately, setDisplayImagesImmediately] = useState(false);
+  const [clicked, setClicked] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -67,7 +70,7 @@ export default function ImageToImagePage() {
     setSelectedStyle(newSelectedStyle);
   };
 
-  const count = 3;
+  let count = 3;
   useEffect (() => {
     const getImageFromId = async () => {
       const docRef = doc(db, "images", `${imageId}`);
@@ -89,9 +92,6 @@ export default function ImageToImagePage() {
     getImageFromId();
   },[imageId])
 
-  const handleStyleChange = (event: any) => {
-    setSelectedStyle(event.target.value);
-  };
   const handleSeed = (event: any) => {
     setSeed(event.target.value);
   };
@@ -114,12 +114,70 @@ export default function ImageToImagePage() {
     setUploadedImage(file);
   };
 
+  const openImageInNewTab = (img : any) => {
+    if (img && img.src) {
+      const link = document.createElement('a');
+      link.href = img.src;
+      link.target = '_blank';
+      link.download = 'image.png'; // Provide a default name for the downloaded image
+      link.click();
+    }
+  };
   function generateRandomId() {
     const timestamp = Date.now();
     const randomPart = Math.floor(Math.random() * 1000000);
     return `${timestamp}-${randomPart}`;
   }
-  // Handle image generation
+  const handleEnhance = (event: any) => {
+    const url = `/image-to-image?imageId=${imageId}`;
+
+    // Redirect to the new URL
+    window.location.href = url;
+  };
+  const handleUpscale = (event: any) => {
+    const url = `/upscale?imageId=${imageId}`;
+
+    // Redirect to the new URL
+    window.location.href = url;
+  };
+  // Define a function to save images in the background
+const saveImagesInBackground = async (images : any) => {
+  // Save the images in the background
+  const saveImagesPromises = images.map(async (img : any) => {
+    const generatedImage = img.src;
+    const base64Data = generatedImage.split(',')[1];
+    const documentId = generateRandomId();
+    setImageId(documentId);
+
+    try {
+      await axios.post('/api/sdxlStorage', {
+        documentId,
+        textInput,
+        selectedStyle,
+        selectedSamples,
+        cfgScale,
+        seed,
+        steps,
+        base64Data,
+      });
+    } catch (error) {
+      console.error(error);
+      toast.error("Something went wrong.");
+    }
+
+    return img;
+  });
+
+  // Wait for all image save promises to resolve (in the background)
+  try {
+    const savedImages = await Promise.all(saveImagesPromises);
+    // Optionally, update the UI or perform any actions after saving is complete
+    console.log("Images saved successfully:", savedImages);
+  } catch (error) {
+    console.error("Error saving images:", error);
+    toast.error("Failed to save some images.");
+  }
+};
   const handleGenerate = async () => {
     setIsLoading(true);
   
@@ -127,6 +185,10 @@ export default function ImageToImagePage() {
       loginModal.onOpen();
     } else {
       const userId = user.id;
+      if (passedImage == '' && uploadedImage == null){
+        toast.error('Please insert an image')
+        setIsLoading(false);
+      }
       try {
         const freeTrial = await checkApiLimit(userId);
         const isPro = await checkSubscription(userId);
@@ -135,23 +197,24 @@ export default function ImageToImagePage() {
           proModal.onOpen();
           setIsLoading(false);
         } else {
-          let initImageBuffer;
+          let initImageBuffer : Buffer;
   
-          if (uploadedImage) {
-            initImageBuffer = Buffer.from(await uploadedImage.arrayBuffer());
-          } else if (passedImage) {        
-              const response = await fetch(`${passedImage}`);
-              if (response.ok) {
-                const imageArrayBuffer = await response.arrayBuffer();
-                initImageBuffer = Buffer.from(imageArrayBuffer);
-              } else {
-                toast.error("Failed to fetch the image from the provided URL.");
-                setIsLoading(false);
-                return;
-              }
-           
+          if (passedImage) {
+            // If using passedImage, fetch base64 data from the URL
+            try{
+              const response = await axios.post('/api/data-fetch', { passedImage : passedImage}, { responseType: 'json' });
+              const  base64Data  =  response.data;
+            initImageBuffer = Buffer.from(base64Data, 'base64');
+            } catch {
+              setIsLoading(false);
+            }
+          } else if (uploadedImage) {
+            // If using uploadedImage, get base64 data from the file
+            const file = uploadedImage as File;
+            const arrayBuffer = await file.arrayBuffer();
+            initImageBuffer = Buffer.from(arrayBuffer);
           } else {
-            toast.error("Please upload an image or provide a valid passedImage URL!");
+            toast.error('Please upload an image or provide an image URL!');
             setIsLoading(false);
             return;
           }
@@ -160,11 +223,11 @@ export default function ImageToImagePage() {
             type: "image-to-image",
             prompts: [
               {
-                text: textInput,
+                text: `${textInput},${selectedStyle}`,
               },
             ],
             stepScheduleStart: 1 - imageStrength,
-            initImage: initImageBuffer,
+            initImage: initImageBuffer! || null,
             seed: seed,
             samples: selectedSamples,
             cfgScale: cfgScale,
@@ -174,31 +237,21 @@ export default function ImageToImagePage() {
   
           const response = await executeGenerationRequest(client, request, metadata);
   
-          // Update the generated images state with an array of HTML image elements
           const generatedImages = onGenerationComplete(response);
+
           if (generatedImages !== null) {
-            const base64Data = generatedImages.toString().split(',')[1];
-            const documentId = generateRandomId();
-            setImageId(documentId);
-            try {
-              const response = await axios.post('/api/sdxlStorage', {
-                final_imageId,
-                textInput,
-                selectedStyle,
-                selectedSamples,
-                cfgScale,
-                seed,
-                steps,
-                base64Data,
-              });
-              console.log(response.data); // The response from the API
-              //router.refresh();
-            } catch (error) {
-              console.error(error);
-              toast.error("Something went wrong.");
+            if (displayImagesImmediately) {
+              console.log('displaying first')
+              setGeneratedImage(generatedImages);
+              saveImagesInBackground(generatedImages);
+            } else { 
+              console.log('saving first')
+              saveImagesInBackground(generatedImages);
+              setGeneratedImage(generatedImages);
             }
+            router.refresh()
           }
-          setGeneratedImage(generatedImages);
+          
           setIsLoading(false);
         }
       } catch (error) {
@@ -207,7 +260,11 @@ export default function ImageToImagePage() {
       }
     }
   };
-
+  const handleButtonClick = () => {
+    setClicked(!clicked);
+    setDisplayImagesImmediately(true);
+    count += 2;  
+  };
   return (
     <div style={{
       display:'grid',
@@ -248,16 +305,15 @@ export default function ImageToImagePage() {
               ) : null}
           <h2 className="text-2xl pt-5 text-blue-900 font-extrabold">Choose a style : <span className="text-1xl ">{selectedStyle}</span> </h2>
           <PickStyle onSelectedStyleChange={handleSelectedStyleChange} />
-          {/* <h2 className="text-2xl mt-5 text-blue-900  font-extrabold ">
-            Choose a style
-          </h2>
-          <select value={selectedStyle} onChange={handleStyleChange}>
-          <option value="">No Style</option>
-            <option value="Realistic">Realistic</option>
-            <option value="Anime">Anime</option>
-            <option value="Cosmic">Cosmic</option>
-          </select>
-          <p>Selected Style: {selectedStyle}</p> */}
+          <div
+      className={`save-time-container ${clicked ? "clicked" : ""}`}
+      onClick={handleButtonClick}
+    >
+      <div className="inner-effect"></div>
+      <p>Fast Process (+2 credits)</p>
+      <Clock />
+    </div>
+
           <div className="flex gap-10">
             <h2 className="text-2xl  mt-5 text-blue-900  font-extrabold">
               Samples
@@ -268,7 +324,7 @@ export default function ImageToImagePage() {
               <option value="4"><h1 className="text-2xl">4</h1></option>
               <option value="6"><h1 className="text-2xl">6</h1></option>
               <option value="8"><h1 className="text-2xl">8</h1></option>
-              <option value="10"><h1>10</h1></option>
+              <option value="10"><h1 className="text-2xl">10</h1></option>
             </select>
           </div>
           <div className="flex gap-3 mt-5">
@@ -347,25 +403,28 @@ export default function ImageToImagePage() {
           {generatedImage == null  && !isLoading && (
             <Empty label="No images generated." />
           )}
-        {generatedImage && (
-    generatedImage.map((img: any, index: any) => (
-      <Card key={index} className="rounded-lg overflow-hidden">
-        <div className="relative aspect-square">
-          <Image
-            fill
-            src={img.src}
-            alt={`Generated Image ${index + 1}`}
-          />
-        </div>
-        <CardFooter className="p-2">
-        <Button onClick={() => window.open(img.src)} variant="secondary" className="w-full">
-                    <Download className="h-4 w-4 mr-2" />
-                    Open Image
-                  </Button>
-        </CardFooter>
-      </Card>
-    ))
-    )}
+       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-8">
+        {Array.isArray(generatedImage) && generatedImage.length > 0 ? (
+          generatedImage.map((img, index) => (
+            <Card key={index} className="">
+            <div className="relative aspect-square">
+              <Image height={img.height} width={img.width} src={img.src} alt={`Generated Image ${index + 1}`} />
+            </div>
+            <CardFooter className="p-2">
+            <Button onClick={() => openImageInNewTab(img)} variant="secondary" className="w-full">
+                <Download className="h-4 w-4 mr-2" />
+                Download
+              </Button>
+              <Button onClick={handleEnhance}>Enhance</Button>
+              <Button onClick={handleUpscale}>Upscale</Button>
+              <PublishButton imageId={f_imageId} />
+            </CardFooter>
+          </Card>
+          ))
+        ) : !isLoading && generatedImage === null ? (
+          <Empty label="No images generated." />
+        ) : null}
+      </div>
       </div>
 
 
