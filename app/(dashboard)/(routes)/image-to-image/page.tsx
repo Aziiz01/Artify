@@ -28,7 +28,7 @@ import axios from "axios";
 import { useLoginModal } from "@/hook/use-login-modal";
 import PickStyle from "@/components/ui/pickStyle";
 import { PublishButton } from "@/components/publish_button";
-import "./style.css";
+import "../../style.css";
 import { Clock } from "lucide-react";
 export default function ImageToImagePage() {
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
@@ -148,7 +148,6 @@ const saveImagesInBackground = async (images : any) => {
     const base64Data = generatedImage.split(',')[1];
     const documentId = generateRandomId();
     setImageId(documentId);
-
     try {
       await axios.post('/api/sdxlStorage', {
         documentId,
@@ -168,7 +167,6 @@ const saveImagesInBackground = async (images : any) => {
     return img;
   });
 
-  // Wait for all image save promises to resolve (in the background)
   try {
     const savedImages = await Promise.all(saveImagesPromises);
     // Optionally, update the UI or perform any actions after saving is complete
@@ -180,7 +178,7 @@ const saveImagesInBackground = async (images : any) => {
 };
   const handleGenerate = async () => {
     setIsLoading(true);
-  
+  router.refresh();
     if (!isSignedIn) {
       loginModal.onOpen();
     } else {
@@ -197,6 +195,13 @@ const saveImagesInBackground = async (images : any) => {
           proModal.onOpen();
           setIsLoading(false);
         } else {
+          const calcul = await countCredit(userId, count);
+
+          if (!calcul) {
+            toast.error("Your credit balance is insufficient!");
+            proModal.onOpen();
+            setIsLoading(false);
+          } else {
           let initImageBuffer : Buffer;
   
           if (passedImage) {
@@ -249,11 +254,10 @@ const saveImagesInBackground = async (images : any) => {
               saveImagesInBackground(generatedImages);
               setGeneratedImage(generatedImages);
             }
-            router.refresh()
           }
           
           setIsLoading(false);
-        }
+        }}
       } catch (error) {
         setIsLoading(true);
         console.error("Failed to make image-to-image request:", error);

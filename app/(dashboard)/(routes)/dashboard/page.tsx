@@ -7,7 +7,7 @@ import { useProModal } from "@/hook/use-pro-modal";
 import { Button } from "@/components/ui/button"; // Import the Button component
 import { Loader } from "@/components/loader";
 import { Empty } from "@/components/ui/empty";
-import { Download, ImageIcon } from "lucide-react";
+import { Clock, Download, ImageIcon } from "lucide-react";
 import { SDXLv1 } from '../../../api/sdxl-v1/route'; // Import the function
 import { SDXLv09 } from "@/app/api/sdxl-v0.9/route";
 import { SDXLv08 } from "@/app/api/sdxl-v0.8/route";
@@ -23,6 +23,7 @@ import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useLoginModal } from "@/hook/use-login-modal";
 import PickStyle from "@/components/ui/pickStyle";
+import "../../style.css";
 
 export default function HomePage() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -45,6 +46,9 @@ export default function HomePage() {
   const [isMounted, setIsMounted] = useState(false);
   const loginModal = useLoginModal();
   const [mobileSize, setMobileSize] = useState(false) 
+  const [clicked, setClicked] = useState(false);
+  const [displayImagesImmediately, setDisplayImagesImmediately] = useState(false);
+  let count = 3;
 
   useEffect(() => {
     const handleResize = () => {
@@ -101,12 +105,17 @@ export default function HomePage() {
     "Stable Diffusion 2.1": SDXLv21,
     "Stable Diffusion 1.5": SDXLv15,
   };
+
+  const handleButtonClick = () => {
+    setClicked(!clicked);
+    setDisplayImagesImmediately(true);
+    count += 2;  
+  };
+
   const handleSeed = (event: any) => {
     setSeed(event.target.value);
   };
-  const handleStyleChange = (event: any) => {
-    setSelectedStyle(event.target.value);
-  };
+
   const handleSamples = (event: any) => {
     setSelectedSamples(event.target.value);
   }
@@ -162,10 +171,50 @@ export default function HomePage() {
     }
   };
   
+const saveImagesInBackground = async (images : any) => {
+  // Save the images in the background
+  const saveImagesPromises = images.map(async (img : any) => {
+    const generatedImage = img.src;
+    const base64Data = generatedImage.split(',')[1];
+    const documentId = generateRandomId();
+    setImageId(documentId);
 
+    try {
+      await axios.post('/api/sdxlStorage', {
+     documentId,
+     textInput,
+     selectedModel,
+     selectedStyle,
+     height,
+     width,
+     selectedSamples,
+     cfgScale,
+     seed,
+     steps,
+     base64Data,
+      });
+    } catch (error) {
+      console.error(error);
+      toast.error("Something went wrong.");
+    }
+
+    return img;
+  });
+
+  // Wait for all image save promises to resolve (in the background)
+  try {
+    const savedImages = await Promise.all(saveImagesPromises);
+    // Optionally, update the UI or perform any actions after saving is complete
+    console.log("Images saved successfully:", savedImages);
+  } catch (error) {
+    console.error("Error saving images:", error);
+    toast.error("Failed to save some images.");
+  }
+};
 
   const generateImage = async () => {
     setIsLoading(true);
+    router.refresh();
     if (isSignedIn) {
       const userId = user.id;
       try {
@@ -179,39 +228,15 @@ export default function HomePage() {
             try {
               const generatedImages = await selectedApi(userId, prompt, selectedStyle, height, width, selectedSamples, cfgScale, seed, steps);
               if (generatedImages !== null && generatedImages !== false) {
-                const generatedImagePromises = generatedImages.map(async (img :any) => {
-                  const generatedImage = img.src;
-                  const base64Data = generatedImage.split(',')[1];
-                  const documentId = generateRandomId();
-                  setImageId(documentId);
-                  try {
-                    await axios.post('/api/sdxlStorage', {
-                      documentId,
-                      textInput,
-                      selectedModel,
-                      selectedStyle,
-                      height,
-                      width,
-                      selectedSamples,
-                      cfgScale,
-                      seed,
-                      steps,
-                      base64Data,
-                    });
-                  } catch (error) {
-                    console.error(error);
-                    toast.error("Something went wrong.");
-                  }
-            
-                  return img; // Return the image data after uploading
-                });
-            
-                // Wait for all image upload promises to resolve
-                const uploadedImages = await Promise.all(generatedImagePromises);
-            
-                // Set all the uploaded images at once
-                setImage(uploadedImages);
-            
+                if (displayImagesImmediately) {
+                  console.log('displaying first')
+                  setImage(generatedImages);
+                  saveImagesInBackground(generatedImages);
+                } else { 
+                  console.log('saving first')
+                  saveImagesInBackground(generatedImages);
+                  setImage(generatedImages);
+                }
                 router.refresh();
               } else if (generatedImages === false) {
                 toast.error("You credit balance is insufficient!");
@@ -320,16 +345,14 @@ export default function HomePage() {
 
       <h2 className="text-2xl pt-5 text-blue-900 font-extrabold">Choose a style : <span className="text-1xl ">{selectedStyle}</span> </h2>
       <PickStyle onSelectedStyleChange={handleSelectedStyleChange} />
-      {/* <select value={selectedStyle} onChange={handleStyleChange}>
-        <option value="">many others to add</option>
-        <option value="3d-model">3D Model</option>
-        <option value="analog-film">Analog Film</option>
-        <option value="anime-cinematic">Anime Cinematic</option>
-        <option value="cinematic">Cinematic</option>
-      </select>
-      <p>Selected Style: {selectedStyle}</p> */}
-      {/* <p className=" text-blue-900 font-extrabold">Selected Style: {selectedStyle}</p> */}
-
+      <div
+      className={`save-time-container ${clicked ? "clicked" : ""}`}
+      onClick={handleButtonClick}
+    >
+      <div className="inner-effect"></div>
+      <p>Fast Process (+2 credits)</p>
+      <Clock/>
+    </div>
       <div className="flex gap-3">
         <h2 className="text-2xl pt-5 text-blue-900 font-extrabold">Algorithm Model</h2>
         <div>

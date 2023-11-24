@@ -21,10 +21,8 @@ const Navbar = async () => {
           <Image src="https://flowbite.com/docs/images/logo.svg" className="h-8 mr-3" alt="Flowbite Logo"  width={100} height={100}/>
           <span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">Flowbite</span>
       </Link>
-      <div className="flex items-center md:order-2">
-          {/* <button type="button" className="flex mr-3 text-sm bg-gray-800 rounded-full md:mr-0 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600" id="user-menu-button" aria-expanded="false" data-dropdown-toggle="user-dropdown" data-dropdown-placement="bottom">
-            <Image className="w-8 h-8 rounded-full" src="/docs/images/people/profile-picture-3.jpg" alt="user photo" width={100} height={100}/>
-          </button> */}
+      <div className="flex items-center">
+          
           <UserButton/>
 
       </div>

@@ -1,4 +1,3 @@
-////////TO DESIGN 
 'use client'
 import React, { useEffect, useState } from "react";
 import { collection, getDocs, query, where, doc, updateDoc } from "firebase/firestore";
@@ -12,6 +11,8 @@ import "./style.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEye, faEyeSlash, faHeart } from "@fortawesome/free-solid-svg-icons";
 import { UserPopup } from "@/components/user_popup";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 interface ImageData {
   id: string;
@@ -173,114 +174,119 @@ const CreationsPage: React.FC = () => {
   };
   
   return (
-  <div>
-    <h1>Explore Images</h1>
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {images.map((image) => (
-        <div key={image.id} className="grid gap-4 relative">
-          <div
-            onClick={() => openModal(image)}
-            className="image-container"
-            style={{ cursor: 'pointer' }}
-          >
-            
-            <Image
-              className="image h-auto max-w-full rounded-lg"
-              src={image.imageUrl}
-              alt={image.prompt}
-              height={image.height}
-              width={image.width}
-
-            />
-            <div className="image-overlay" >
-            
-              <UserPopup imageId={image.id} />
-              <div
-                className={`like-icon ${!isSignedIn ? 'login-required' : isLiked(image, user.emailAddresses[0].emailAddress) ? 'liked' : ''}`}
-                onClick={(e) => {
-                  e.stopPropagation(); // Prevent the click event from propagating
-                  if (!isSignedIn) {
-                    loginModal.onOpen();
-                  } else if (!isLiked(image, user.emailAddresses[0].emailAddress)) {
-                    handleLike(image.id); // Handle the like action
-                  }
-                }}
-                style={{ cursor: 'pointer' }}
-              >
-                <FontAwesomeIcon icon={faHeart} className="mr-1" />
+    <div>
+      {images.length === 0 ? (
+        <div className="text-center mt-8">
+          <h1 className="text-3xl font-semibold mb-4">You dont have any creations</h1>
+          <p className="text-lg text-gray-500 mb-4">Start generating art and more</p>
+          <div>
+      
+      <Link href="/dashboard">
+        <Button variant="premium" className="md:text-lg p-4 md:p-6 rounded-full font-semibold">
+          Start Generating For Free
+        </Button>
+      </Link>
+    </div>        </div>
+      ) : (
+        <>
+          <h1>My Creations</h1>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {images.map((image) => (
+              <div key={image.id} className="grid gap-4 relative">
+                <div
+                  onClick={() => openModal(image)}
+                  className="image-container"
+                  style={{ cursor: 'pointer' }}
+                >
+                  <Image
+                    className="image h-auto max-w-full rounded-lg"
+                    src={image.imageUrl}
+                    alt={image.prompt}
+                    height={image.height}
+                    width={image.width}
+                  />
+                  <div className="image-overlay">
+                    <UserPopup imageId={image.id} />
+                    <div
+                      className={`like-icon ${!isSignedIn ? 'login-required' : isLiked(image, user.emailAddresses[0].emailAddress) ? 'liked' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (!isSignedIn) {
+                          loginModal.onOpen();
+                        } else if (!isLiked(image, user.emailAddresses[0].emailAddress)) {
+                          handleLike(image.id);
+                        }
+                      }}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <FontAwesomeIcon icon={faHeart} className="mr-1" />
+                    </div>
+                    <div
+                      className="publish-icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        togglePublish(image.id, image.published);
+                      }}
+                      style={{ cursor: "pointer" }}
+                    >
+                      {image.published ? (
+                        <>Unpublish <FontAwesomeIcon icon={faEyeSlash} title="Unpublished" /></>
+                      ) : (
+                        <>Publish<FontAwesomeIcon icon={faEye} title="Published" /></>
+                      )}
+                    </div>
+                    <div className="like-count">
+                      {image.likes.length} likes
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div
-  className="publish-icon"
-  onClick={(e) => {
-    e.stopPropagation();
-    togglePublish(image.id, image.published);
-  }}
-  style={{ cursor: "pointer" }}
->
-  {image.published ? (
-    <>
-      Unpublish <FontAwesomeIcon icon={faEyeSlash} title="Unpublished" />
-    </>
-  ) : (
-    <>
-      Publish<FontAwesomeIcon icon={faEye} title="Published" /> 
-    </>
-  )}
-</div>
-
-              <div className="like-count">
-                {image.likes.length} likes
-              </div>
-            </div>
+            ))}
           </div>
-        </div>
-      ))}
+          {showLikesList && selectedImage && (
+            <LikesList image={selectedImage} onClose={closeLikesList} />
+          )}
+          <Modal
+            isOpen={isModalOpen}
+            onRequestClose={closeModal}
+            contentLabel="Image Modal"
+            style={modalStyle}
+          >
+            {selectedImage && (
+              <div className="vertical-modal-container">
+                <div className="modal-image-container">
+                  <Image
+                    src={selectedImage.imageUrl}
+                    alt={selectedImage.prompt}
+                    height={selectedImage.height}
+                    width={selectedImage.width}
+                    className="image"
+                  />
+                </div>
+                <div className="details-container">
+                  <div className="text-container">
+                    <h2 className="image-prompt artistic-text">{selectedImage.prompt}</h2>
+                  </div>
+                  <hr className="horizontal-line" />
+                  <div className="buttons-container">
+                    <button className="button pink-button artistic-button">
+                      {selectedImage.model}
+                    </button>
+                    <button className="button purple-button artistic-button">
+                      {selectedImage.style}
+                    </button>
+                    <button className="button teal-button artistic-button">
+                      {selectedImage.height}*{selectedImage.width}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </Modal>
+        </>
+      )}
     </div>
-
-    {showLikesList && selectedImage && (
-      <LikesList image={selectedImage} onClose={closeLikesList} />
-    )}
-   <Modal
-  isOpen={isModalOpen}
-  onRequestClose={closeModal}
-  contentLabel="Image Modal"
-  style={modalStyle}
->
-  {selectedImage && (
-    <div className="vertical-modal-container">
-      <div className="modal-image-container">
-        <Image
-          src={selectedImage.imageUrl}
-          alt={selectedImage.prompt}
-          height={selectedImage.height}
-          width={selectedImage.width}
-          className="image"
-        />
-      </div>
-      <div className="details-container">
-        <div className="text-container">
-          <h2 className="image-prompt artistic-text">{selectedImage.prompt}</h2>
-        </div>
-        <hr className="horizontal-line" />
-        <div className="buttons-container">
-          <button className="button pink-button artistic-button">
-            {selectedImage.model}
-          </button>
-          <button className="button purple-button artistic-button">
-            {selectedImage.style}
-          </button>
-          <button className="button teal-button artistic-button">
-            {selectedImage.height}*{selectedImage.width}
-          </button>
-        </div>
-      </div>
-    </div>
-  )}
-</Modal>
-
-  </div>
-);
-
-};
-
+  );
+  
+            }
 export default CreationsPage;

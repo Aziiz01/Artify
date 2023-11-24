@@ -1,17 +1,17 @@
 'use client'
 // to implement passedImage 
-import React, { useState, ChangeEvent , useEffect } from "react";
+import React, { useState, ChangeEvent, useEffect } from "react";
 import * as Generation from "../../../generation/generation_pb";
 import {
   executeGenerationRequest,
   onGenerationComplete,
   buildGenerationRequest,
-}  from "../../../../lib/helpers";// Adjust the import path as needed
+} from "../../../../lib/helpers";// Adjust the import path as needed
 import { client, metadata } from "../../../../lib/grpc-client";
 import Image from "next/image";
 import { CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Clock, Download } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Empty } from "@/components/ui/empty";
 import { Loader } from "@/components/loader";
@@ -26,10 +26,10 @@ import { useProModal } from "@/hook/use-pro-modal";
 import axios from "axios";
 import { useLoginModal } from "@/hook/use-login-modal";
 import { PublishButton } from "@/components/publish_button";
-import corsModule from 'cors';
+import "../../style.css"
 export default function UpscalePage() {
   const { isSignedIn, user, isLoaded } = useUser();
-const router = useRouter();
+  const router = useRouter();
   const [passedImage, setPassedImage] = useState('');
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [generatedImage, setGeneratedImage] = useState<HTMLImageElement[] | null>(null);
@@ -37,11 +37,11 @@ const router = useRouter();
   const searchParams = useSearchParams();
   const imageId = searchParams.get('imageId');
   const proModal = useProModal();
-  const [documentId,setImageId] = useState("");
+  const [documentId, setImageId] = useState("");
   const loginModal = useLoginModal();
-  const [mobileSize, setMobileSize] = useState(false) 
- // const cors = corsModule({origin:true})
-
+  const [mobileSize, setMobileSize] = useState(false)
+  const [displayImagesImmediately, setDisplayImagesImmediately] = useState(false);
+  const [clicked, setClicked] = useState(false);
   useEffect(() => {
     const handleResize = () => {
       const isMobile = window.innerWidth < 768;
@@ -57,12 +57,12 @@ const router = useRouter();
   }, []);
 
 
-  const count = 3;
-  useEffect (() => {
+  let count = 3;
+  useEffect(() => {
     const getImageFromId = async () => {
-      const docRef = doc(db, "images",`${imageId}`);
+      const docRef = doc(db, "images", `${imageId}`);
       const docSnap = await getDoc(docRef);
-      
+
       if (docSnap.exists()) {
         // Check if the 'image' field exists in the document
         if (docSnap.data().image) {
@@ -75,218 +75,248 @@ const router = useRouter();
         // Handle the case where the document doesn't exist
         console.error("Document with imageId not found in Firestore.");
       }
-  }
-  
-    getImageFromId();
-  },[imageId])
-
-
-// Handle image upload
-const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
-  const file = event.target.files?.[0] || null;
-  setUploadedImage(file);
-
-  if (file) {
-    const reader = new FileReader();
-
-    reader.onload = (e) => {
-      if (e.target) { // Check if e.target is not null
-        const imageElement = document.createElement("img");
-        imageElement.src = e.target.result as string;
-
-        imageElement.onload = () => {
-          console.log(`Image width: ${imageElement.width} height: ${imageElement.height}`);
-        };
-      }
-    };
-
-    reader.readAsDataURL(file);
-  }
-};
-const openImageInNewTab = (img : any) => {
-  if (img && img.src) {
-    const link = document.createElement('a');
-    link.href = img.src;
-    link.target = '_blank';
-    link.download = 'image.png'; // Provide a default name for the downloaded image
-    link.click();
-  }
-};
-function generateRandomId() {
-  const timestamp = Date.now();
-  const randomPart = Math.floor(Math.random() * 1000000);
-  return `${timestamp}-${randomPart}`;
-}
-
-
-
-
-
-const handleEnhance = (event: any) => {
-  const url = `/image-to-image?imageId=${imageId}`;
-  window.location.href = url;
-};
-
- const handleUpscale = async () => {
-  setIsLoading(true);
-
-  if (!isSignedIn) {
-    loginModal.onOpen();
-    return;
-  } else {
-    const userId = user.id;
-if (passedImage == '' && uploadedImage == null){
-  toast.error('Please insert an image')
-  setIsLoading(false);
-}
-    try {
-      const imageElement = document.createElement("img");
-      if (passedImage){
-        imageElement.src = passedImage; 
-      } 
-      else if (uploadedImage) {
-      imageElement.src = URL.createObjectURL(uploadedImage)
     }
 
-      imageElement.onload = async () => {
-        console.log("Image dimensions:", imageElement.width, imageElement.height);
+    getImageFromId();
+  }, [imageId])
 
-        const width = imageElement.width;
-        const height = imageElement.height;
 
-        let selectedModel;
+  // Handle image upload
+  const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] || null;
+    setUploadedImage(file);
 
-        if (width === 512 && height === 512) {
-          selectedModel = "stable-diffusion-x4-latent-upscaler";
-        } else if (width === 1024 && height === 1024) {
-          selectedModel = "esrgan-v1-x2plus";
-        } else {
-          console.error("Invalid image dimensions. Expected 512x512 or 1024x1024.");
-          setIsLoading(false);
-          return;
+    if (file) {
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        if (e.target) { // Check if e.target is not null
+          const imageElement = document.createElement("img");
+          imageElement.src = e.target.result as string;
+
+          imageElement.onload = () => {
+            console.log(`Image width: ${imageElement.width} height: ${imageElement.height}`);
+          };
+        }
+      };
+
+      reader.readAsDataURL(file);
+    }
+  };
+  const openImageInNewTab = (img: any) => {
+    if (img && img.src) {
+      const link = document.createElement('a');
+      link.href = img.src;
+      link.target = '_blank';
+      link.download = 'image.png'; // Provide a default name for the downloaded image
+      link.click();
+    }
+  };
+  function generateRandomId() {
+    const timestamp = Date.now();
+    const randomPart = Math.floor(Math.random() * 1000000);
+    return `${timestamp}-${randomPart}`;
+  }
+
+  const saveImagesInBackground = async (images: any, selectedModel: string) => {
+    // Save the images in the background
+    const saveImagesPromises = images.map(async (img: any) => {
+      const generatedImage = img.src;
+      const base64Data = generatedImage.split(',')[1];
+      const documentId = generateRandomId();
+      setImageId(documentId);
+      const height = 2048;
+      const width = 2048;
+      try {
+        await axios.post('/api/sdxlStorage', {
+          documentId,
+          selectedModel,
+          base64Data,
+          height,
+          width
+        });
+      } catch (error) {
+        console.error(error);
+        toast.error("Something went wrong.");
+      }
+
+      return img;
+    });
+
+    // Wait for all image save promises to resolve (in the background)
+    try {
+      const savedImages = await Promise.all(saveImagesPromises);
+      // Optionally, update the UI or perform any actions after saving is complete
+      console.log("Images saved successfully:", savedImages);
+    } catch (error) {
+      console.error("Error saving images:", error);
+      toast.error("Failed to save some images.");
+    }
+  };
+
+
+
+  const handleEnhance = (event: any) => {
+    const url = `/image-to-image?imageId=${imageId}`;
+    window.location.href = url;
+  };
+
+  const handleUpscale = async () => {
+    setIsLoading(true);
+    router.refresh();
+    if (!isSignedIn) {
+      loginModal.onOpen();
+      return;
+    } else {
+      const userId = user.id;
+      if (passedImage == '' && uploadedImage == null) {
+        toast.error('Please insert an image')
+        setIsLoading(false);
+      }
+      try {
+        const imageElement = document.createElement("img");
+        if (passedImage) {
+          imageElement.src = passedImage;
+        }
+        else if (uploadedImage) {
+          imageElement.src = URL.createObjectURL(uploadedImage)
         }
 
-        const freeTrial = await checkApiLimit(userId);
-        const isPro = await checkSubscription(userId);
+        imageElement.onload = async () => {
+          console.log("Image dimensions:", imageElement.width, imageElement.height);
 
-        if (!isPro && !freeTrial) {
-          proModal.onOpen();
-          setIsLoading(false);
-        } else {
-          const calcul = await countCredit(userId, count);
+          const width = imageElement.width;
+          const height = imageElement.height;
 
-          if (!calcul) {
-            toast.error("Your credit balance is insufficient!");
+          let selectedModel;
+
+          if (width === 512 && height === 512) {
+            selectedModel = "stable-diffusion-x4-latent-upscaler";
+          } else if (width === 1024 && height === 1024) {
+            selectedModel = "esrgan-v1-x2plus";
+          } else {
+            console.error("Invalid image dimensions. Expected 512x512 or 1024x1024.");
+            setIsLoading(false);
+            return;
+          }
+
+          const freeTrial = await checkApiLimit(userId);
+          const isPro = await checkSubscription(userId);
+
+          if (!isPro && !freeTrial) {
             proModal.onOpen();
             setIsLoading(false);
           } else {
-            let initImageBuffer: Buffer;
+            const calcul = await countCredit(userId, count);
 
-  if (passedImage) {
-    // If using passedImage, fetch base64 data from the URL
-    try{
-      const response = await axios.post('/api/data-fetch', { passedImage : passedImage}, { responseType: 'json' });
-      const  base64Data  =  response.data;
-    initImageBuffer = Buffer.from(base64Data, 'base64');
-    } catch {
-      setIsLoading(false);
-    }
-  } else if (uploadedImage) {
-    // If using uploadedImage, get base64 data from the file
-    const file = uploadedImage as File;
-    const arrayBuffer = await file.arrayBuffer();
-    initImageBuffer = Buffer.from(arrayBuffer);
-  } else {
-    toast.error('Please upload an image or provide an image URL!');
-    setIsLoading(false);
-    return;
-  }
-            const request = buildGenerationRequest(selectedModel, {
-              type: "upscaling",
-              upscaler: Generation.Upscaler.UPSCALER_ESRGAN,
-              initImage: initImageBuffer! || null,
-            });
+            if (!calcul) {
+              toast.error("Your credit balance is insufficient!");
+              proModal.onOpen();
+              setIsLoading(false);
+            } else {
+              let initImageBuffer: Buffer;
 
-
-            try {
-              const response = await executeGenerationRequest(client, request, metadata);
-
-              console.log("Generation Response:", response);
-
-              const generatedImages = onGenerationComplete(response);
-
-              setGeneratedImage(generatedImages);
-
-              if (generatedImages !== null && generatedImages.length > 0) {
-                const base64Data = generatedImages[0].src.split(",")[1];
-                const documentId = generateRandomId();
-                setImageId(documentId);
-                const height = 2048;
-                const width = 2048;
+              if (passedImage) {
+                // If using passedImage, fetch base64 data from the URL
                 try {
-                  const response = await axios.post("/api/sdxlStorage", {
-                    documentId,
-                    selectedModel,
-                    base64Data,
-                    height,
-                    width
-                  });
-                  console.log(response.data);
-                  router.refresh();
-                } catch (error) {
-                  console.error(error);
-                  toast.error("Something went wrong.");
+                  const response = await axios.post('/api/data-fetch', { passedImage: passedImage }, { responseType: 'json' });
+                  const base64Data = response.data;
+                  initImageBuffer = Buffer.from(base64Data, 'base64');
+                } catch {
+                  setIsLoading(false);
                 }
+              } else if (uploadedImage) {
+                // If using uploadedImage, get base64 data from the file
+                const file = uploadedImage as File;
+                const arrayBuffer = await file.arrayBuffer();
+                initImageBuffer = Buffer.from(arrayBuffer);
+              } else {
+                toast.error('Please upload an image or provide an image URL!');
+                setIsLoading(false);
+                return;
               }
+              const request = buildGenerationRequest(selectedModel, {
+                type: "upscaling",
+                upscaler: Generation.Upscaler.UPSCALER_ESRGAN,
+                initImage: initImageBuffer! || null,
+              });
 
-              setIsLoading(false);
-            } catch (error) {
-              console.error("Failed to make image-upscale request:", error);
-              setIsLoading(false);
+
+              try {
+                const response = await executeGenerationRequest(client, request, metadata);
+                const generatedImages = onGenerationComplete(response);
+                if (generatedImages !== null) {
+                  if (displayImagesImmediately) {
+                    console.log('displaying first')
+                    setGeneratedImage(generatedImages);
+                    saveImagesInBackground(generatedImages, selectedModel);
+                  } else {
+                    console.log('saving first')
+                    saveImagesInBackground(generatedImages, selectedModel);
+                    setGeneratedImage(generatedImages);
+                  }
+                }
+
+                setIsLoading(false);
+              } catch (error) {
+                console.error("Failed to make image-upscale request:", error);
+                setIsLoading(false);
+              }
             }
           }
-        }
-      };
-    } catch (error) {
-      console.error("Error handling image:", error);
-      setIsLoading(false);
+        };
+      } catch (error) {
+        console.error("Error handling image:", error);
+        setIsLoading(false);
+      }
     }
-  }
-};
+  };
 
-
+  const handleButtonClick = () => {
+    setClicked(!clicked);
+    setDisplayImagesImmediately(true);
+    count += 2;  
+  };
 
   return (
     <div style={{
-      display:'grid',
-      height:!mobileSize ? '850px' : '2000px',
+      display: 'grid',
+      height: !mobileSize ? '850px' : '2000px',
       gridTemplateColumns: !mobileSize ? '40% 60%' : undefined,
       gridTemplateRows: mobileSize ? '10% 90%' : undefined,
-      backgroundColor:'transparent'
+      backgroundColor: 'transparent'
     }}>
-      <div className="px-4 lg:px-8 bg-transparent" style={{ overflowY: !mobileSize ? 'scroll' : undefined, height:'850px'}}>
+      <div className="px-4 lg:px-8 bg-transparent" style={{ overflowY: !mobileSize ? 'scroll' : undefined, height: '850px' }}>
         <h2 className="text-2xl mt-5 text-blue-900 font-extrabold">Image Upscaler</h2>
-        <input type="file" onChange={handleImageUpload} className="mt-4 block w-full text-lg text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"/>
-          {passedImage || uploadedImage ? (
+        <input type="file" onChange={handleImageUpload} className="mt-4 block w-full text-lg text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" />
+        {passedImage || uploadedImage ? (
           <Image
-          priority={true}
-              width={512}
-              height={512}
-              src={passedImage || (uploadedImage ? URL.createObjectURL(uploadedImage) : "")}
-              alt="Uploaded image"
-            />
-          ) : null}
-          <Button
-            onClick={handleUpscale} disabled={isLoading}
-            className="mt-4 w-full relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-purple-500 group-hover:to-pink-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-purple-200 dark:focus:ring-purple-800"
-          // Attach the click event handler
-          >
-              <span className="w-full relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-opacity-0 ">
-                {isLoading ? 'Upscaling...' : 'Upscale'}
-              </span>
-          </Button>
+            priority={true}
+            width={512}
+            height={512}
+            src={passedImage || (uploadedImage ? URL.createObjectURL(uploadedImage) : "")}
+            alt="Uploaded image"
+          />
+        ) : null}
+         <div
+      className={`save-time-container ${clicked ? "clicked" : ""}`}
+      onClick={handleButtonClick}
+    >
+      <div className="inner-effect"></div>
+      <p>Fast Process (+2 credits)</p>
+      <Clock />
+    </div>
+        <Button
+          onClick={handleUpscale} disabled={isLoading}
+          className="mt-4 w-full relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-purple-500 group-hover:to-pink-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-purple-200 dark:focus:ring-purple-800"
+        // Attach the click event handler
+        >
+          <span className="w-full relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-opacity-0 ">
+            {isLoading ? 'Upscaling...' : 'Upscale'}
+          </span>
+        </Button>
       </div>
-      <div  style={{ overflowY: !mobileSize ? 'scroll' : undefined, height:'850px'}}>
+      <div style={{ overflowY: !mobileSize ? 'scroll' : undefined, height: '850px' }}>
         <div className="mb-8 space-y-4 text-center">
           <h2 className="text-4xl mt-5 text-blue-900 font-extrabold">
             Explore the Power of AI
@@ -295,40 +325,40 @@ if (passedImage == '' && uploadedImage == null){
             Chat with the Smartest AI - Experience the Power of AI
           </p>
         </div>
-          {isLoading && (
-            <div className="p-8 rounded-lg w-full flex items-center justify-center bg-muted">
-              <Loader />
-            </div>
+        {isLoading && (
+          <div className="p-8 rounded-lg w-full flex items-center justify-center bg-muted">
+            <Loader />
+          </div>
+        )}
+        {generatedImage == null && !isLoading && (
+          <Empty label="No images generated." />
+        )}
+
+        <>
+          <br />
+          {generatedImage && (
+            <>
+              <h2>Upscaled Image:</h2>
+              {generatedImage.map((img, index) => (
+                <Card key={index} className="">
+                  <div className="relative aspect-square">
+                    <Image priority={false} height={img.height} width={img.width} src={img.src} alt={`Generated Image ${index + 1}`} />
+                  </div>
+                  <CardFooter className="p-2">
+                    <Button onClick={() => openImageInNewTab(img)} variant="secondary" className="w-full">
+                      <Download className="h-4 w-4 mr-2" />
+                      Download
+                    </Button>
+                    <Button onClick={handleEnhance}>Enhance</Button>
+                    <PublishButton imageId={documentId} />
+                  </CardFooter>
+                </Card>
+              ))}
+            </>
           )}
-          {generatedImage == null  && !isLoading && (
-            <Empty label="No images generated." />
-          )}   
-        
-          <>
-                <br />
-            {generatedImage && (
-              <>
-                <h2>Upscaled Image:</h2>
-                {generatedImage.map((img, index) => (
-                   <Card key={index} className="">
-                   <div className="relative aspect-square">
-                     <Image priority={false} height={img.height} width={img.width} src={img.src} alt={`Generated Image ${index + 1}`} />
-                   </div>
-                   <CardFooter className="p-2">
-                   <Button onClick={() => openImageInNewTab(img)} variant="secondary" className="w-full">
-                       <Download className="h-4 w-4 mr-2" />
-                       Download
-                     </Button>
-                     <Button onClick={handleEnhance}>Enhance</Button>
-                     <PublishButton imageId={documentId} />
-                   </CardFooter>
-                 </Card>
-                ))}
-              </>
-            )}
-          </>
-        
+        </>
+
       </div>
-    </div> 
+    </div>
   );
-              }
+}
