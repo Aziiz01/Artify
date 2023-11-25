@@ -1,10 +1,7 @@
 "use client";
-
-import axios from "axios";
 import { useState } from "react";
 import { Check, Zap } from "lucide-react";
 import { toast } from "react-hot-toast";
-
 import { 
   Dialog, 
   DialogContent, 
@@ -20,14 +17,15 @@ import { tools } from "@/constants";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+
 export const ProModal = () => {
+
   const proModal = useProModal();
   const [loading, setLoading] = useState(false);
 const router = useRouter();
   const onSubscribe = async () => {
     router.push('/credits');
     proModal.onClose();
-
   }
 
   return (

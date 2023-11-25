@@ -14,14 +14,13 @@ import { incrementApiLimit } from '@/lib/api-limit';
 import {doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from '@/firebase';
 
-export async function SDXLv08(userId: string, prompt: string, selectedStyle: string, height: number, width: number, selectedSamples: number, cfgScale: number, seed: number, steps: number) {
+export async function SDXLv08(userId: string, prompt: string, selectedStyle: string, height: number, width: number, selectedSamples: number, cfgScale: number, seed: number, steps: number, fast_count : number) {
  try{
-  const freeTrial = await checkApiLimit(userId);
+  const count=(1*selectedSamples)+fast_count;
+  const freeTrial = await checkApiLimit(userId,count);
   const isPro = await checkSubscription(userId);
-  const count=1*selectedSamples;
 
   if (!freeTrial && !isPro) {
-    // Return a 403 response immediately
     return null;
   }
   const calcul =await countCredit(userId,count);

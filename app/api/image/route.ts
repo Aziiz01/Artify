@@ -42,7 +42,7 @@ export async function POST(req: Request) {
       return new NextResponse("Resolution is required", { status: 400 });
     }
 
-    const freeTrial = await checkApiLimit(userId);
+     const freeTrial = await checkApiLimit(userId,count);;
     const isPro = await checkSubscription(userId);
 
     if (!freeTrial && !isPro) {

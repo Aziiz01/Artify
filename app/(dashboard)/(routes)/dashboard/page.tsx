@@ -48,7 +48,8 @@ export default function HomePage() {
   const [mobileSize, setMobileSize] = useState(false) 
   const [clicked, setClicked] = useState(false);
   const [displayImagesImmediately, setDisplayImagesImmediately] = useState(false);
-  let count = 3;
+  const [fast_count, setCount] = useState(0);
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -94,7 +95,8 @@ export default function HomePage() {
       selectedSamples: number,
       cfgScale: number,
       seed: number,
-      steps: number
+      steps: number,
+      count : number
     ) => Promise<any>;
   };
 
@@ -103,13 +105,14 @@ export default function HomePage() {
     "Stable Diffusion XL 0.9": SDXLv09,
     "Stable Diffusion XL 0.8": SDXLv08,
     "Stable Diffusion 2.1": SDXLv21,
-    "Stable Diffusion 1.5": SDXLv15,
+    "Stable Diffusion 1.6": SDXLv15,
   };
 
   const handleButtonClick = () => {
     setClicked(!clicked);
-    setDisplayImagesImmediately(true);
-    count += 2;  
+    setDisplayImagesImmediately(!displayImagesImmediately)
+    const newCount = clicked ? 0 : 2;
+    setCount(newCount);
   };
 
   const handleSeed = (event: any) => {
@@ -226,7 +229,7 @@ const saveImagesInBackground = async (images : any) => {
           if (selectedApi) {
             const prompt = `${textInput} , ${selectedStyle}`;
             try {
-              const generatedImages = await selectedApi(userId, prompt, selectedStyle, height, width, selectedSamples, cfgScale, seed, steps);
+              const generatedImages = await selectedApi(userId, prompt, selectedStyle, height, width, selectedSamples, cfgScale, seed, steps,fast_count);
               if (generatedImages !== null && generatedImages !== false) {
                 if (displayImagesImmediately) {
                   console.log('displaying first')
@@ -353,6 +356,28 @@ const saveImagesInBackground = async (images : any) => {
       <p>Fast Process (+2 credits)</p>
       <Clock/>
     </div>
+    <div className="flex gap-3 ">
+        <h2 className="text-2xl pt-5 text-blue-900 font-extrabold">Samples</h2>
+        <select className="bloc w-200 px-4 mt-2 text-base text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-900 focus:border-red-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={selectedSamples} onChange={handleSamples}>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="4">4</option>
+          <option value="6">6</option>
+          <option value="8">8</option>
+        </select>
+      </div>
+      <label>
+        
+        <div className="text-2xl pt-5 text-blue-900 font-extrabold"
+> Show Advanced Options <input
+          type="checkbox"
+          checked={showAdvancedOptions}
+          onChange={() => setShowAdvancedOptions(!showAdvancedOptions)}
+        /></div>
+
+      </label>
+      {showAdvancedOptions && (
+        <>
       <div className="flex gap-3">
         <h2 className="text-2xl pt-5 text-blue-900 font-extrabold">Algorithm Model</h2>
         <div>
@@ -376,16 +401,7 @@ const saveImagesInBackground = async (images : any) => {
           <option value="2048x2048">2K</option>
         </select>
       </div>
-      <div className="flex gap-3 mt-7">
-        <h2 className="text-2xl pt-5 text-blue-900 font-extrabold">Samples</h2>
-        <select className="bloc w-200 px-4 mt-2 text-base text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-900 focus:border-red-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={selectedSamples} onChange={handleSamples}>
-          <option value="1">1</option>
-          <option value="2">2</option>
-          <option value="4">4</option>
-          <option value="6">6</option>
-          <option value="8">8</option>
-        </select>
-      </div>
+     
 
       <div className="flex mt-7 gap-3">
         <h2 className="text-2xl text-blue-900 font-extrabold">CFG_Scale</h2>
@@ -425,7 +441,8 @@ const saveImagesInBackground = async (images : any) => {
           onChange={handleSeed}
         />
       </div>
-
+      </>
+      )}
       <Button
         onClick={handleGenerate}
         disabled={isLoading}

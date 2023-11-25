@@ -28,7 +28,6 @@ export const LoginModal = () => {
     router.push("/sign-up");
     loginModal.onClose();
   };
-// missing some more design
   return (
     <Dialog open={loginModal.isOpen} onOpenChange={loginModal.onClose}>
       <DialogContent className="bg-[#111827] rounded-lg shadow-md text-white">

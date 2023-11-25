@@ -1,65 +1,87 @@
-
-import { UserButton } from "@clerk/nextjs";
-import Image from "next/image";
-import Link from "next/link";
-import { MobileSidebar } from "@/components/mobile-sidebar";
+import { Montserrat } from "next/font/google";
+import Image from "next/image"
+import Link from "next/link"
+import { UserButton, auth } from "@clerk/nextjs";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSearch, faRocket, faPalette, faCog, faExpand, faWandSparkles } from "@fortawesome/free-solid-svg-icons";
+import { Button } from "@/components/ui/button";
+import { FreeCounter } from "./free-counter";
 import { getApiLimitCount } from "@/lib/api-limit";
 import { checkSubscription } from "@/lib/subscription";
-import { auth } from "@clerk/nextjs";
-import { FreeCounter } from "./free-counter";
+import { getCredits } from "@/lib/credits";
+import { cn } from "@/lib/utils";
 
-const Navbar = async () => {
+const font = Montserrat({ weight: '600', subsets: ['latin'] });
+
+ const Navbar = async () => {
   const { userId } : { userId: string | null } = auth();
-
   const apiLimitCount = await getApiLimitCount(userId);
   const isPro = await checkSubscription(userId);
+  const credits = await getCredits();
 
-  return ( 
-    <nav className="w-full bg-gradient-to-br from-blue-900 to-gray-600" style={{backgroundColor: '#1a202c'}}>
-      <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
-      <Link href="/" className="flex items-center">
-          <Image src="https://flowbite.com/docs/images/logo.svg" className="h-8 mr-3" alt="Flowbite Logo"  width={100} height={100}/>
-          <span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">Flowbite</span>
-      </Link>
-      <div className="flex items-center">
-          
-          <UserButton/>
-
+  return (
+    <nav className="p-4 bg-transparent flex items-center justify-between">
+      <div className="flex items-center gap-10">
+        <Link href="/" className="flex items-center">
+          <div className="relative h-8 w-8 mr-4">
+            <Image fill alt="Logo" src="/logo.png" />
+          </div>
+          <h1 className={cn("text-2xl font-bold text-white", font.className)}>
+            Imaginify
+          </h1>
+        </Link>
       </div>
-      <div className="items-center justify-between hidden w-full md:flex md:w-auto md:order-1" id="navbar-user">
-        <ul className="flex flex-col font-medium p-4 md:p-0 mt-4 border rounded-lg md:flex-row md:space-x-8 md:mt-0 md:border-0">
-        <li>
-            <Link href="/creations"  className="block py-2 pl-3 pr-4 text-gray-100 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent dark:border-gray-700 font-extrabold" aria-current="page">My Creations</Link>
-          </li>
-          <li>
-            <Link href="/dashboard"  className="block py-2 pl-3 pr-4 text-gray-100 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent dark:border-gray-700 font-extrabold" aria-current="page">Gnerate Images</Link>
-          </li>
-          <li>
-            <Link href="/image-to-image" className="block py-2 pl-3 pr-4 text-gray-100 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent dark:border-gray-700 font-extrabold">Modify Images</Link>
-          </li>
-          <li>
-            <Link href="/upscale" className="block py-2 pl-3 pr-4 text-gray-100 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent dark:border-gray-700 font-extrabold">Upscale Images</Link>
-          </li>
-          <li>
-            <Link href="/explore" className="block py-2 pl-3 pr-4 text-gray-100 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent dark:border-gray-700 font-extrabold">Explore</Link>
-          </li>
-          <li>
-            <Link href="/settings" className="block py-2 pl-3 pr-4 text-gray-100 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent dark:border-gray-700 font-extrabold">Settings</Link>
-          </li>
-          <li>
-            <Link href="/blog" className="block py-2 pl-3 pr-4 text-gray-100 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent dark:border-gray-700 font-extrabold">Blog</Link>
-          </li>
-        </ul>
-      
+      <div className="flex items-center gap-x-2 justify-center mr-3">
+       
+        <Link href="/dashboard">
+          <Button variant="outline" className="rounded-full">
+            Generate Art     
+             <FontAwesomeIcon icon={faRocket} className="ml-2" />
+          </Button>
+        </Link>
+        <Link href="/image-to-image">
+          <Button variant="outline" className="rounded-full">
+            Enhance      
+             <FontAwesomeIcon icon={faWandSparkles} className="ml-2" />
+          </Button>
+        </Link>
+        <Link href="/upscale">
+          <Button variant="outline" className="rounded-full">
+            Upscale     
+             <FontAwesomeIcon icon={faExpand} className="ml-2" />
+          </Button>
+        </Link>
+        <Link href="/creations">
+          <Button variant="outline" className="rounded-full">
+            My Creations     
+             <FontAwesomeIcon icon={faPalette} className="ml-2" />
+          </Button>
+        </Link>
+        
+        <Link href="/explore">
+          <Button variant="outline" className="rounded-full">
+            Explore     
+             <FontAwesomeIcon icon={faSearch} className="ml-2" />
+          </Button>
+        </Link>
+        <Link href="/settings">
+          <Button variant="outline" className="rounded-full">
+            Settings     
+             <FontAwesomeIcon icon={faCog} className="ml-2" />
+          </Button>
+        </Link>
+
         <FreeCounter
-        apiLimitCount={apiLimitCount} 
-        isPro={isPro}
-      />
-      </div>
+          apiLimitCount={apiLimitCount} 
+          isPro={isPro}
+          credits={credits}
+        />
+
+        <div className="ml-2">
+          <UserButton />
+        </div>
       </div>
     </nav>
-    
-   );
+  )
 }
- 
 export default Navbar;

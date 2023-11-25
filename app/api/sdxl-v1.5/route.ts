@@ -15,11 +15,11 @@ import {  getDoc , doc, updateDoc } from "firebase/firestore";
 import { db } from '../../../firebase';
 
 // Create a function to make the API call and save the image
-export async function SDXLv15(userId : string,prompt: string, selectedStyle : string,height : number,width : number, selectedSamples : number,cfgScale : number,seed :number, steps: number) {
+export async function SDXLv15(userId : string,prompt: string, selectedStyle : string,height : number,width : number, selectedSamples : number,cfgScale : number,seed :number, steps: number, fast_count: number) {
   try {
-    const freeTrial = await checkApiLimit(userId);
+    const count=(1*selectedSamples)+fast_count;
+     const freeTrial = await checkApiLimit(userId,count);;
     const isPro = await checkSubscription(userId);
-    const count=1*selectedSamples;
 
     if (!freeTrial && !isPro) {
       // Return a 403 response immediately

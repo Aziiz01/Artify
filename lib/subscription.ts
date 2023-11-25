@@ -47,8 +47,9 @@ export const countCredit = async (userId: string | null, count: number) => {
     return false;
   }
   const isPro = await checkSubscription(userId);
+ // const free = await checkApiLimit(userId,count);
   if (!isPro) {
-    await incrementApiLimit(userId);
+    await incrementApiLimit(userId, count);
     return true;
   } else {
     try {

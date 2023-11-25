@@ -5,7 +5,7 @@ import { MAX_FREE_COUNTS } from "@/constants";
 import { doc, serverTimestamp, getDoc, setDoc , increment} from "firebase/firestore";
 import { db } from "@/firebase";
 
-export const incrementApiLimit = async (userId: string | null, count? : number) => {
+export const incrementApiLimit = async (userId: string | null, count: number) => {
   if (!userId) {
     return;
   }
@@ -16,27 +16,23 @@ export const incrementApiLimit = async (userId: string | null, count? : number) 
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      // Document exists, increment the count by 1
       await setDoc(docRef, {
-        count: increment(1), // Increment the count by 1
+        count: increment(-(count)), 
         timeStamp: serverTimestamp(),
       }, { merge: true });
-      console.log("Document updated");
     } else {
-      // Document doesn't exist, create a new one with count = 1
       await setDoc(docRef, {
-        count: 1,
+        count: 25-count, 
         timeStamp: serverTimestamp(),
         userId: userId,
       });
-      console.log("Document created");
     }
   } catch (error) {
     console.error("Error updating or creating the document:", error);
   }
-}
+};
 
-export const checkApiLimit = async ( userId: string | null ) => {
+export const checkApiLimit = async ( userId: string | null , count : number) => {
   if (!userId) {
     return false;
   }
@@ -44,7 +40,8 @@ export const checkApiLimit = async ( userId: string | null ) => {
   const docRef = await getDoc(doc(db, "UserApiLimit", userId));
   if (docRef.exists()) {
     const productData = docRef.data();
-    if (productData.count < MAX_FREE_COUNTS) {
+    console.log(productData.count-count)
+    if (productData.count >= count) {
       return true;
     } else {
       return false;
@@ -63,7 +60,7 @@ export const getApiLimitCount = async (userId: string | null) => {
   const docRef = await getDoc(doc(db, "UserApiLimit", userId));
 
   if (!docRef.exists()) {
-    return 0;
+    return 25;
   } else {
     const productData = docRef.data();
 

@@ -27,6 +27,7 @@ import axios from "axios";
 import { useLoginModal } from "@/hook/use-login-modal";
 import { PublishButton } from "@/components/publish_button";
 import "../../style.css"
+import { Upscale } from "@/app/api/upscale/route";
 export default function UpscalePage() {
   const { isSignedIn, user, isLoaded } = useUser();
   const router = useRouter();
@@ -42,6 +43,8 @@ export default function UpscalePage() {
   const [mobileSize, setMobileSize] = useState(false)
   const [displayImagesImmediately, setDisplayImagesImmediately] = useState(false);
   const [clicked, setClicked] = useState(false);
+  const [fast_count, setCount] = useState(0);
+
   useEffect(() => {
     const handleResize = () => {
       const isMobile = window.innerWidth < 768;
@@ -57,7 +60,6 @@ export default function UpscalePage() {
   }, []);
 
 
-  let count = 3;
   useEffect(() => {
     const getImageFromId = async () => {
       const docRef = doc(db, "images", `${imageId}`);
@@ -169,10 +171,6 @@ export default function UpscalePage() {
       return;
     } else {
       const userId = user.id;
-      if (passedImage == '' && uploadedImage == null) {
-        toast.error('Please insert an image')
-        setIsLoading(false);
-      }
       try {
         const imageElement = document.createElement("img");
         if (passedImage) {
@@ -199,53 +197,10 @@ export default function UpscalePage() {
             setIsLoading(false);
             return;
           }
-
-          const freeTrial = await checkApiLimit(userId);
-          const isPro = await checkSubscription(userId);
-
-          if (!isPro && !freeTrial) {
-            proModal.onOpen();
-            setIsLoading(false);
-          } else {
-            const calcul = await countCredit(userId, count);
-
-            if (!calcul) {
-              toast.error("Your credit balance is insufficient!");
-              proModal.onOpen();
-              setIsLoading(false);
-            } else {
-              let initImageBuffer: Buffer;
-
-              if (passedImage) {
-                // If using passedImage, fetch base64 data from the URL
-                try {
-                  const response = await axios.post('/api/data-fetch', { passedImage: passedImage }, { responseType: 'json' });
-                  const base64Data = response.data;
-                  initImageBuffer = Buffer.from(base64Data, 'base64');
-                } catch {
-                  setIsLoading(false);
-                }
-              } else if (uploadedImage) {
-                // If using uploadedImage, get base64 data from the file
-                const file = uploadedImage as File;
-                const arrayBuffer = await file.arrayBuffer();
-                initImageBuffer = Buffer.from(arrayBuffer);
-              } else {
-                toast.error('Please upload an image or provide an image URL!');
-                setIsLoading(false);
-                return;
-              }
-              const request = buildGenerationRequest(selectedModel, {
-                type: "upscaling",
-                upscaler: Generation.Upscaler.UPSCALER_ESRGAN,
-                initImage: initImageBuffer! || null,
-              });
-
-
               try {
-                const response = await executeGenerationRequest(client, request, metadata);
-                const generatedImages = onGenerationComplete(response);
-                if (generatedImages !== null) {
+                const generatedImages = await Upscale(userId, uploadedImage, passedImage,selectedModel,fast_count);
+
+                if (generatedImages !== null && generatedImages !== -1 && generatedImages !== false) {
                   if (displayImagesImmediately) {
                     console.log('displaying first')
                     setGeneratedImage(generatedImages);
@@ -255,16 +210,22 @@ export default function UpscalePage() {
                     saveImagesInBackground(generatedImages, selectedModel);
                     setGeneratedImage(generatedImages);
                   }
+                  setIsLoading(false);
+
+                } else if (!generatedImages) {
+                  proModal.onOpen();
+                  setIsLoading(false);
+                } else if (generatedImages == -1 || generatedImages == null){
+                  setIsLoading(false);
                 }
 
-                setIsLoading(false);
               } catch (error) {
                 console.error("Failed to make image-upscale request:", error);
                 setIsLoading(false);
               }
             }
-          }
-        };
+          
+        
       } catch (error) {
         console.error("Error handling image:", error);
         setIsLoading(false);
@@ -274,9 +235,11 @@ export default function UpscalePage() {
 
   const handleButtonClick = () => {
     setClicked(!clicked);
-    setDisplayImagesImmediately(true);
-    count += 2;  
+    setDisplayImagesImmediately(!displayImagesImmediately)
+    const newCount = clicked ? 0 : 2;
+    setCount(newCount);
   };
+
 
   return (
     <div style={{

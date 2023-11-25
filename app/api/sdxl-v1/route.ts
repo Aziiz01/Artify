@@ -11,12 +11,13 @@ import { incrementApiLimit, checkApiLimit } from "@/lib/api-limit";
 
 
 // Create a function to make the API call and save the image
-export async function SDXLv1(userId : string,prompt: string, selectedStyle : string,height : number,width : number, selectedSamples : number,cfgScale : number,seed :number, steps: number ) {
+export async function SDXLv1(userId : string,prompt: string, selectedStyle : string,height : number,width : number, selectedSamples : number,cfgScale : number,seed :number, steps: number, fast_count: number ) {
 
   try {
-    const freeTrial = await checkApiLimit(userId);
+    const count=(3*selectedSamples)+fast_count;
+
+     const freeTrial = await checkApiLimit(userId,count);;
     const isPro = await checkSubscription(userId);
-    const count=3*selectedSamples;
 
     if (!freeTrial && !isPro) {
       return null;

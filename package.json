@@ -63,6 +63,7 @@
     "react-modal": "^3.16.1",
     "react-responsive-carousel": "^3.2.23",
     "react-scroll-parallax": "^3.4.3",
+    "react-tooltip": "^5.24.0",
     "replicate": "^0.12.3",
     "stripe": "^12.18.0",
     "tailwind-merge": "^1.13.2",

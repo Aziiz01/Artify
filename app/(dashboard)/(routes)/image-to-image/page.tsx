@@ -30,6 +30,7 @@ import PickStyle from "@/components/ui/pickStyle";
 import { PublishButton } from "@/components/publish_button";
 import "../../style.css";
 import { Clock } from "lucide-react";
+import { Enhance } from "@/app/api/enhance/route";
 export default function ImageToImagePage() {
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [passedImage, setPassedImage] = useState('');
@@ -51,6 +52,8 @@ export default function ImageToImagePage() {
   const [mobileSize, setMobileSize] = useState(false) 
   const [displayImagesImmediately, setDisplayImagesImmediately] = useState(false);
   const [clicked, setClicked] = useState(false);
+  const [fast_count, setCount] = useState(0);
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -70,7 +73,6 @@ export default function ImageToImagePage() {
     setSelectedStyle(newSelectedStyle);
   };
 
-  let count = 3;
   useEffect (() => {
     const getImageFromId = async () => {
       const docRef = doc(db, "images", `${imageId}`);
@@ -183,92 +185,42 @@ const saveImagesInBackground = async (images : any) => {
       loginModal.onOpen();
     } else {
       const userId = user.id;
-      if (passedImage == '' && uploadedImage == null){
-        toast.error('Please insert an image')
-        setIsLoading(false);
-      }
       try {
-        const freeTrial = await checkApiLimit(userId);
-        const isPro = await checkSubscription(userId);
-  
-        if (!isPro && !freeTrial) {
-          proModal.onOpen();
-          setIsLoading(false);
-        } else {
-          const calcul = await countCredit(userId, count);
-
-          if (!calcul) {
-            toast.error("Your credit balance is insufficient!");
-            proModal.onOpen();
-            setIsLoading(false);
-          } else {
-          let initImageBuffer : Buffer;
-  
-          if (passedImage) {
-            // If using passedImage, fetch base64 data from the URL
-            try{
-              const response = await axios.post('/api/data-fetch', { passedImage : passedImage}, { responseType: 'json' });
-              const  base64Data  =  response.data;
-            initImageBuffer = Buffer.from(base64Data, 'base64');
-            } catch {
-              setIsLoading(false);
-            }
-          } else if (uploadedImage) {
-            // If using uploadedImage, get base64 data from the file
-            const file = uploadedImage as File;
-            const arrayBuffer = await file.arrayBuffer();
-            initImageBuffer = Buffer.from(arrayBuffer);
-          } else {
-            toast.error('Please upload an image or provide an image URL!');
-            setIsLoading(false);
-            return;
-          }
-  
-          const request = buildGenerationRequest("stable-diffusion-xl-1024-v1-0", {
-            type: "image-to-image",
-            prompts: [
-              {
-                text: `${textInput},${selectedStyle}`,
-              },
-            ],
-            stepScheduleStart: 1 - imageStrength,
-            initImage: initImageBuffer! || null,
-            seed: seed,
-            samples: selectedSamples,
-            cfgScale: cfgScale,
-            steps: steps,
-            sampler: Generation.DiffusionSampler.SAMPLER_K_DPMPP_2M,
-          });
-  
-          const response = await executeGenerationRequest(client, request, metadata);
-  
-          const generatedImages = onGenerationComplete(response);
-
-          if (generatedImages !== null) {
+        const prompt = `${textInput},${selectedStyle}`
+          const generatedImages = await Enhance(userId,uploadedImage,passedImage,prompt,selectedSamples,cfgScale,seed,steps,fast_count)
+          if (generatedImages !== null && generatedImages !== false) {
             if (displayImagesImmediately) {
               console.log('displaying first')
               setGeneratedImage(generatedImages);
               saveImagesInBackground(generatedImages);
-            } else { 
+            } else  { 
               console.log('saving first')
               saveImagesInBackground(generatedImages);
               setGeneratedImage(generatedImages);
             }
+            setIsLoading(false);
+          } else if (!generatedImages) {
+            proModal.onOpen();
+            setIsLoading(false);
+          } else {
+            setIsLoading(false);
           }
           
-          setIsLoading(false);
-        }}
-      } catch (error) {
+        }
+       catch (error) {
         setIsLoading(true);
         console.error("Failed to make image-to-image request:", error);
       }
     }
   };
+  
   const handleButtonClick = () => {
     setClicked(!clicked);
-    setDisplayImagesImmediately(true);
-    count += 2;  
+    setDisplayImagesImmediately(!displayImagesImmediately)
+    const newCount = clicked ? 0 : 2;
+    setCount(newCount);
   };
+
   return (
     <div style={{
       display:'grid',
@@ -287,19 +239,24 @@ const saveImagesInBackground = async (images : any) => {
             Describe what you want the AI to create
           </p>
         </div>
+        
           <input
-            className=" bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-red-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"// Remove left padding
+            className=" bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-red-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 mb-4"
             type="text"
             placeholder="Your text prompt"
             value={textInput}
             onChange={(e) => setTextInput(e.target.value)}
           />
-          <h2 className="text-2xl mt-5 text-blue-900  font-extrabold">
-            Input init image
-          </h2>
+         
           
-          <input type="file" className="block w-full text-lg text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" onChange={handleImageUpload} />
-             {passedImage || uploadedImage ? (
+{ passedImage =='' ? ( 
+  <>
+   <h2 className="text-2xl mt-5 text-blue-900  font-extrabold">
+   Input init image
+ </h2>      
+  <input type="file" className="block w-full text-lg text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" onChange={handleImageUpload} />
+</>
+): null}             {passedImage || uploadedImage ? (
               <Image
                 width={512}
                 height={512}
@@ -331,6 +288,19 @@ const saveImagesInBackground = async (images : any) => {
               <option value="10"><h1 className="text-2xl">10</h1></option>
             </select>
           </div>
+          <label>
+        
+        <div className="text-2xl pt-5 text-blue-900 font-extrabold">
+           Show Advanced Options
+            <input
+          type="checkbox"
+          checked={showAdvancedOptions}
+          onChange={() => setShowAdvancedOptions(!showAdvancedOptions)}
+        /></div>
+
+      </label>
+      {showAdvancedOptions && (
+        <>
           <div className="flex gap-3 mt-5">
             <h2 className="text-2xl text-blue-900 font-extrabold">
               CFG_Scale
@@ -374,10 +344,8 @@ const saveImagesInBackground = async (images : any) => {
             />
           </div>
    
-          <h2 className="text-2xl  mt-5 text-gray-400 font-bold">
-            Algorithm Model : STABLE DIFF SDXL V1
-          </h2>
-       
+         </>
+      )}
           <Button
             onClick={handleGenerate} disabled={isLoading}
             className="mt-4 w-full relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-purple-500 group-hover:to-pink-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-purple-200 dark:focus:ring-purple-800"

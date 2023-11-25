@@ -10,12 +10,14 @@ import {
 import { client, metadata } from "../../../lib/grpc-client";
 import { incrementApiLimit, checkApiLimit } from "@/lib/api-limit";
 import { checkSubscription, countCredit } from "@/lib/subscription";
+import { fas } from '@fortawesome/free-solid-svg-icons';
 
 // Create a function to make the API call and save the image
-export async function SDXLv21(userId : string,prompt: string, selectedStyle : string,height : number,width : number, selectedSamples : number,cfgScale : number,seed :number, steps: number) {
+export async function SDXLv21(userId : string,prompt: string, selectedStyle : string,height : number,width : number, selectedSamples : number,cfgScale : number,seed :number, steps: number, fast_count : number) {
   try {
-    const count=1*selectedSamples;
-    const freeTrial = await checkApiLimit(userId);
+    const count=(1*selectedSamples)+fast_count;
+    console.log('fast count is :',fast_count)
+     const freeTrial = await checkApiLimit(userId,count);
     const isPro = await checkSubscription(userId);
     if (!freeTrial && !isPro) {
       return null;

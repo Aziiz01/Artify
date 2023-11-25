@@ -2,8 +2,7 @@
 
 import axios from "axios";
 import { useState } from "react";
-import { Check, Zap } from "lucide-react";
-import { toast } from "react-hot-toast";
+
 
 import {
     Dialog,
@@ -13,12 +12,9 @@ import {
     DialogDescription,
     DialogFooter
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+
 import { useProModal } from "@/hook/use-pro-modal";
-import { tools } from "@/constants";
-import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+
 
 export const ProModal = () => {
     const proModal = useProModal();
