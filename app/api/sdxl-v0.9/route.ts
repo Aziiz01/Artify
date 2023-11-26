@@ -14,6 +14,11 @@ import { db } from '@/firebase';
 // Create a function to make the API call and save the image
 export async function SDXLv09(userId : string, prompt: string, selectedStyle : string,height : number,width : number, selectedSamples : number,cfgScale : number,seed :number, steps: number, fast_count : number) {
   try {
+    let height_n,width_n;
+    if (height == 512 && width ==512){
+     height_n = 1024;
+     width_n = 1024;
+    }
     const count=(3*selectedSamples)+fast_count;
 
      const freeTrial = await checkApiLimit(userId,count);;
@@ -35,8 +40,8 @@ export async function SDXLv09(userId : string, prompt: string, selectedStyle : s
           text: prompt ,
         },
       ],
-      width: 1024,
-      height: 1024,
+      width: width_n,
+      height: height_n,
       samples: selectedSamples,
       cfgScale: cfgScale,
       steps: steps,

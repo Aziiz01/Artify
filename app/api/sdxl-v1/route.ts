@@ -24,7 +24,7 @@ export async function SDXLv1(userId : string,prompt: string, selectedStyle : str
     }
     const calcul =await countCredit(userId,count);
       if (!calcul){
-        return false;
+        return true;
       } else {
     const request = buildGenerationRequest("stable-diffusion-xl-1024-v1-0", {
       
@@ -36,7 +36,7 @@ export async function SDXLv1(userId : string,prompt: string, selectedStyle : str
       ],
       width: 1024,
       height: 1024,
-      samples: selectedSamples,
+      samples: 4,
       cfgScale: cfgScale,
       steps: steps,
       seed: seed,

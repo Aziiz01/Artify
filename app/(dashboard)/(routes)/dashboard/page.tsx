@@ -39,8 +39,8 @@ export default function HomePage() {
   const [height, setHeight] = useState(512);
   const [width, setWidth] = useState(512);
   const [selectedSamples, setSelectedSamples] = useState(1);
-  const [cfgScale, setCfgScale] = useState(0); // Set an initial value, e.g., 0
-  const [steps, setSteps] = useState(10); // Set an initial value, e.g., 0
+  const [cfgScale, setCfgScale] = useState(7); // Set an initial value, e.g., 0
+  const [steps, setSteps] = useState(30); // Set an initial value, e.g., 0
   const [seed, setSeed] = useState(0);
   const [imageId, setImageId] = useState("");
   const [isMounted, setIsMounted] = useState(false);
@@ -50,8 +50,10 @@ export default function HomePage() {
   const [displayImagesImmediately, setDisplayImagesImmediately] = useState(false);
   const [fast_count, setCount] = useState(0);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  const [selectedDimensions, setSelectedDimensions] = useState<{ width: number; height: number } | null>(null);
+  const [creditCount, setCreditCount] = useState(1);
 
-  useEffect(() => {
+  useEffect(() => {    
     const handleResize = () => {
       const isMobile = window.innerWidth < 768;
       setMobileSize(isMobile);
@@ -63,6 +65,7 @@ export default function HomePage() {
     return () => {
       window.removeEventListener('resize', handleResize);
     };
+    
   }, []);
 
   useEffect(() => {
@@ -77,26 +80,19 @@ export default function HomePage() {
     setSelectedStyle(newSelectedStyle);
   };
 
-  const handleDimensions = (event: any) => {
-    const selectedValue = event.target.value;
-    const [selectedHeight, selectedWidth] = selectedValue.split('x');
-    setHeight(selectedHeight);
-    setWidth(selectedWidth);
-  };
-
 
   type SDXLModelApiMapping = {
     [key: string]: (
       userId: string,
       prompt: string,
       selectedStyle: string,
-      height: number,
-      width: number,
       selectedSamples: number,
       cfgScale: number,
+      height: number,
+      width: number,
       seed: number,
       steps: number,
-      count : number
+      fast_count : number
     ) => Promise<any>;
   };
 
@@ -107,7 +103,24 @@ export default function HomePage() {
     "Stable Diffusion 2.1": SDXLv21,
     "Stable Diffusion 1.6": SDXLv15,
   };
-
+  const ratioMappings: { [key: string]: { width: number; height: number; selectable: boolean } } = {
+    '1:1': { width: 512, height: 512, selectable: true },
+    '4:3': { width: 1152, height: 896, selectable: selectedModel === "Stable Diffusion XL 1.0" || selectedModel === "Stable Diffusion XL 0.9" },
+    '16:9': { width: 1344, height: 768, selectable: selectedModel === "Stable Diffusion XL 1.0" || selectedModel === "Stable Diffusion XL 0.9" },
+    '9:16': { width: 768, height: 1344, selectable: selectedModel === "Stable Diffusion XL 1.0" || selectedModel === "Stable Diffusion XL 0.9" },
+    '3:4': { width: 896, height: 1152, selectable: selectedModel === "Stable Diffusion XL 1.0" || selectedModel === "Stable Diffusion XL 0.9" },
+  };
+  
+ 
+  
+  const handleRatioClick = (ratio: string) => {
+    const dimensions = ratioMappings[ratio];
+    if (dimensions) {
+      setSelectedDimensions(dimensions);
+      setWidth(dimensions.width);
+      setHeight(dimensions.height);
+    }
+  };
   const handleButtonClick = () => {
     setClicked(!clicked);
     setDisplayImagesImmediately(!displayImagesImmediately)
@@ -119,9 +132,10 @@ export default function HomePage() {
     setSeed(event.target.value);
   };
 
-  const handleSamples = (event: any) => {
-    setSelectedSamples(event.target.value);
-  }
+  const handleSamples = (value : number) => {
+    setSelectedSamples(value);
+  };
+  
   const handleModelChange = (event: any) => {
     setSelectedModel(event.target.value);
   };
@@ -131,8 +145,6 @@ export default function HomePage() {
   };
   const handleSurpriseMeClick = () => {
     const randomIndex = getRandomPromptIndex();
-
-    // Set the selected prompt in the user input bar
     if (randomIndex !== null) {
       setTextInput(promptOptions[randomIndex]);
     }
@@ -155,14 +167,27 @@ export default function HomePage() {
       const response = await axios.post('/api/image', values);
       const urls = response.data.map((image: { url: string }) => image.url);
       setPhotos(urls);
-  
-      for (const url of urls) {
-        const documentId = generateRandomId();
-        setImageId(documentId);
-  
-        // Send a POST request for each URL separately
-        await axios.post('/api/dalleStorage', { url, values, documentId });
+      if (displayImagesImmediately) {
+        console.log('displaying first')
+        setPhotos(urls);
+        for (const url of urls) {
+          const documentId = generateRandomId();
+          setImageId(documentId);
+    
+          // Send a POST request for each URL separately
+          await axios.post('/api/dalleStorage', { url, values, documentId });
+        }     
+       } else { 
+        console.log('saving first')
+        for (const url of urls) {
+          const documentId = generateRandomId();
+          setImageId(documentId);
+    
+          // Send a POST request for each URL separately
+          await axios.post('/api/dalleStorage', { url, values, documentId });
+        }        setPhotos(urls);
       }
+     
     } catch (error: any) {
       if (error?.response?.status === 403) {
         proModal.onOpen();
@@ -181,6 +206,13 @@ const saveImagesInBackground = async (images : any) => {
     const base64Data = generatedImage.split(',')[1];
     const documentId = generateRandomId();
     setImageId(documentId);
+    if (selectedModel === "Stable Diffusion XL 1.0" || selectedModel === "Stable Diffusion XL 0.9") {
+      setHeight(1024)
+      setWidth(1024)
+    } else {
+      setHeight(512)
+      setWidth(512)
+    }
 
     try {
       await axios.post('/api/sdxlStorage', {
@@ -229,7 +261,7 @@ const saveImagesInBackground = async (images : any) => {
           if (selectedApi) {
             const prompt = `${textInput} , ${selectedStyle}`;
             try {
-              const generatedImages = await selectedApi(userId, prompt, selectedStyle, height, width, selectedSamples, cfgScale, seed, steps,fast_count);
+              const generatedImages = await selectedApi(userId, prompt, selectedStyle, selectedSamples,height,width,cfgScale, seed, steps,fast_count);
               if (generatedImages !== null && generatedImages !== false) {
                 if (displayImagesImmediately) {
                   console.log('displaying first')
@@ -269,6 +301,16 @@ const saveImagesInBackground = async (images : any) => {
     }
   };
   
+  const SampleButton = ({ value, selected, onClick }: { value: number, selected: number, onClick: (value: number) => void }) => (
+    <button
+      className={`bloc w-16 text-base text-gray-900 border border-gray-300 rounded-lg ${
+        selected === value ? 'bg-gray-200' : 'bg-gray-50'
+      } focus:ring-blue-900 focus:border-red-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500`}
+      onClick={() => onClick(value)}
+    >
+      {value}
+    </button>
+  );
   
 
   const handleGenerate = () => {
@@ -311,7 +353,7 @@ const saveImagesInBackground = async (images : any) => {
       link.click();
     }
   };
-  
+ 
   return (
     <div style={{
       display:'grid',
@@ -320,66 +362,63 @@ const saveImagesInBackground = async (images : any) => {
       gridTemplateRows: mobileSize ? '50% 50%' : undefined,
     }}>
       <div className="px-4 lg:px-8 bg-transparent" style={{ overflowY: !mobileSize ? 'scroll' : undefined, height:'850px'  }}>
-      <div className="flex items-center">
-        <h2 className="text-2xl text-blue-900 font-extrabold">Text Prompt</h2>
-        <button className="ml-2 text-gray-500 hover:text-blue-500">
-          <span role="img" aria-label="Help">
-            ❓
-          </span>
-        </button>
-      </div>
-      <div className="relative flex items-center">
-        <p className=" text-gray-400 font-bold text-lg">
-          Describe what you want the AI to create
-        </p>
-        <button className="bg-gray-200 text-gray-500 py-1 px-2 rounded-md ml-auto"      
-       onClick={handleSurpriseMeClick}>
-          <FontAwesomeIcon icon={faLightbulb} className="mr-1" />
-          Surprise Me
-        </button>
-      </div>
+      <div className="bg-white rounded-lg p-4 mb-4 mt-4">
+  {/* Text Prompt Section */}
+  <div >
+    <h2 className="text-mm text-blue-900 font-extrabold">Text Prompt</h2>
+    <div className="flex items-center">
+      <p className="text-gray-400 font-bold text-sm">
+        Describe what you want the AI to create
+      </p>
+      <button
+        className="bg-gray-200 text-gray-500 py-1 px-2 rounded-md ml-auto mb-1"
+        onClick={handleSurpriseMeClick}
+      >
+        <FontAwesomeIcon icon={faLightbulb} className="mr-1" />
+        Surprise Me
+      </button>
+    </div>
+
+  {/* Input Section */}
+   
+    <div className="relative">
       <input
-        className=" bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-red-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"// Remove left padding
+        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-red-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
         type="text"
         placeholder="Your text prompt"
         value={textInput}
         onChange={(e) => setTextInput(e.target.value)}
       />
+    </div>
+  </div>
 
-      <h2 className="text-2xl pt-5 text-blue-900 font-extrabold">Choose a style : <span className="text-1xl ">{selectedStyle}</span> </h2>
+      <h2 className="block text-mm text-blue-900 font-extrabold mb-2 mt-3">Choose a style : <span className="text-1xl ">{selectedStyle}</span> </h2>
       <PickStyle onSelectedStyleChange={handleSelectedStyleChange} />
       <div
       className={`save-time-container ${clicked ? "clicked" : ""}`}
       onClick={handleButtonClick}
     >
-      <div className="inner-effect"></div>
+      <div className="inner-effect mt-3"></div>
       <p>Fast Process (+2 credits)</p>
       <Clock/>
     </div>
-    <div className="flex gap-3 ">
-        <h2 className="text-2xl pt-5 text-blue-900 font-extrabold">Samples</h2>
-        <select className="bloc w-200 px-4 mt-2 text-base text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-900 focus:border-red-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={selectedSamples} onChange={handleSamples}>
-          <option value="1">1</option>
-          <option value="2">2</option>
-          <option value="4">4</option>
-          <option value="6">6</option>
-          <option value="8">8</option>
-        </select>
-      </div>
-      <label>
-        
-        <div className="text-2xl pt-5 text-blue-900 font-extrabold"
-> Show Advanced Options <input
-          type="checkbox"
-          checked={showAdvancedOptions}
-          onChange={() => setShowAdvancedOptions(!showAdvancedOptions)}
-        /></div>
+    <div className="flex gap-3 mt-3">
+  <h2 className="text-mm pt-5 text-blue-900 font-extrabold">Samples</h2>
 
-      </label>
-      {showAdvancedOptions && (
-        <>
-      <div className="flex gap-3">
-        <h2 className="text-2xl pt-5 text-blue-900 font-extrabold">Algorithm Model</h2>
+  <div className="flex gap-2">
+    
+    {[1, 2, 4, 6, 8].map((value) => (
+      <SampleButton
+        key={value}
+        value={value}
+        selected={selectedSamples}
+        onClick={handleSamples}
+      />
+    ))}
+  </div>
+</div>
+<div className="flex gap-3">
+        <h2 className="text-mm pt-5 text-blue-900 font-extrabold">Algorithm Model</h2>
         <div>
           <select className="bloc w-200 px-4 mt-4 text-base text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-900 focus:border-red-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={selectedModel} onChange={handleModelChange}>
             <option value="Stable Diffusion XL 1.0">Stable Diffusion XL 1.0 (Pro only)</option>
@@ -392,19 +431,38 @@ const saveImagesInBackground = async (images : any) => {
           <p>Selected Model: {selectedModel}</p>
         </div>
       </div>
+      <label>
+        
+        <div className="text-mm pt-5 text-blue-900 font-extrabold mb-2"
+> Show Advanced Options <input
+          type="checkbox"
+          checked={showAdvancedOptions}
+          onChange={() => setShowAdvancedOptions(!showAdvancedOptions)}
+        /></div>
 
-      <div className="flex gap-3 mt-7">
-        <h2 className="text-2xl  text-blue-900 font-extrabold">Dimensions</h2>
-        <select className="bloc w-200 px-4 text-base text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-900 focus:border-red-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={`${height}x${width}`} onChange={handleDimensions}>
-          <option value="512x512">512x512</option>
-          <option value="1024x1024">1024x1024</option>
-          <option value="2048x2048">2K</option>
-        </select>
-      </div>
-     
+      </label>
+      {showAdvancedOptions && (
+        <>
+       <div className="flex gap-2">
+       <h2 className="block text-mm text-blue-900 font-extrabold mb-2 mt-3">Aspect Ratio</h2>
+  {Object.entries(ratioMappings).map(([ratio, { width, height, selectable }]) => (
+    <button
+      key={ratio}
+      className={`bloc w-16 text-base text-gray-900 border border-gray-300 rounded-lg ${
+        !selectable ? 'bg-gray-200 cursor-not-allowed' : 'bg-gray-50 focus:ring-blue-900 focus:border-red-500'
+      } dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500`}
+      onClick={() => selectable && handleRatioClick(ratio)}
+      disabled={!selectable}
+    >
+      {ratio}
+
+    </button>
+  ))}
+</div>
+
 
       <div className="flex mt-7 gap-3">
-        <h2 className="text-2xl text-blue-900 font-extrabold">CFG_Scale</h2>
+        <h2 className="text-mm text-blue-900 font-extrabold">CFG_Scale</h2>
         <input
           type="range"
           id="cfgScale"
@@ -418,7 +476,7 @@ const saveImagesInBackground = async (images : any) => {
       </div>
 
       <div className="flex mt-7 gap-3">
-        <h2 className="text-2xl text-blue-900 font-extrabold">Steps</h2>
+        <h2 className="text-mm text-blue-900 font-extrabold">Steps</h2>
         <input
           type="range"
           id="steps"
@@ -432,9 +490,9 @@ const saveImagesInBackground = async (images : any) => {
       </div>
 
       <div className="flex mt-7 gap-3">
-        <h2 className="text-2xl text-blue-900 font-extrabold">Seed</h2>
+        <h2 className="text-mm text-blue-900 font-extrabold">Seed</h2>
         <input
-          className="w-50 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-red-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"// Remove left padding
+          className="w-50 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-red-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
           type="text"
           placeholder="Seed"
           value={seed}
@@ -442,17 +500,17 @@ const saveImagesInBackground = async (images : any) => {
         />
       </div>
       </>
-      )}
+    )}
       <Button
         onClick={handleGenerate}
         disabled={isLoading}
-        className="mt-4 w-full relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-purple-500 group-hover:to-pink-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-purple-200 dark:focus:ring-purple-800"
-        // Attach the click event handler
-        >
-        <span className="w-full relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-opacity-0 ">
-         {isLoading ? 'Generating...' : 'Generate'}
+        className="mt-4 w-full relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium text-white rounded-lg group bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-purple-500 group-hover:to-pink-500 hover:text-black   dark:text-white focus:ring-4 focus:outline-none focus:ring-purple-200 dark:focus:ring-purple-800"
+variant="premium">
+        <span>
+         {isLoading ? 'Generating...' : `Generate`}
         </span>
       </Button>
+    </div>
     </div>
     <div  style={{ overflowY: !mobileSize ? 'scroll' : undefined, height:'850px' }}>
       <div className="mb-8 space-y-4 text-center">
