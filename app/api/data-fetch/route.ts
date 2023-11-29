@@ -1,12 +1,11 @@
-import { NextResponse } from 'next/server';
-import fetch from 'node-fetch';
+
+import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
     const body = await req.text();
     const variables = JSON.parse(body);
     const passedImage = variables.passedImage;
-
 
     if (!passedImage) {
       return new NextResponse("Request passedImage is empty", { status: 400 });
@@ -20,20 +19,19 @@ export async function POST(req: Request) {
       return new NextResponse("Failed to fetch image", { status: response.status });
     }
 
-    const data = await response.arrayBuffer(); // Use arrayBuffer directly
-
-    // Convert arrayBuffer to base64
+    const data = await response.arrayBuffer();
     const buffer = Buffer.from(data);
-    const base64 = buffer.toString('base64');
+    const imageBuffer = buffer.toString('base64');
 
-    return new NextResponse(base64, {
+    // Return the base64-encoded image data with appropriate headers
+    return new NextResponse(imageBuffer, {
       status: 200,
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'text/plain',
       },
     });
   } catch (error) {
-    console.error('server eror', error);
+    console.error('Server error', error);
     return new NextResponse("Internal Error", { status: 500 });
   }
 }

@@ -41,7 +41,8 @@ export default function ImageToImagePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState('');
   const [selectedSamples, setSelectedSamples] = useState(1);
-  const [cfgScale, setCfgScale] = useState(5); // Set an initial value, e.g., 0
+const [cfgScale, setCfgScale] = useState(5); 
+const [image_strength, setImgStrength] = useState(0.35); // Set an initial value, e.g., 0
   const [steps, setSteps] = useState(30); // Set an initial value, e.g., 0
   const [seed, setSeed] = useState(123463446);
   const searchParams = useSearchParams()
@@ -54,6 +55,8 @@ export default function ImageToImagePage() {
   const [clicked, setClicked] = useState(false);
   const [fast_count, setCount] = useState(0);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  const [negativePrompt, setNegativePrompt] = useState('bad,blurry');
+  const [selectedModel, setSelectedModel] = useState('stable-diffusion-xl-1024-v1-0');
 
   useEffect(() => {
     const handleResize = () => {
@@ -72,7 +75,9 @@ export default function ImageToImagePage() {
   const handleSelectedStyleChange = (newSelectedStyle: string) => {
     setSelectedStyle(newSelectedStyle);
   };
-
+  const handleModelChange = (event: any) => {
+    setSelectedModel(event.target.value);
+  };
   useEffect (() => {
     const getImageFromId = async () => {
       const docRef = doc(db, "images", `${imageId}`);
@@ -104,6 +109,10 @@ export default function ImageToImagePage() {
   const handleCFG = (event: any) => {
     const selectedCFG = event.target.value;
     setCfgScale(selectedCFG);
+  };
+  const handleImgStrength = (event: any) => {
+    const selectedStrength = event.target.value;
+    setImgStrength(selectedStrength);
   };
   const handleSteps = (event: any) => {
     const selectedSteps = event.target.value;
@@ -170,9 +179,9 @@ const saveImagesInBackground = async (images : any) => {
   });
 
   try {
-    const savedImages = await Promise.all(saveImagesPromises);
+     await Promise.all(saveImagesPromises);
     // Optionally, update the UI or perform any actions after saving is complete
-    console.log("Images saved successfully:", savedImages);
+    console.log("Images saved successfully");
   } catch (error) {
     console.error("Error saving images:", error);
     toast.error("Failed to save some images.");
@@ -186,8 +195,7 @@ const saveImagesInBackground = async (images : any) => {
     } else {
       const userId = user.id;
       try {
-        const prompt = `${textInput},${selectedStyle}`
-          const generatedImages = await Enhance(userId,uploadedImage,passedImage,prompt,selectedSamples,cfgScale,seed,steps,fast_count)
+          const generatedImages = await Enhance(userId,uploadedImage,passedImage,textInput,negativePrompt,image_strength,selectedSamples,selectedModel,selectedStyle,cfgScale,seed,steps,fast_count)
           if (generatedImages !== null && generatedImages !== false) {
             if (displayImagesImmediately) {
               console.log('displaying first')
@@ -280,12 +288,12 @@ const saveImagesInBackground = async (images : any) => {
               Samples
             </h2>
             <select className="bloc w-200 px-4 mt-4 text-base text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-900 focus:border-red-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={selectedSamples} onChange={handleSamples}>
-              <option value="1"><h1 className="text-2xl">1</h1></option>
-              <option value="2"><h1 className="text-2xl">2</h1></option>
-              <option value="4"><h1 className="text-2xl">4</h1></option>
-              <option value="6"><h1 className="text-2xl">6</h1></option>
-              <option value="8"><h1 className="text-2xl">8</h1></option>
-              <option value="10"><h1 className="text-2xl">10</h1></option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="4">4</option>
+              <option value="6">6</option>
+              <option value="8">8</option>
+              <option value="10">10</option>
             </select>
           </div>
           <label>
@@ -301,6 +309,41 @@ const saveImagesInBackground = async (images : any) => {
       </label>
       {showAdvancedOptions && (
         <>
+         <h2 className="block text-mm text-blue-900 font-extrabold mb-2 mt-3">Negative Prompt</h2>
+         <div className="relative">
+      <input
+        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-red-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 mb-3"
+        type="text"
+        placeholder="What you want to avoid"
+        value={negativePrompt}
+        onChange={(e) => setNegativePrompt(e.target.value)}
+      />
+    </div>
+    <div className="flex gap-3 mt-5">
+            <h2 className="text-2xl text-blue-900 font-extrabold">
+              Image Strength
+            </h2>
+            <input
+              type="range"
+              id="imgStrength"
+              name="imageStrength"
+              min={0}
+              max={1}
+              step={0.01} 
+              value={image_strength}
+              onChange={handleImgStrength}
+            />
+            <h4 className="text-1xl">{image_strength}</h4>
+          </div>
+          <div className="flex gap-3">
+        <h2 className="text-mm pt-5 text-blue-900 font-extrabold">Algorithm Model</h2>
+        <div>
+          <select className="bloc w-200 px-4 mt-4 text-base text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-900 focus:border-red-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={selectedModel} onChange={handleModelChange}>
+            <option value="stable-diffusion-xl-1024-v1-0">Stable Diffusion XL 1.0 (Pro only)</option>
+            <option value="stable-diffusion-v1-6">Stable Diffusion 1.6</option>
+          </select>
+        </div>
+      </div>
           <div className="flex gap-3 mt-5">
             <h2 className="text-2xl text-blue-900 font-extrabold">
               CFG_Scale

@@ -58,7 +58,6 @@ export const countCredit = async (userId: string | null, count: number) => {
         const productData = docRef.data();
         const currentCredits = parseInt(productData.count, 10);
         const credits = (currentCredits - count);
-        console.log(credits);
         if (credits < 0) { 
           return false 
         } else {

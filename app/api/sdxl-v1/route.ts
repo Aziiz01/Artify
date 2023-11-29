@@ -1,19 +1,17 @@
-import * as Generation from "../../../app/generation/generation_pb";
-import {
-  buildGenerationRequest,
-  executeGenerationRequest,
-  onGenerationComplete,
-} from "../../../lib/helpers";
-import { client, metadata } from "../../../lib/grpc-client";
 import { checkSubscription, countCredit } from "@/lib/subscription";
 import { incrementApiLimit, checkApiLimit } from "@/lib/api-limit";
 
 
-
-// Create a function to make the API call and save the image
-export async function SDXLv1(userId : string,prompt: string, selectedStyle : string,height : number,width : number, selectedSamples : number,cfgScale : number,seed :number, steps: number, fast_count: number ) {
+export async function SDXL(userId : string,textInput: string,negativePrompt:string, selectedStyle : string,selectedSamples : number,height : number,width : number, selectedModel:string,cfgScale : number,seed :number, steps: number, fast_count: number ) {
 
   try {
+     const path =`https://api.stability.ai/v1/generation/${selectedModel}/text-to-image`;
+     const apiKey = "sk-6NoWpvUXGEKd2J5M1G0bDgLNZTzPPvwOfzdXhgHqQGBptoBX";
+      const headers = {
+        Accept: "application/json",
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json", 
+      };
     const count=(3*selectedSamples)+fast_count;
 
      const freeTrial = await checkApiLimit(userId,count);;
@@ -24,28 +22,73 @@ export async function SDXLv1(userId : string,prompt: string, selectedStyle : str
     }
     const calcul =await countCredit(userId,count);
       if (!calcul){
-        return true;
-      } else {
-    const request = buildGenerationRequest("stable-diffusion-xl-1024-v1-0", {
+        return false;
+      } else {   
+        const body: {
+          steps: number;
+          width: number;
+          height: number;
+          seed: number;
+          cfg_scale: number;
+          samples: number;
+          text_prompts: { text: string; weight: number }[];
+          style_preset?: string; // make style_preset optional
+        } = {
+          steps: steps,
+          width: width,
+          height: height,
+          seed: seed,
+          cfg_scale: cfgScale,
+          samples: selectedSamples,
+          text_prompts: [
+            {
+              text: textInput,
+              weight: 1,
+            },
+          ],
+        };
+  
+        if (selectedStyle !== '') {
+          body.style_preset = selectedStyle ;
+        }
+        if (negativePrompt !== '') {
+          body.text_prompts.push({
+            text: negativePrompt,
+            weight: -1,
+          });
+        }
+   
+      const response = await fetch(path, {
+        headers,
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+
       
-      type: "text-to-image",
-      prompts: [
-        {
-          text: prompt ,
-        },
-      ],
-      width: 1024,
-      height: 1024,
-      samples: 4,
-      cfgScale: cfgScale,
-      steps: steps,
-      seed: seed,
-      sampler: Generation.DiffusionSampler.SAMPLER_K_DPMPP_2M,
-    });
-    
-    const response = await executeGenerationRequest(client, request, metadata);
-        const generatedImageData = onGenerationComplete(response);
-        return generatedImageData;
+      if (!response.ok) {
+        throw new Error(`Non-200 response: ${await response.text()}`)
+      }
+      
+      const responseJSON = await response.json();
+
+      // Create an array to store the HTML img elements
+      const htmlImgElements: HTMLImageElement[] = [];
+
+      responseJSON.artifacts.forEach((image: any, index: any) => {
+        // Construct the data URL for the image
+        const dataUrl = `data:image/png;base64,${image.base64}`;
+
+        // Create an HTML img element
+        const imgElement = document.createElement('img');
+        imgElement.src = dataUrl;
+        imgElement.alt = `Generated Image ${index + 1}`;
+
+        // Push the img element to the array
+        htmlImgElements.push(imgElement);
+      });
+
+      // Return the array of HTML img elements
+      return htmlImgElements;
   } 
 
   } catch (error) {

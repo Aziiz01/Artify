@@ -26,7 +26,7 @@ export default async function RootLayout({
     <ClerkProvider  afterSignInUrl='/dashboard' afterSignUpUrl='/dashboard'>
       <html lang="en" suppressHydrationWarning={true}>
         <CrispProvider />
-        <body className="">
+        <body className="" suppressHydrationWarning={true}>
           <ToasterProvider />
           <ModalProvider />
          <LoginModalProvider/>      

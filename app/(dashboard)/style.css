@@ -32,3 +32,20 @@
 .save-time-container.clicked .inner-effect {
   transform: scaleX(1);
 }
+::-webkit-scrollbar {
+  width: 0.75em;
+}
+
+::-webkit-scrollbar-track {
+  background: #f5f5f5; /* Light gray for the track */
+  border-radius: 9px;
+  margin: 0.5em;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #a8a7a7; /* Darker blue for the thumb */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #535556; /* Lighter blue on hover for better visibility */
+}

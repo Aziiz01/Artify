@@ -8,11 +8,7 @@ import { Button } from "@/components/ui/button"; // Import the Button component
 import { Loader } from "@/components/loader";
 import { Empty } from "@/components/ui/empty";
 import { Clock, Download, ImageIcon } from "lucide-react";
-import { SDXLv1 } from '../../../api/sdxl-v1/route'; // Import the function
-import { SDXLv09 } from "@/app/api/sdxl-v0.9/route";
-import { SDXLv08 } from "@/app/api/sdxl-v0.8/route";
-import { SDXLv15 } from "@/app/api/sdxl-v1.5/route";
-import { SDXLv21 } from "@/app/api/sdxl-v2.1/route";
+import { SDXL } from '../../../api/sdxl-v1/route'; // Import the function
 import { toast } from "react-hot-toast";
 import { promptOptions } from "./constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -33,11 +29,12 @@ export default function HomePage() {
   const [image, setImage] = useState<HTMLImageElement[]>([]);
   const [photos, setPhotos] = useState<string[]>([]);
   const [textInput, setTextInput] = useState('');
+  const [negativePrompt, setNegativePrompt] = useState('bad,blurry');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState<string>('');
-  const [selectedModel, setSelectedModel] = useState('Stable Diffusion 2.1');
-  const [height, setHeight] = useState(512);
-  const [width, setWidth] = useState(512);
+  const [selectedModel, setSelectedModel] = useState('stable-diffusion-xl-1024-v1-0');
+  const [height, setHeight] = useState(1024);
+  const [width, setWidth] = useState(1024);
   const [selectedSamples, setSelectedSamples] = useState(1);
   const [cfgScale, setCfgScale] = useState(7); // Set an initial value, e.g., 0
   const [steps, setSteps] = useState(30); // Set an initial value, e.g., 0
@@ -52,6 +49,7 @@ export default function HomePage() {
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [selectedDimensions, setSelectedDimensions] = useState<{ width: number; height: number } | null>(null);
   const [creditCount, setCreditCount] = useState(1);
+  const [selectedRatio, setSelectedRatio] = useState("");
 
   useEffect(() => {    
     const handleResize = () => {
@@ -81,35 +79,21 @@ export default function HomePage() {
   };
 
 
-  type SDXLModelApiMapping = {
-    [key: string]: (
-      userId: string,
-      prompt: string,
-      selectedStyle: string,
-      selectedSamples: number,
-      cfgScale: number,
-      height: number,
-      width: number,
-      seed: number,
-      steps: number,
-      fast_count : number
-    ) => Promise<any>;
-  };
 
-  const SDXLmodelApiMapping: SDXLModelApiMapping = {
-    "Stable Diffusion XL 1.0": SDXLv1,
-    "Stable Diffusion XL 0.9": SDXLv09,
-    "Stable Diffusion XL 0.8": SDXLv08,
-    "Stable Diffusion 2.1": SDXLv21,
-    "Stable Diffusion 1.6": SDXLv15,
-  };
+
+ 
   const ratioMappings: { [key: string]: { width: number; height: number; selectable: boolean } } = {
-    '1:1': { width: 512, height: 512, selectable: true },
-    '4:3': { width: 1152, height: 896, selectable: selectedModel === "Stable Diffusion XL 1.0" || selectedModel === "Stable Diffusion XL 0.9" },
-    '16:9': { width: 1344, height: 768, selectable: selectedModel === "Stable Diffusion XL 1.0" || selectedModel === "Stable Diffusion XL 0.9" },
-    '9:16': { width: 768, height: 1344, selectable: selectedModel === "Stable Diffusion XL 1.0" || selectedModel === "Stable Diffusion XL 0.9" },
-    '3:4': { width: 896, height: 1152, selectable: selectedModel === "Stable Diffusion XL 1.0" || selectedModel === "Stable Diffusion XL 0.9" },
+    '1:1': { 
+      width: selectedModel === "stable-diffusion-xl-1024-v1-0" || selectedModel === "stable-diffusion-xl-1024-v0-9" ? 1024 : 512,
+      height: selectedModel === "stable-diffusion-xl-1024-v1-0" || selectedModel === "stable-diffusion-xl-1024-v0-9" ? 1024 : 512,
+      selectable: true 
+    },
+    '4:3': { width: 1152, height: 896, selectable: selectedModel === "stable-diffusion-xl-1024-v1-0" || selectedModel === "stable-diffusion-xl-1024-v0-9" },
+    '16:9': { width: 1344, height: 768, selectable: selectedModel === "stable-diffusion-xl-1024-v1-0" || selectedModel === "stable-diffusion-xl-1024-v0-9" },
+    '9:16': { width: 768, height: 1344, selectable: selectedModel === "stable-diffusion-xl-1024-v1-0" || selectedModel === "stable-diffusion-xl-1024-v0-9" },
+    '3:4': { width: 896, height: 1152, selectable: selectedModel === "stable-diffusion-xl-1024-v1-0" || selectedModel === "stable-diffusion-xl-1024-v0-9" },
   };
+  
   
  
   
@@ -119,6 +103,8 @@ export default function HomePage() {
       setSelectedDimensions(dimensions);
       setWidth(dimensions.width);
       setHeight(dimensions.height);
+      setSelectedRatio(ratio);
+
     }
   };
   const handleButtonClick = () => {
@@ -152,7 +138,7 @@ export default function HomePage() {
   const values = {
     prompt: `${textInput} , ${selectedStyle}`,
     amount: selectedSamples,
-    resolution: `${height}x${width}`,
+    resolution: `${512}x${512}`,
   }
   function generateRandomId() {
     const timestamp = Date.now();
@@ -206,9 +192,9 @@ const saveImagesInBackground = async (images : any) => {
     const base64Data = generatedImage.split(',')[1];
     const documentId = generateRandomId();
     setImageId(documentId);
-    if (selectedModel === "Stable Diffusion XL 1.0" || selectedModel === "Stable Diffusion XL 0.9") {
-      setHeight(1024)
-      setWidth(1024)
+    if (selectedModel === "stable-diffusion-xl-1024-v1-0" || selectedModel === "stable-diffusion-xl-1024-v0-9") {
+      setHeight(height)
+      setWidth(width)
     } else {
       setHeight(512)
       setWidth(512)
@@ -238,9 +224,9 @@ const saveImagesInBackground = async (images : any) => {
 
   // Wait for all image save promises to resolve (in the background)
   try {
-    const savedImages = await Promise.all(saveImagesPromises);
+    await Promise.all(saveImagesPromises);
     // Optionally, update the UI or perform any actions after saving is complete
-    console.log("Images saved successfully:", savedImages);
+    console.log("Images saved successfully");
   } catch (error) {
     console.error("Error saving images:", error);
     toast.error("Failed to save some images.");
@@ -256,12 +242,16 @@ const saveImagesInBackground = async (images : any) => {
         if (selectedModel === 'DALL E2') {
           await DALLE(values);
         } else {
-          // Use the selected model to determine which API to call
-          const selectedApi = SDXLmodelApiMapping[selectedModel];
-          if (selectedApi) {
-            const prompt = `${textInput} , ${selectedStyle}`;
+          
             try {
-              const generatedImages = await selectedApi(userId, prompt, selectedStyle, selectedSamples,height,width,cfgScale, seed, steps,fast_count);
+              if (selectedModel === "stable-diffusion-xl-1024-v1-0" || selectedModel === "stable-diffusion-xl-1024-v0-9") {
+                setHeight(height)
+                setWidth(width)
+              } else {
+                setHeight(512)
+                setWidth(512)
+              }
+              const generatedImages = await SDXL(userId, textInput,negativePrompt, selectedStyle, selectedSamples,height,width,selectedModel,cfgScale, seed, steps,fast_count);
               if (generatedImages !== null && generatedImages !== false) {
                 if (displayImagesImmediately) {
                   console.log('displaying first')
@@ -289,9 +279,7 @@ const saveImagesInBackground = async (images : any) => {
               }
             }
             
-          } else {
-            console.error(`API for model ${selectedModel} not found.`);
-          }
+         
         }
       } finally {
         setIsLoading(false);
@@ -353,8 +341,7 @@ const saveImagesInBackground = async (images : any) => {
       link.click();
     }
   };
- 
-  return (
+ return(
     <div style={{
       display:'grid',
       height:!mobileSize ? '850px' : '2000px',
@@ -362,6 +349,7 @@ const saveImagesInBackground = async (images : any) => {
       gridTemplateRows: mobileSize ? '50% 50%' : undefined,
     }}>
       <div className="px-4 lg:px-8 bg-transparent" style={{ overflowY: !mobileSize ? 'scroll' : undefined, height:'850px'  }}>
+        
       <div className="bg-white rounded-lg p-4 mb-4 mt-4">
   {/* Text Prompt Section */}
   <div >
@@ -421,14 +409,11 @@ const saveImagesInBackground = async (images : any) => {
         <h2 className="text-mm pt-5 text-blue-900 font-extrabold">Algorithm Model</h2>
         <div>
           <select className="bloc w-200 px-4 mt-4 text-base text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-900 focus:border-red-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={selectedModel} onChange={handleModelChange}>
-            <option value="Stable Diffusion XL 1.0">Stable Diffusion XL 1.0 (Pro only)</option>
-            <option value="Stable Diffusion XL 0.9">Stable Diffusion XL 0.9 (Pro only)</option>
-            <option value="Stable Diffusion XL 0.8">Stable Diffusion XL 0.8</option>
-            <option value="Stable Diffusion 2.1">Stable Diffusion 2.1</option>
-            <option value="Stable Diffusion 1.5">Stable Diffusion 1.5</option>
+            <option value="stable-diffusion-xl-1024-v1-0">Stable Diffusion XL 1.0 (Pro only)</option>
+            <option value="stable-diffusion-xl-1024-v0-9">Stable Diffusion XL 0.9 (Pro only)</option>
+            <option value="stable-diffusion-v1-6">Stable Diffusion 1.6</option>
             <option value="DALL E2">DALL E2</option>
           </select>
-          <p>Selected Model: {selectedModel}</p>
         </div>
       </div>
       <label>
@@ -443,21 +428,38 @@ const saveImagesInBackground = async (images : any) => {
       </label>
       {showAdvancedOptions && (
         <>
+        
+       <h2 className="block text-mm text-blue-900 font-extrabold mb-2 mt-3">Negative Prompt</h2>
+         <div className="relative">
+      <input
+        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-red-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 mb-3"
+        type="text"
+        placeholder="What you want to avoid"
+        value={negativePrompt}
+        onChange={(e) => setNegativePrompt(e.target.value)}
+      />
+    </div>
+  
+  
        <div className="flex gap-2">
        <h2 className="block text-mm text-blue-900 font-extrabold mb-2 mt-3">Aspect Ratio</h2>
-  {Object.entries(ratioMappings).map(([ratio, { width, height, selectable }]) => (
-    <button
-      key={ratio}
-      className={`bloc w-16 text-base text-gray-900 border border-gray-300 rounded-lg ${
-        !selectable ? 'bg-gray-200 cursor-not-allowed' : 'bg-gray-50 focus:ring-blue-900 focus:border-red-500'
-      } dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500`}
-      onClick={() => selectable && handleRatioClick(ratio)}
-      disabled={!selectable}
-    >
-      {ratio}
+       {Object.entries(ratioMappings).map(([ratio, { width, height, selectable }]) => (
+  <button
+    key={ratio}
+    className={`bloc w-16 text-base rounded-lg ${
+      !selectable
+        ? 'bg-gray-200 text-gray-500 cursor-not-allowed border border-gray-300'
+        : ratio === selectedRatio
+        ? 'bg-gray-300 text-gray-700 border border-gray-500'
+        : 'bg-gray-50 text-gray-900 focus:ring-blue-900 focus:border-red-500 border border-gray-300'
+    } dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500`}
+    onClick={() => selectable && handleRatioClick(ratio)}
+    disabled={!selectable}
+  >
+    {ratio}
+  </button>
+))}
 
-    </button>
-  ))}
 </div>
 
 

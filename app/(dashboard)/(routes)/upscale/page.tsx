@@ -198,7 +198,7 @@ export default function UpscalePage() {
             return;
           }
               try {
-                const generatedImages = await Upscale(userId, uploadedImage, passedImage,selectedModel,fast_count);
+                const generatedImages = await Upscale(userId, uploadedImage,passedImage,selectedModel,fast_count);
 
                 if (generatedImages !== null && generatedImages !== -1 && generatedImages !== false) {
                   if (displayImagesImmediately) {

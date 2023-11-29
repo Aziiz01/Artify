@@ -13,15 +13,15 @@ export default function PickStyle({ onSelectedStyleChange }: { onSelectedStyleCh
     },
     {
       backgroundImg: robot.src,
-      style: 'Realistic',
+      style: 'photographic',
     },
     {
       backgroundImg: robot.src,
-      style: '3d',
+      style: '3d-model',
     },
     {
       backgroundImg: robot.src,
-      style: 'Cinematic',
+      style: 'cinematic',
     },
   ];
 
