@@ -1,7 +1,7 @@
 import React from "react";
 
 interface LikesListProps {
-  image: ImageData;
+  image: any;
   onClose: () => void;
 }
 

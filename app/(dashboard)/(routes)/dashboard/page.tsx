@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import axios from 'axios';
-import { Card, CardFooter } from "@/components/ui/card";
+import { ImageCard, ImageCardFooter } from "@/components/ui/image_card";
 import Image from "next/image";
 import { useProModal } from "@/hook/use-pro-modal";
 import { Button } from "@/components/ui/button"; // Import the Button component
@@ -12,7 +12,7 @@ import { SDXL } from '../../../api/sdxl-v1/route'; // Import the function
 import { toast } from "react-hot-toast";
 import { promptOptions } from "./constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faLightbulb } from "@fortawesome/free-solid-svg-icons";
+import { faExpand, faLightbulb, faWandSparkles } from "@fortawesome/free-solid-svg-icons";
 import { PublishButton } from "@/components/publish_button";
 import { clerkClient } from "@clerk/nextjs";
 import { useUser } from "@clerk/nextjs";
@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 import { useLoginModal } from "@/hook/use-login-modal";
 import PickStyle from "@/components/ui/pickStyle";
 import "../../style.css";
+import Modal from 'react-modal';
 
 export default function HomePage() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -50,7 +51,12 @@ export default function HomePage() {
   const [selectedDimensions, setSelectedDimensions] = useState<{ width: number; height: number } | null>(null);
   const [creditCount, setCreditCount] = useState(1);
   const [selectedRatio, setSelectedRatio] = useState("");
+  const [modalImage, setModalImage] = useState(null);
+  const [selectedImage, setSelectedImage] = useState<any>(null);
 
+
+  
+  
   useEffect(() => {    
     const handleResize = () => {
       const isMobile = window.innerWidth < 768;
@@ -300,7 +306,14 @@ const saveImagesInBackground = async (images : any) => {
     </button>
   );
   
-
+  const openModal = (image: HTMLImageElement) => {
+    setSelectedImage(image);
+    setIsModalOpen(true);
+  };
+  const closeModal = () => {
+    setSelectedImage(null);
+    setIsModalOpen(false);
+  };
   const handleGenerate = () => {
     generateImage();
   };
@@ -331,7 +344,10 @@ const saveImagesInBackground = async (images : any) => {
     // Redirect to the new URL
     window.location.href = url;
   };
-
+  const openImageInNewWindow = (img : any) => {
+    const fullSizeImage = img.src; // Replace this with the appropriate property of your image object
+    window.open(fullSizeImage, '_blank', 'width=auto,height=auto');
+  };
   const openImageInNewTab = (img : any) => {
     if (img && img.src) {
       const link = document.createElement('a');
@@ -340,6 +356,16 @@ const saveImagesInBackground = async (images : any) => {
       link.download = 'image.png'; // Provide a default name for the downloaded image
       link.click();
     }
+  };
+  const modalStyle = {
+    // Add your custom modal styles here
+    overlay: {
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    content: {
+      maxWidth: '800px',
+      margin: 'auto',
+    },
   };
  return(
     <div style={{
@@ -531,39 +557,73 @@ variant="premium">
         <Empty label="No images generated." />
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-8">
-        {Array.isArray(image) && image.length > 0 ? (
-          image.map((img, index) => (
-            <Card key={index} className="">
-            <div className="relative aspect-square">
-              <Image height={img.height} width={img.width} src={img.src} alt={`Generated Image ${index + 1}`} />
-            </div>
-            <CardFooter className="p-2">
-            <Button onClick={() => openImageInNewTab(img)} variant="secondary" className="w-full">
-                <Download className="h-4 w-4 mr-2" />
-                Download
-              </Button>
-              <Button onClick={handleEnhance}>Enhance</Button>
-              <Button onClick={handleUpscale}>Upscale</Button>
-              <PublishButton imageId={imageId} />
-            </CardFooter>
-          </Card>
-          ))
-        ) : !isLoading && photos === null ? (
-          <Empty label="No images generated." />
-        ) : null}
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-2 ml-2 mr-2">
+  {Array.isArray(image) && image.length > 0 ? (
+    image.map((img, index) => (
+      <div key={index} className="flex flex-col items-center">
+        <div className="image-container" onClick={() => openModal(img)}>
+          <Image
+            className="rounded-lg image-hover"
+            src={img.src}
+            alt={`Generated Image ${index + 1}`}
+            height={1024}
+            width={1024}
+          />
+          <div className="image-overlay">
+            <p className="text-white">Click to view in full size</p>
+          </div>
+        </div>
+        <div className="flex gap-1 mt-2">
+          <Button onClick={() => openImageInNewTab(img)} variant="secondary">
+            <Download className="h-3 w-3 mr-1" /> Download
+          </Button>
+          <Button onClick={handleEnhance} variant="secondary">
+            <FontAwesomeIcon icon={faWandSparkles} className="h-3 w-3 mr-1" /> Enhance
+          </Button>
+          <Button onClick={handleUpscale} variant="secondary">
+            <FontAwesomeIcon icon={faExpand} className="h-3 w-3 mr-1" /> Upscale
+          </Button>
+          <PublishButton imageId={imageId} />
+        </div>
       </div>
+    ))
+  ) : !isLoading && photos === null ? (
+    <Empty label="No images generated." />
+  ) : null}
+</div>
   
-    
+<Modal
+      isOpen={isModalOpen}
+      onRequestClose={closeModal}
+      contentLabel="Image Modal"
+      style={modalStyle}
+    >
+      {selectedImage && (
+        <div className="vertical-modal-container">
+          <div className="modal-image-container">
+            <Image
+              src={selectedImage.src}
+              alt="selectedImage"
+              fill
+              className="image"
+            />
+             <div className="image-text-container">
+              <p className="image-text">{textInput}</p>
+            </div>
+          </div> 
+        </div>
+      )}
+    </Modal>
+  
 
       {photos && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-8">
           {photos.map((src) => (
-            <Card key={src} className="rounded-lg overflow-hidden">
+            <ImageCard key={src} className="rounded-lg overflow-hidden">
             <div className="relative aspect-square">
               <Image fill alt="Generated" src={src} />
             </div>
-            <CardFooter className="p-2">
+            <ImageCardFooter className="p-2">
               <Button onClick={() => window.open(src)} variant="secondary" className="w-full">
                 <Download className="h-4 w-4 mr-2" />
                 Open Image
@@ -571,8 +631,8 @@ variant="premium">
               <Button onClick={handleEnhance}>Enhance</Button>
               <Button onClick={handleUpscale}>Upscale</Button>
               <PublishButton imageId={imageId} />
-            </CardFooter>
-          </Card>
+            </ImageCardFooter>
+          </ImageCard>
           ))}
     </div>
       )}

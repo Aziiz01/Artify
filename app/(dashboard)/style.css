@@ -1,3 +1,90 @@
+.image-container {
+  position: relative !important;
+  overflow: hidden !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  position: relative !important;
+  width: 100% !important;
+  max-width: 1024px !important;
+  height: 100% !important;
+  max-height: 1024px !important;
+}
+
+
+.image-container:hover .image-overlay {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  color: #fff;
+}
+
+
+.like-icon {
+  font-size: 24px; /* Adjust the size as needed */
+  transition: color 0.3s; /* Add a smooth color transition on hover */
+}
+
+/* Change the color when the user hovers over the heart icon */
+.like-icon:hover {
+  color: #ff0000; /* Change to a red color on hover (you can use your desired color) */
+}
+.like-icon.liked {
+  color: red; /* Change the heart icon color to red */
+  transform: scale(1.5); /* Add a transformation effect */
+  pointer-events: none; /* Make it unclickable */
+}
+.like-icon.login-required {
+  color: #ccc; /* Change the heart icon color to a light gray */
+  cursor: pointer; /* Show a pointer cursor to indicate it's clickable */
+}
+.vertical-modal-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  text-align: center;
+  padding: 20px;
+}
+
+.modal-image-container {
+  margin-bottom: 20px;
+}
+
+
+
+.text-container {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #333;
+  margin: 10px 0;
+}
+
+.artistic-text {
+  font-family: 'cursive', cursive;
+  color: #880000;
+  text-shadow: 2px 2px 4px #ffcc00;
+}
+
+.horizontal-line {
+  border: 0;
+  border-top: 1px solid #ccc;
+  margin: 20px 0;
+}
+
+
 .save-time-container {
   position: relative;
   cursor: pointer;
