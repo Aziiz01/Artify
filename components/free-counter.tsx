@@ -8,38 +8,44 @@ import { Progress } from "@/components/ui/progress";
 import { useProModal } from "@/hook/use-pro-modal";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import toast from "react-hot-toast";
 
 export const FreeCounter = ({
   isPro = false,
   apiLimitCount = 0,
-  credits = 0,
+  initialCredits ,
 }: {
   isPro: boolean;
   apiLimitCount: number;
-  credits: number;
+  initialCredits: any;
 }) => {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const proModal = useProModal();
+  const [toastShown, setToastShown] = useState(false); 
+  const [credits, setCredits] = useState(initialCredits);
 
   useEffect(() => {
     setMounted(true);
-    router.refresh();
-  }, [router]);
+    //router.refresh();
+  }, [proModal,toastShown,credits]);
 
   if (!mounted) {
     return null;
   }
-
+  if (credits === 0 && !toastShown ) {
+    // toast.error('You have no more credits!');
+     //proModal.onOpen()
+     setToastShown(true); 
+     setCredits('0 credits left');
+     
+   }
+   /// problem with initialImage is being empty an not filled with the return of getCredits
   return (
     <>
       {isPro ? (
         <>
-        <div className="flex text-center text-m text-white mt-2 ml-2 mr-3">
-          <p>
-            {credits} Credits left
-          </p>
-        </div>
+      
           <Link href="/credits">
           <Button variant="premium">
             Get More Credits

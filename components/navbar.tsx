@@ -1,3 +1,4 @@
+
 import { Montserrat } from "next/font/google";
 import Image from "next/image"
 import Link from "next/link"
@@ -17,7 +18,7 @@ const font = Montserrat({ weight: '600', subsets: ['latin'] });
   const { userId } : { userId: string | null } = auth();
   const apiLimitCount = await getApiLimitCount(userId);
   const isPro = await checkSubscription(userId);
-  const credits = await getCredits();
+  const credits = getCredits();
 
   return (
     <nav className="p-4 bg-transparent flex items-center justify-between">
@@ -62,7 +63,7 @@ const font = Montserrat({ weight: '600', subsets: ['latin'] });
           <Button variant="outline" className="rounded-full">
             Explore     
              <FontAwesomeIcon icon={faSearch} className="ml-2" />
-          </Button>
+          </Button> 
         </Link>
         <Link href="/settings">
           <Button variant="outline" className="rounded-full">
@@ -74,7 +75,7 @@ const font = Montserrat({ weight: '600', subsets: ['latin'] });
         <FreeCounter
           apiLimitCount={apiLimitCount} 
           isPro={isPro}
-          credits={credits}
+          initialCredits={credits}
         />
 
         <div className="ml-2">

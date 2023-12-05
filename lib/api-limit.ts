@@ -51,8 +51,7 @@ export const checkApiLimit = async ( userId: string | null , count : number) => 
   }
 };
 
-export const getApiLimitCount = async (userId: string | null) => {
-
+export const getApiLimitCount = async (userId: string | null): Promise<number> => {
   if (!userId) {
     return 0;
   }
@@ -63,7 +62,7 @@ export const getApiLimitCount = async (userId: string | null) => {
     return 25;
   } else {
     const productData = docRef.data();
-
     return productData.count;
   }
+
 };

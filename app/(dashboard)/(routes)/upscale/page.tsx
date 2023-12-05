@@ -147,9 +147,9 @@ export default function UpscalePage() {
 
     // Wait for all image save promises to resolve (in the background)
     try {
-      const savedImages = await Promise.all(saveImagesPromises);
+      await Promise.all(saveImagesPromises);
       // Optionally, update the UI or perform any actions after saving is complete
-      console.log("Images saved successfully:", savedImages);
+      console.log("Images saved successfully");
     } catch (error) {
       console.error("Error saving images:", error);
       toast.error("Failed to save some images.");
@@ -165,7 +165,6 @@ export default function UpscalePage() {
 
   const handleUpscale = async () => {
     setIsLoading(true);
-    router.refresh();
     if (!isSignedIn) {
       loginModal.onOpen();
       return;
@@ -218,7 +217,7 @@ export default function UpscalePage() {
                 } else if (generatedImages == -1 || generatedImages == null){
                   setIsLoading(false);
                 }
-
+                  router.refresh();
               } catch (error) {
                 console.error("Failed to make image-upscale request:", error);
                 setIsLoading(false);
@@ -250,7 +249,9 @@ export default function UpscalePage() {
       backgroundColor: 'transparent'
     }}>
       <div className="px-4 lg:px-8 bg-transparent" style={{ overflowY: !mobileSize ? 'scroll' : undefined, height: '850px' }}>
-        <h2 className="text-2xl mt-5 text-blue-900 font-extrabold">Image Upscaler</h2>
+      <div className="bg-white rounded-lg p-4 mb-4 mt-4">
+
+        <h2 className="text-mm mt-5 text-blue-900 font-extrabold">Image Upscaler</h2>
         <input type="file" onChange={handleImageUpload} className="mt-4 block w-full text-lg text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" />
         {passedImage || uploadedImage ? (
           <Image
@@ -271,22 +272,21 @@ export default function UpscalePage() {
     </div>
         <Button
           onClick={handleUpscale} disabled={isLoading}
-          className="mt-4 w-full relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-purple-500 group-hover:to-pink-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-purple-200 dark:focus:ring-purple-800"
-        // Attach the click event handler
-        >
+          className="mt-4 w-full relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium text-white rounded-lg group bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-purple-500 group-hover:to-pink-500 hover:text-black   dark:text-white focus:ring-4 focus:outline-none focus:ring-purple-200 dark:focus:ring-purple-800"
+variant="premium">
           <span className="w-full relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-opacity-0 ">
             {isLoading ? 'Upscaling...' : 'Upscale'}
           </span>
         </Button>
       </div>
+      </div>
       <div style={{ overflowY: !mobileSize ? 'scroll' : undefined, height: '850px' }}>
         <div className="mb-8 space-y-4 text-center">
           <h2 className="text-4xl mt-5 text-blue-900 font-extrabold">
-            Explore the Power of AI
-          </h2>
+Upscale Images       
+   </h2>
           <p className="text-gray-500 text-lg">
-            Chat with the Smartest AI - Experience the Power of AI
-          </p>
+          Enhance Your Visual Odyssey: Unleashing the Power of 2x Upscaling AI          </p>
         </div>
         {isLoading && (
           <div className="p-8 rounded-lg w-full flex items-center justify-center bg-muted">

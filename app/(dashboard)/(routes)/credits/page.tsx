@@ -2,20 +2,21 @@
 import axios from "axios"
 import { useState, useEffect } from "react"
 import PricingCard from "../../../../components/packCard";
-
+import { useRouter } from "next/navigation";
 const Pricing = () => {
   const [prices, setPrices] = useState([]);
-
-  useEffect(() => {
-  fetchPrices()
-  }, [])
-
-
+  const router = useRouter();
   const fetchPrices = async () => {
     const {data} = await axios.get('/api/packs')
     setPrices(data)
-    console.log(data)
   } 
+  useEffect(() => {
+  fetchPrices()
+  router.refresh()
+  }, [router])
+
+
+  
 
   return (
    <section className="w-full">

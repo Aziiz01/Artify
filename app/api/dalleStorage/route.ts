@@ -50,7 +50,7 @@ const docId = body.documentId;
         lastName : lastName,
         userId: userId,
         image: imageUrl,
-        prompt: prompt,
+        textInput: prompt,
         amount : amount,
         resolution : resolution,
         published: false, 

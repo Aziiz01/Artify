@@ -6,19 +6,18 @@ export const getCredits = async () => {
   const { userId } = auth();
 
   if (!userId) {
-    return 0; // User is not authenticated, return 0 credits.
+    return 0; 
   }
-
   const docRef = doc(db, "UserCredits", userId);
   const docSnap = await getDoc(docRef);
 
   if (docSnap.exists()) {
     const productData = docSnap.data();
-
-    if (productData?.count) {
-      return productData.count;
+    if (productData.count) {
+      return `${productData.count} credits left`;
     }
   }
 
-  return 0; // Return 0 credits if userCredits are not found.
+  return 0;
+  
 };

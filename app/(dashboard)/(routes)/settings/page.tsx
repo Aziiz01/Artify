@@ -4,11 +4,13 @@ import { SubscriptionButton } from "@/components/subscription-button";
 import { checkSubscription } from "@/lib/subscription";
 import { getCredits } from "@/lib/credits";
 import { auth } from "@clerk/nextjs";
+import { getPackage } from "@/lib/package";
+
 const SettingsPage = async () => {
   const { userId } : { userId: string | null } = auth();
   const isPro = await checkSubscription(userId);
- const credits = await getCredits(); // Corrected function call
-
+ const credits =await  getCredits(); 
+const p = await getPackage();
   return ( 
     <div>
       <Heading
@@ -23,7 +25,12 @@ const SettingsPage = async () => {
           {isPro ? "You are currently on a Pro plan." : "You are currently on a free plan."}
         </div>
         <SubscriptionButton isPro={isPro} />
-        Your credits are: {credits} 
+        <div className="mb-1">     
+           Your credits are: {credits} 
+</div>
+        {p ?(
+          `Your current package is ${p}`
+        ): ""}
       </div>
     </div>
   );

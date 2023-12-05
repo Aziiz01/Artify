@@ -1,6 +1,6 @@
 'use client'
 import React, { useEffect, useState } from "react";
-import { collection, getDocs, query, where, doc, updateDoc } from "firebase/firestore";
+import { collection, getDocs, query, where, doc, updateDoc, orderBy, startAfter, limit } from "firebase/firestore";
 import { db } from "@/firebase";
 import Image from "next/image";
 import { useUser } from "@clerk/nextjs";
@@ -17,16 +17,22 @@ import { Button } from "@/components/ui/button";
 interface ImageData {
   id: string;
   imageUrl: string;
-  prompt: string;
+  textInput: string;
+  negativePrompt:string;
   likes: string[];
   height: number;
   width: number;
   style : string,
   model : string,
   published: boolean;
+  timeStamp: Date;
 
 }
-
+const filteringOptions = [
+  { label: "Created Date (Descending)", value: "createdDateDesc" },
+  { label: "Created Date (Ascending)", value: "createdDateAsc" },
+  { label: "Most Liked", value: "mostLiked" },
+];
 const CreationsPage: React.FC = () => {
   const [showLikesList, setShowLikesList] = useState(false);
   const [images, setImages] = useState<ImageData[]>([]);
@@ -34,6 +40,7 @@ const CreationsPage: React.FC = () => {
   const { isSignedIn, user, isLoaded } = useUser();
   const loginModal = useLoginModal();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [filterOption, setFilterOption] = useState<string>("createdDateDesc");
 
   const openModal = (image: ImageData) => {
     setSelectedImage(image);
@@ -82,21 +89,58 @@ const CreationsPage: React.FC = () => {
         try {
           const userId = user.id;
           const imagesRef = collection(db, "images");
-          const q = query(imagesRef, where("userId", "==", userId));
+          let q: any;
+  
+          switch (filterOption) {
+            case "createdDateDesc":
+              q = query(imagesRef, where("userId", "==", userId), orderBy("timeStamp", "desc"));
+              break;
+            case "createdDateAsc":
+              q = query(imagesRef, where("userId", "==", userId), orderBy("timeStamp", "asc"));
+              break;
+              case "mostLiked":
+                q = query(
+                  imagesRef,
+                  where("userId", "==", userId),
+                  orderBy("likes", "desc"),
+                );
+                break;
+              
+              
+            default:
+              q = query(imagesRef, where("userId", "==", userId), orderBy("timeStamp", "asc"));
+          }
+  
           const querySnapshot = await getDocs(q);
   
           const imageData: ImageData[] = [];
           querySnapshot.forEach((doc) => {
+            const data = doc.data() as {
+              image: string;
+              textInput: string;
+              negativePrompt: string;
+              likes: string[];
+              height: number;
+              width: number;
+              Style: string;
+              Model: string;
+              published: boolean;
+              timeStamp: Date;
+            };
+            const createdAtDate = new Date(data.timeStamp);
+  
             imageData.push({
               id: doc.id,
-              imageUrl: doc.data().image,
-              prompt: doc.data().prompt,
-              likes: doc.data().likes,
-              height: doc.data().height,
-              width: doc.data().width,
-              style: doc.data().Style,
-              model: doc.data().Model,
-              published : doc.data().published
+              imageUrl: data.image,
+              textInput: data.textInput,
+              negativePrompt : data.negativePrompt,
+              likes: data.likes,
+              height: data.height,
+              width: data.width,
+              style: data.Style,
+              model: data.Model,
+              published: data.published,
+              timeStamp: createdAtDate,
             });
           });
   
@@ -108,10 +152,10 @@ const CreationsPage: React.FC = () => {
     };
   
     if (isLoaded && isSignedIn) {
-      // Add a condition to check if the component is loaded and the user is signed in
       fetchImages();
     }
-  }, [isLoaded, isSignedIn, user, loginModal]);
+  }, [isLoaded, isSignedIn, user, loginModal, filterOption]);
+  
   
   const isLiked = (image: ImageData, user_email: string) => {
     return image.likes.includes(user_email);
@@ -186,10 +230,27 @@ const CreationsPage: React.FC = () => {
           Start Generating For Free
         </Button>
       </Link>
-    </div>        </div>
+    </div>       
+   </div>
       ) : (
         <>
-          <h1>My Creations</h1>
+         <div style={{ textAlign: 'center' }}>
+        <h1 style={{ fontSize: '3em' }}>My Creations</h1>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1em' }}>
+        <label htmlFor="filterDropdown" style={{ marginRight: '0.5em' }}>Filter By:</label>
+        <select
+          id="filterDropdown"
+          value={filterOption}
+          onChange={(e) => setFilterOption(e.target.value)}
+        >
+          {filteringOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {images.map((image) => (
               <div key={image.id} className="grid gap-4 relative">
@@ -201,7 +262,7 @@ const CreationsPage: React.FC = () => {
                   <Image
                     className="image h-auto max-w-full rounded-lg"
                     src={image.imageUrl}
-                    alt={image.prompt}
+                    alt={image.textInput}
                     height={image.height}
                     width={image.width}
                   />
@@ -247,42 +308,46 @@ const CreationsPage: React.FC = () => {
             <LikesList image={selectedImage} onClose={closeLikesList} />
           )}
           <Modal
-            isOpen={isModalOpen}
-            onRequestClose={closeModal}
-            contentLabel="Image Modal"
-            style={modalStyle}
-          >
-            {selectedImage && (
-              <div className="vertical-modal-container">
-                <div className="modal-image-container">
-                  <Image
-                    src={selectedImage.imageUrl}
-                    alt={selectedImage.prompt}
-                    height={selectedImage.height}
-                    width={selectedImage.width}
-                    className="image"
-                  />
-                </div>
-                <div className="details-container">
-                  <div className="text-container">
-                    <h2 className="image-prompt artistic-text">{selectedImage.prompt}</h2>
-                  </div>
-                  <hr className="horizontal-line" />
-                  <div className="buttons-container">
-                    <button className="button pink-button artistic-button">
-                      {selectedImage.model}
-                    </button>
-                    <button className="button purple-button artistic-button">
-                      {selectedImage.style}
-                    </button>
-                    <button className="button teal-button artistic-button">
-                      {selectedImage.height}*{selectedImage.width}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </Modal>
+  isOpen={isModalOpen}
+  onRequestClose={closeModal}
+  contentLabel="Image Modal"
+  style={modalStyle}
+  ariaHideApp={false}
+>
+  {selectedImage && (
+    <div style={{ display: 'flex', alignItems: 'center', padding: '20px' }}>
+      <div style={{ marginRight: '20px' }}>
+        <Image
+          src={selectedImage.imageUrl}
+          alt={selectedImage.textInput}
+          height={512}
+          width={512}
+          className="image"
+        />
+      </div>
+      <div>
+        <div style={{ marginBottom: '10px' }}>
+          <h2 style={{ fontSize: '1.5em', fontWeight: 'bold' }}>{selectedImage.textInput}</h2>
+        </div>
+        <div style={{ marginBottom: '10px' }}>
+          <h2 style={{ fontSize: '1.2em', fontWeight: 'bold' }}>negativePrompt : {selectedImage.negativePrompt}</h2>
+        </div>
+        <hr style={{ height: '1px', background: '#ccc', border: 'none', margin: '10px 0' }} />
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <button style={{ marginBottom: '10px' }} className="button pink-button artistic-button">
+            {selectedImage.model}
+          </button>
+          <button style={{ marginBottom: '10px' }} className="button purple-button artistic-button">
+            {selectedImage.style}
+          </button>
+          <button className="button teal-button artistic-button">
+            {selectedImage.height} x {selectedImage.width}
+          </button>
+        </div>
+      </div>
+    </div>
+  )}
+</Modal>
         </>
       )}
     </div>

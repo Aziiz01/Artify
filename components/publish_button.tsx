@@ -40,12 +40,12 @@ export const PublishButton =  ({ imageId}: { imageId: string }) => {
         published: !isPublished,
       });
   
-      // Update the state with the new value
       setIsPublished(!isPublished);
 
     } catch (error) {
-      toast.error("Something went wrong");
-    } finally {
+      toast.loading("Working in backend", {
+        duration: 4000,
+      });    } finally {
       setLoading(false);
     }
   };

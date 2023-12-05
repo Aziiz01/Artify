@@ -56,6 +56,13 @@ export const countCredit = async (userId: string | null, count: number) => {
       const docRef = await getDoc(doc(db, "UserCredits", userId));
       if (docRef.exists()) {
         const productData = docRef.data();
+        if (productData.count === 'unlimited' &&  productData.deadline.toMillis() >= Date.now()){
+          return true;
+        }
+          else if (productData.count === 'unlimited' && productData.deadline.toMillis() < Date.now()){
+            return false;
+          }
+         else {
         const currentCredits = parseInt(productData.count, 10);
         const credits = (currentCredits - count);
         if (credits < 0) { 
@@ -65,11 +72,10 @@ export const countCredit = async (userId: string | null, count: number) => {
           await updateDoc(doc(db, "UserCredits", userId), {
             count: updatedCredits,
           });
-          console.log("document updated");
           return true;
-        }
+        }}
       }
-    } catch (error) {
+    }catch (error) {
       console.log('Error while decrementing credits:', error);
       return false;
     }

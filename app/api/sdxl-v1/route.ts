@@ -12,7 +12,7 @@ export async function SDXL(userId : string,textInput: string,negativePrompt:stri
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json", 
       };
-    const count=(3*selectedSamples)+fast_count;
+    const count=selectedSamples+fast_count;
 
      const freeTrial = await checkApiLimit(userId,count);;
     const isPro = await checkSubscription(userId);
@@ -32,7 +32,7 @@ export async function SDXL(userId : string,textInput: string,negativePrompt:stri
           cfg_scale: number;
           samples: number;
           text_prompts: { text: string; weight: number }[];
-          style_preset?: string; // make style_preset optional
+          style_preset?: string; 
         } = {
           steps: steps,
           width: width,

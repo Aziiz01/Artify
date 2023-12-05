@@ -31,6 +31,9 @@ import { PublishButton } from "@/components/publish_button";
 import "../../style.css";
 import { Clock } from "lucide-react";
 import { Enhance } from "@/app/api/enhance/route";
+import UserCredits from "@/components/credit_button";
+import { getCredits } from "@/lib/credits";
+import { SampleButton } from "@/components/ui/sample_button";
 export default function ImageToImagePage() {
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [passedImage, setPassedImage] = useState('');
@@ -59,6 +62,7 @@ const [image_strength, setImgStrength] = useState(0.35); // Set an initial value
   const [selectedModel, setSelectedModel] = useState('stable-diffusion-xl-1024-v1-0');
 
   useEffect(() => {
+  
     const handleResize = () => {
       const isMobile = window.innerWidth < 768;
       setMobileSize(isMobile);
@@ -70,6 +74,8 @@ const [image_strength, setImgStrength] = useState(0.35); // Set an initial value
     return () => {
       window.removeEventListener('resize', handleResize);
     };
+    
+
   }, []);
 
   const handleSelectedStyleChange = (newSelectedStyle: string) => {
@@ -99,13 +105,15 @@ const [image_strength, setImgStrength] = useState(0.35); // Set an initial value
     getImageFromId();
   },[imageId])
 
+
+
   const handleSeed = (event: any) => {
     setSeed(event.target.value);
   };
   
-  const handleSamples = (event: any) => {
-    setSelectedSamples(event.target.value);
-  }
+  const handleSamples = (value : number) => {
+    setSelectedSamples(value);
+  };
   const handleCFG = (event: any) => {
     const selectedCFG = event.target.value;
     setCfgScale(selectedCFG);
@@ -118,7 +126,6 @@ const [image_strength, setImgStrength] = useState(0.35); // Set an initial value
     const selectedSteps = event.target.value;
     setSteps(selectedSteps);
   };
-  const imageStrength = 0.4;
   // Handle image upload
   const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null;
@@ -159,11 +166,15 @@ const saveImagesInBackground = async (images : any) => {
     const base64Data = generatedImage.split(',')[1];
     const documentId = generateRandomId();
     setImageId(documentId);
+    const height = 1024;
+    const width = 1024;
     try {
       await axios.post('/api/sdxlStorage', {
         documentId,
         textInput,
         selectedStyle,
+        height,
+        width,
         selectedSamples,
         cfgScale,
         seed,
@@ -180,7 +191,6 @@ const saveImagesInBackground = async (images : any) => {
 
   try {
      await Promise.all(saveImagesPromises);
-    // Optionally, update the UI or perform any actions after saving is complete
     console.log("Images saved successfully");
   } catch (error) {
     console.error("Error saving images:", error);
@@ -189,7 +199,6 @@ const saveImagesInBackground = async (images : any) => {
 };
   const handleGenerate = async () => {
     setIsLoading(true);
-  router.refresh();
     if (!isSignedIn) {
       loginModal.onOpen();
     } else {
@@ -213,13 +222,14 @@ const saveImagesInBackground = async (images : any) => {
           } else {
             setIsLoading(false);
           }
-          
+          router.refresh();
+
         }
        catch (error) {
-        setIsLoading(true);
+        setIsLoading(false);
         console.error("Failed to make image-to-image request:", error);
       }
-    }
+    } 
   };
   
   const handleButtonClick = () => {
@@ -237,8 +247,10 @@ const saveImagesInBackground = async (images : any) => {
       gridTemplateRows: mobileSize ? '50% 50%' : undefined,
     }}>
       <div className="px-4 lg:px-8 bg-transparent" style={{ overflowY: !mobileSize ? 'scroll' : undefined, height:'850px' }}>
+      <div className="bg-white rounded-lg p-4 mb-4 mt-4">
+
         <div className="flex items-center">
-          <h2 className="text-2xl text-blue-900 font-extrabold ">
+          <h2 className="text-mm text-blue-900 font-extrabold ">
             Text Prompt
           </h2>
         </div>
@@ -259,7 +271,7 @@ const saveImagesInBackground = async (images : any) => {
           
 { passedImage =='' ? ( 
   <>
-   <h2 className="text-2xl mt-5 text-blue-900  font-extrabold">
+   <h2 className="text-mm mt-5 text-blue-900  font-extrabold">
    Input init image
  </h2>      
   <input type="file" className="block w-full text-lg text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" onChange={handleImageUpload} />
@@ -272,7 +284,7 @@ const saveImagesInBackground = async (images : any) => {
                 alt="Uploaded image"
               />
               ) : null}
-          <h2 className="text-2xl pt-5 text-blue-900 font-extrabold">Choose a style : <span className="text-1xl ">{selectedStyle}</span> </h2>
+          <h2 className="text-mm pt-5 text-blue-900 font-extrabold">Choose a style : <span className="text-1xl ">{selectedStyle}</span> </h2>
           <PickStyle onSelectedStyleChange={handleSelectedStyleChange} />
           <div
       className={`save-time-container ${clicked ? "clicked" : ""}`}
@@ -282,23 +294,24 @@ const saveImagesInBackground = async (images : any) => {
       <p>Fast Process (+2 credits)</p>
       <Clock />
     </div>
+    <div className="flex gap-3 mt-3">
+  <h2 className="text-mm pt-5 text-blue-900 font-extrabold">Samples</h2>
 
-          <div className="flex gap-10">
-            <h2 className="text-2xl  mt-5 text-blue-900  font-extrabold">
-              Samples
-            </h2>
-            <select className="bloc w-200 px-4 mt-4 text-base text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-900 focus:border-red-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={selectedSamples} onChange={handleSamples}>
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="4">4</option>
-              <option value="6">6</option>
-              <option value="8">8</option>
-              <option value="10">10</option>
-            </select>
-          </div>
+    <div className="flex gap-2">
+    
+    {[1, 2, 4, 6, 8].map((value) => (
+      <SampleButton
+        key={value}
+        value={value}
+        selected={selectedSamples}
+        onClick={handleSamples}
+      />
+    ))}
+  </div>
+  </div>
           <label>
         
-        <div className="text-2xl pt-5 text-blue-900 font-extrabold">
+        <div className="text-mm pt-5 text-blue-900 font-extrabold">
            Show Advanced Options
             <input
           type="checkbox"
@@ -320,7 +333,7 @@ const saveImagesInBackground = async (images : any) => {
       />
     </div>
     <div className="flex gap-3 mt-5">
-            <h2 className="text-2xl text-blue-900 font-extrabold">
+            <h2 className="text-mm text-blue-900 font-extrabold">
               Image Strength
             </h2>
             <input
@@ -345,7 +358,7 @@ const saveImagesInBackground = async (images : any) => {
         </div>
       </div>
           <div className="flex gap-3 mt-5">
-            <h2 className="text-2xl text-blue-900 font-extrabold">
+            <h2 className="text-mm text-blue-900 font-extrabold">
               CFG_Scale
             </h2>
             <input
@@ -360,7 +373,7 @@ const saveImagesInBackground = async (images : any) => {
             <h4 className="text-1xl">{cfgScale}</h4>
           </div>
           <div className="flex mt-5 gap-3">
-            <h2 className="text-2xl text-blue-900 font-extrabold">
+            <h2 className="text-mm text-blue-900 font-extrabold">
               Steps
             </h2>
             <input
@@ -375,7 +388,7 @@ const saveImagesInBackground = async (images : any) => {
             <h4>{steps}</h4>
           </div>
           <div className="flex mt-5 gap-3">
-            <h2 className="text-2xl mt-1 text-blue-900 font-extrabold">
+            <h2 className="text-mm mt-1 text-blue-900 font-extrabold">
               Seed
             </h2>
             <input
@@ -391,24 +404,22 @@ const saveImagesInBackground = async (images : any) => {
       )}
           <Button
             onClick={handleGenerate} disabled={isLoading}
-            className="mt-4 w-full relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-purple-500 group-hover:to-pink-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-purple-200 dark:focus:ring-purple-800"
-            // Attach the click event handler
-            >
+            className="mt-4 w-full relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium text-white rounded-lg group bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-purple-500 group-hover:to-pink-500 hover:text-black   dark:text-white focus:ring-4 focus:outline-none focus:ring-purple-200 dark:focus:ring-purple-800"
+            variant="premium">
             <span className="w-full relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-opacity-0 ">  
               {isLoading ? 'Generating...' : 'Generate'}
             </span>
           </Button>
       </div>
-     
+     </div>
       <div  style={{ overflowY: !mobileSize ? 'scroll' : undefined, height:'850px' }}>
-      <div className="mb-8 space-y-4 text-center">
-        <h2 className="text-4xl font-bold">
-          Explore the Power of AI 
+      <div className=" space-y-4 text-center">
+      <h2 className="text-4xl mt-5 text-blue-900 font-extrabold">
+Enhance Images
         </h2>
-       
         <p className="text-gray-500 text-lg">
-          Chat with the Smartest AI - Experience the Power of AI
-        </p>
+        Transform Images with Cutting-Edge Image-to-Image Models
+       </p>
       </div>
           {isLoading && (
             <div className="p-20">
@@ -436,8 +447,7 @@ const saveImagesInBackground = async (images : any) => {
             </CardFooter>
           </Card>
           ))
-        ) : !isLoading && generatedImage === null ? (
-          <Empty label="No images generated." />
+        
         ) : null}
       </div>
       </div>
