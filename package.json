@@ -43,6 +43,7 @@
     "firebase": "^10.4.0",
     "flowbite": "^2.0.0",
     "flowbite-react": "^0.6.4",
+    "framer-motion": "^10.16.12",
     "gsap": "^3.12.2",
     "http-proxy-middleware": "^2.0.6",
     "imagesloaded": "^5.0.0",

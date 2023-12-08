@@ -1,0 +1,13 @@
+/* Add this CSS to your existing styles or create a new stylesheet */
+@media (max-width: 768px) {
+    #links {
+      display: none;
+    }
+    #userbtn{
+      display: none;
+    }
+    #logo {
+      flex: 1; /* Allow the logo to take the full width on mobile */
+    }
+  }
+  
