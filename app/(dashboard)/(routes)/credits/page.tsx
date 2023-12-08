@@ -5,6 +5,7 @@ import PricingCard from "../../../../components/packCard";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Info } from "@/app/(dashboard)/(routes)/credits/credit_info";
+import { Footer } from "@/components/footer";
 const Pricing = () => {
   const [prices, setPrices] = useState<any[]>([]);
   const router = useRouter();
@@ -63,6 +64,7 @@ const Pricing = () => {
   });
 
   return (
+    <>
    <section className="w-full h-full">
          <div className="mx-auto max-w-4xl text-center items-center">
               <p className=" text-4xl font-bold text-gray-900 sm:text-5xl">Upgrade to Imaginify PRO</p>
@@ -168,6 +170,9 @@ const Pricing = () => {
     </>
       )}
    </section>
+   <Footer />
+
+   </>
   )
 }
 

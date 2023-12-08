@@ -133,13 +133,28 @@ export const FAQSection = () => {
       },
       {
         question: "Is my data secure?",
-        answer: "Yes, we prioritize the security of your data. We use advanced security features and comply with PCI DSS standards.",
+        answer: "Yes, we prioritize the security of your data. We use advanced security features and comply with PCI DSS standards. We also don't keep your payment data.",
       },
     {
       question: "Do credits expire?",
       answer: "No. Any unused credits will roll over into the next month. Even if you cancel your PRO membership, you'll still have access to all the credits you received while you were subscribed.",
     },
-    // Add more FAQ items as needed
+    {
+      question : "Can I get a refund?",
+      answer : "If you stop using Imaginfy but forget to cancel your Imaginify PRO subscription, we'll generally be happy to refund your latest subscription payment as long as you haven't used any credits or created any images since the payment went through. To request a refund, send us a refund request via the email Mohamedaziz.nacib@esprit.tn ."
+    },
+    {
+      question: "How many artworks can I create per day for free?",
+      answer : "You can create unlimited base Stable Diffusion creations for free. Other algorithms and more powerful settings are also available but cost credits to generate."
+    },
+    {
+      question :"What if my creation fails / is marked as error?",
+      answer :"We know not all creations are successful. If your creation fails, send a refund request to the Crisp chat in the bottom right corner and we'll get you refund with an apology bonus ."
+    },
+    {
+      question : "Why does it cost money?",
+      answer : "Imaginify used to offer unlimited creations for free, but the model quickly proved unsustainable as we grew. It takes a lot of computing power to process a creation, and that costs us money. However, as algorithms become more optimised, and compute power becomes cheaper, the cost of Imaginify credits has and will continue to go down."
+    }
   ];
 
   return (
