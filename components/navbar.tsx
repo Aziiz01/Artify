@@ -78,9 +78,13 @@ const font = Montserrat({ weight: '600', subsets: ['latin'] });
           initialCredits={credits}
         />
 
-        <div className="ml-2">
-          <UserButton />
-        </div>
+<div className="ml-2 flex items-center">
+{isPro && (
+    <span className="bg-blue-100 text-blue-800 text-mm font-semibold me-2 px-2.5 py-0.5 rounded dark:bg-blue-200 dark:text-blue-800 ms-2">PRO</span>
+  )}
+  <UserButton />
+</div>
+
       </div>
     </nav>
   )

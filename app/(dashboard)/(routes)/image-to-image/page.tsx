@@ -1,13 +1,6 @@
 'use client'
 
 import React, { useState, ChangeEvent } from "react";
-import * as Generation from "../../../generation/generation_pb";
-import {
-  executeGenerationRequest,
-  onGenerationComplete,
-  buildGenerationRequest,
-}  from "../../../../lib/helpers";// Adjust the import path as needed
-import { client, metadata } from "../../../../lib/grpc-client";
 import Image from "next/image";
 import { CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,8 +15,6 @@ import { db } from "@/firebase";
 import { useUser } from "@clerk/nextjs";
 import { useProModal } from "@/hook/use-pro-modal";
 import toast from "react-hot-toast";
-import { checkApiLimit } from "@/lib/api-limit";
-import { checkSubscription, countCredit } from "@/lib/subscription";
 import axios from "axios";
 import { useLoginModal } from "@/hook/use-login-modal";
 import PickStyle from "@/components/ui/pickStyle";
@@ -31,8 +22,6 @@ import { PublishButton } from "@/components/publish_button";
 import "../../style.css";
 import { Clock } from "lucide-react";
 import { Enhance } from "@/app/api/enhance/route";
-import UserCredits from "@/components/credit_button";
-import { getCredits } from "@/lib/credits";
 import { SampleButton } from "@/components/ui/sample_button";
 export default function ImageToImagePage() {
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
@@ -406,7 +395,7 @@ const saveImagesInBackground = async (images : any) => {
             onClick={handleGenerate} disabled={isLoading}
             className="mt-4 w-full relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium text-white rounded-lg group bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-purple-500 group-hover:to-pink-500 hover:text-black   dark:text-white focus:ring-4 focus:outline-none focus:ring-purple-200 dark:focus:ring-purple-800"
             variant="premium">
-            <span className="w-full relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-opacity-0 ">  
+            <span >  
               {isLoading ? 'Generating...' : 'Generate'}
             </span>
           </Button>
@@ -427,7 +416,9 @@ Enhance Images
             </div>
           )}
           {generatedImage == null  && !isLoading && (
+            <div className="mb-5">
             <Empty label="No images generated." />
+            </div>
           )}
        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-8">
         {Array.isArray(generatedImage) && generatedImage.length > 0 ? (

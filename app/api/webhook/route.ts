@@ -58,7 +58,16 @@ export async function POST(req: Request) {
         deadline : new Date(
           subscription.current_period_end * 1000
         )
-     })} else {
+     })} else if (old_count === 'unlimited' && p_credit !== 'unlimited'){
+      await updateDoc(ApiCountRef, {
+        count: p_credit,
+        package : p,
+        deadline : new Date(
+          subscription.current_period_end * 1000
+        )
+     })
+     }
+      else {
      const new_count = parseInt(old_count, 10) + parseInt(p_credit, 10);
      await updateDoc(ApiCountRef, {
       count: new_count,

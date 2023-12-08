@@ -14,7 +14,6 @@ import { promptOptions } from "./constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faExpand, faLightbulb, faWandSparkles } from "@fortawesome/free-solid-svg-icons";
 import { PublishButton } from "@/components/publish_button";
-import { clerkClient } from "@clerk/nextjs";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useLoginModal } from "@/hook/use-login-modal";
@@ -362,7 +361,6 @@ const saveImagesInBackground = async (images : any) => {
       <div className="px-4 lg:px-8 bg-transparent" style={{ overflowY: !mobileSize ? 'scroll' : undefined, height:'850px'  }}>
         
       <div className="bg-white rounded-lg p-4 mb-4 mt-4">
-  {/* Text Prompt Section */}
   <div >
     <h2 className="text-mm text-blue-900 font-extrabold">Text Prompt</h2>
     <div className="flex items-center">
@@ -539,8 +537,9 @@ variant="premium">
       )}
 
       {(!image || image.length === 0) && !isLoading && photos.length === 0 && (
-        <Empty label="No images generated." />
-      )}
+ <div className="mb-5">
+ <Empty label="No images generated." />
+ </div>      )}
 
 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-2 ml-2 mr-2">
   {Array.isArray(image) && image.length > 0 ? (
