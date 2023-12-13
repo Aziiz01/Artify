@@ -17,13 +17,13 @@ export const Footer = () => {
               <div>
                   <h2 className="mb-6 text-sm font-semibold text-gray-900 uppercase dark:text-white">📄 Policies</h2>
                   <ul className="text-gray-500 dark:text-gray-400 font-medium">
-                      <li className="mb-4">
+                      <li className="mb-2">
                           <a href="https://flowbite.com/" className="hover:underline">Privacy Policy</a>
                       </li>
-                      <li>
+                      <li className="mb-2">
                           <a href="https://tailwindcss.com/" className="hover:underline">Terms of Service</a>
                       </li>
-                      <li>
+                      <li className="mb-2">
                           <a href="https://tailwindcss.com/" className="hover:underline">Refund Policy</a>
                       </li>
                   </ul>
@@ -31,16 +31,16 @@ export const Footer = () => {
               <div>
                   <h2 className="mb-6 text-sm font-semibold text-gray-900 uppercase dark:text-white">Follow us 🔗</h2>
                   <ul className="text-gray-500 dark:text-gray-400 font-medium">
-                      <li className="mb-4">
+                      <li className="mb-2">
                           <a href="https://github.com/themesberg/flowbite" className="hover:underline ">Instagram</a>
                       </li>
-                      <li>
+                      <li className="mb-2">
                           <a href="https://discord.gg/4eeurUVvTy" className="hover:underline">Pinterest</a>
                       </li>
-                      <li>
+                      <li className="mb-2">
                           <a href="https://discord.gg/4eeurUVvTy" className="hover:underline">Facebook</a>
                       </li>
-                      <li>
+                      <li className="mb-2">
                           <a href="https://discord.gg/4eeurUVvTy" className="hover:underline">Medium</a>
                       </li>
                   </ul>
@@ -48,11 +48,15 @@ export const Footer = () => {
               <div>
                   <h2 className="mb-6 text-sm font-semibold text-gray-900 uppercase dark:text-white">Create Artworks 🤖 </h2>
                   <ul className="text-gray-500 dark:text-gray-400 font-medium">
-                      <li className="mb-4">
-                          <a href="#" className="hover:underline">Privacy Policy</a>
+                      <li className="mb-2">
+                          <a href="/dashboard" className="hover:underline">Create Artworks</a>
                       </li>
-                      <li>
-                          <a href="#" className="hover:underline">Terms &amp; Conditions</a>
+                      
+                      <li className="mb-2">
+                          <a href="image-to-image" className="hover:underline">Enhance images</a>
+                      </li>
+                      <li className="mb-2">
+                          <a href="/upscale" className="hover:underline">Upscale images</a>
                       </li>
                   </ul>
               </div>

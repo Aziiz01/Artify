@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Info } from "@/app/(dashboard)/(routes)/credits/credit_info";
 import { Footer } from "@/components/footer";
+import { S_Loader } from "@/components/s_loader";
 const Pricing = () => {
   const [prices, setPrices] = useState<any[]>([]);
   const router = useRouter();
@@ -71,9 +72,9 @@ const Pricing = () => {
               <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-gray-600 sm:text-center">Go PRO for a monthly credit pack, early access to new models, no ads, and a range of other perks.</p>
          </div>
            {loading ? (
-        <div className="flex justify-center mt-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-        </div>
+            <div className="flex flex-col items-center mt-8 mb-8">
+            <S_Loader />
+          </div>
       ) : (
         <>
          <div className="flex justify-center mt-6 space-x-4 mb-2">

@@ -12,6 +12,7 @@
   import robot from '@/public/robot.jpg';
   import Discover from "@/components/ui/discoverTransition";
 import front from '@/public/front.jpg'
+import { Footer } from "@/components/footer";
 
   const cardData = [
     {
@@ -155,6 +156,7 @@ import front from '@/public/front.jpg'
           </ParallaxLayer>
         </Parallax>
       </div>
+      
     );
   }
   

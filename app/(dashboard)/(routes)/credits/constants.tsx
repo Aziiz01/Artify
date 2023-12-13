@@ -153,7 +153,7 @@ export const FAQSection = () => {
     },
     {
       question : "Why does it cost money?",
-      answer : "Imaginify used to offer unlimited creations for free, but the model quickly proved unsustainable as we grew. It takes a lot of computing power to process a creation, and that costs us money. However, as algorithms become more optimised, and compute power becomes cheaper, the cost of Imaginify credits has and will continue to go down."
+      answer : "Imaginify offers certain creations for free, but the more powerful models takes a lot of computing power to process a creation, and that costs us money. However, Imaginify prices are considered to be the cheapest in the market as we focus on giving the best experience for our users."
     }
   ];
 
