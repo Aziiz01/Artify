@@ -1,6 +1,4 @@
-"use client"
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/router'; 
+
 import { Montserrat } from "next/font/google";
 import Image from "next/image"
 import Link from "next/link"
@@ -21,69 +19,17 @@ import "./css/nav.css"
 
 const font = Montserrat({ weight: '600', subsets: ['latin'] });
 
-const Navbar = () => {
- //const { userId }: { userId: string | null } = auth();
-  const [apiLimitCount, setApiLimitCount] = useState<number>(0);
-  const [isPro, setIsPro] = useState<boolean>(false);
-  const [credits, setCredits] = useState<number>(0);
-  const { isSignedIn, user, isLoaded } = useUser();
-  const [isMobile, setIsMobile] = useState<boolean>(false);
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-
-
-
-  useEffect(() => {
-    if (isSignedIn) {
-      const userId = user.id; 
-    const fetchData = async () => {
-      try {
-        const limitCount = await getApiLimitCount(userId);
-        setApiLimitCount(limitCount);
-
-        const subscriptionStatus = await checkSubscription(userId);
-        setIsPro(subscriptionStatus);
-
-        const userCredits = await getCredits();
-        setCredits(userCredits);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
-      fetchData();
-  }
-  }, [isSignedIn,user]);
-
-
-
-  useEffect(() => {    
-    const handleResize = () => {
-      const isMobile = window.innerWidth < 768;
-      setIsMobile(isMobile);
-    };
-
-    window.addEventListener('resize', handleResize);
-    handleResize();
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-    
-  }, []);
-
-
-  const handleToggleModal = () => {
-    setIsModalOpen(!isModalOpen);
-  };
-
-  const handleLinkClicked = () => {
-    setIsModalOpen(false);
-  }
+ const Navbar = async () => {
+  const { userId } : { userId: string | null } = auth();
+  const apiLimitCount = await getApiLimitCount(userId);
+  const isPro = await checkSubscription(userId);
+  const credits = await getCredits();
 
   return (
     <nav className="p-4 bg-transparent flex items-center justify-between">
       <div id="logo" className="flex items-center gap-10">
         <Link href="/" className="flex items-center">
-          <div className="relative h-8 w-8 mr-4" onClick={handleLinkClicked}>
+          <div className="relative h-8 w-8 mr-4" >
             <Image fill alt="Logo" src="/logo.png" />
           </div>
           <h1 className={cn("text-2xl font-bold text-white", font.className)}>
@@ -102,7 +48,7 @@ const Navbar = () => {
                 transition-all
                 hover:shadow-[-1px_-1px_5px_rgba(255,_255,_255,_0.6),_1px_1px_5px_rgba(0,_0,_0,_0.3),inset_-2px_-2px_5px_rgba(255,_255,_255,_1),inset_2px_2px_4px_rgba(0,_0,_0,_0.3)]
                hover:text-violet-500
-            `} onClick={handleLinkClicked}>
+            `}>
             Generate Art     
              <FontAwesomeIcon icon={faRocket} className="ml-2" />
           </Button>
@@ -116,7 +62,7 @@ const Navbar = () => {
                 transition-all
                 hover:shadow-[-1px_-1px_5px_rgba(255,_255,_255,_0.6),_1px_1px_5px_rgba(0,_0,_0,_0.3),inset_-2px_-2px_5px_rgba(255,_255,_255,_1),inset_2px_2px_4px_rgba(0,_0,_0,_0.3)]
                hover:text-violet-500
-            `} onClick={handleLinkClicked}>
+            `}>
             Enhance      
              <FontAwesomeIcon icon={faWandSparkles} className="ml-2" />
           </Button>
@@ -130,7 +76,7 @@ const Navbar = () => {
                 transition-all
                 hover:shadow-[-1px_-1px_5px_rgba(255,_255,_255,_0.6),_1px_1px_5px_rgba(0,_0,_0,_0.3),inset_-2px_-2px_5px_rgba(255,_255,_255,_1),inset_2px_2px_4px_rgba(0,_0,_0,_0.3)]
                hover:text-violet-500
-            `} onClick={handleLinkClicked}>
+            `}>
             Upscale     
              <FontAwesomeIcon icon={faExpand} className="ml-2" />
           </Button>
@@ -144,7 +90,7 @@ const Navbar = () => {
                 transition-all
                 hover:shadow-[-1px_-1px_5px_rgba(255,_255,_255,_0.6),_1px_1px_5px_rgba(0,_0,_0,_0.3),inset_-2px_-2px_5px_rgba(255,_255,_255,_1),inset_2px_2px_4px_rgba(0,_0,_0,_0.3)]
                hover:text-violet-500
-            `} onClick={handleLinkClicked}>
+            `}>
             My Creations     
              <FontAwesomeIcon icon={faPalette} className="ml-2" />
           </Button>
@@ -159,10 +105,10 @@ const Navbar = () => {
                 transition-all
                 hover:shadow-[-1px_-1px_5px_rgba(255,_255,_255,_0.6),_1px_1px_5px_rgba(0,_0,_0,_0.3),inset_-2px_-2px_5px_rgba(255,_255,_255,_1),inset_2px_2px_4px_rgba(0,_0,_0,_0.3)]
                hover:text-violet-500
-            `} onClick={handleLinkClicked}>
+            `}>
             Explore     
              <FontAwesomeIcon icon={faSearch} className="ml-2" />
-          </Button>
+          </Button> 
         </Link>
         <Link href="/settings">
           <Button variant="outline" className={`
@@ -173,7 +119,7 @@ const Navbar = () => {
                 transition-all
                 hover:shadow-[-1px_-1px_5px_rgba(255,_255,_255,_0.6),_1px_1px_5px_rgba(0,_0,_0,_0.3),inset_-2px_-2px_5px_rgba(255,_255,_255,_1),inset_2px_2px_4px_rgba(0,_0,_0,_0.3)]
                hover:text-violet-500
-            `} onClick={handleLinkClicked}>
+            `}>
             Settings     
              <FontAwesomeIcon icon={faCog} className="ml-2" />
           </Button>
@@ -183,25 +129,12 @@ const Navbar = () => {
         <FreeCounter
           apiLimitCount={apiLimitCount} 
           isPro={isPro}
-          credits={credits}
+          initialCredits={credits}
         />
 
-        <div id="userbtn" className="ml-2" >
+        <div className="ml-2">
           <UserButton />
         </div>
-      <div className={`ml-2 ${isMobile ? 'flex' : 'hidden'}`}>
-        <Button variant="outline" className="rounded-full" onClick={handleToggleModal}>
-          <RxHamburgerMenu style={{width:'30px', height:'30px'}} />
-        </Button>
-      </div>
-      {isModalOpen && (
-        <FullScreenModal
-          onClose={handleToggleModal}
-          content={
-           <HoverImageLinks/>
-          }
-        />
-      )}
     </nav>
   )
 }

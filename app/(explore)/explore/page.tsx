@@ -1,7 +1,6 @@
-////////TO DESIGN 
 'use client'
 import React, { useEffect, useState } from "react";
-import { collection, getDocs, query, where, doc, updateDoc } from "firebase/firestore";
+import { collection, getDocs, query, where, doc, updateDoc, orderBy } from "firebase/firestore";
 import { db } from "@/firebase";
 import Image from "next/image";
 import { useUser } from "@clerk/nextjs";
@@ -17,13 +16,20 @@ interface ImageData {
   id: string;
   imageUrl: string;
   prompt: string;
+  negativePrompt: string;
   likes: string[];
   height: number;
   width: number;
   style : string,
-  model : string
-}
+  model : string,
+  timeStamp: Date;
 
+}
+const filteringOptions = [
+  { label: "Created Date (Descending)", value: "createdDateDesc" },
+  { label: "Created Date (Ascending)", value: "createdDateAsc" },
+  { label: "Most Liked", value: "mostLiked" },
+];
 const ExplorePage: React.FC = () => {
   const [showLikesList, setShowLikesList] = useState(false);
   const [images, setImages] = useState<ImageData[]>([]);
@@ -31,6 +37,7 @@ const ExplorePage: React.FC = () => {
   const { isSignedIn, user, isLoaded } = useUser();
   const loginModal = useLoginModal();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [filterOption, setFilterOption] = useState<string>("createdDateDesc");
 
   const openModal = (image: ImageData) => {
     setSelectedImage(image);
@@ -56,20 +63,56 @@ const ExplorePage: React.FC = () => {
     const fetchImages = async () => {
       try {
         const imagesRef = collection(db, "images");
-        const q = query(imagesRef, where("published", "==", true));
+        let q: any;
+
+        switch (filterOption) {
+          case "createdDateDesc":
+            q = query(imagesRef,where("published", "==", true), orderBy("timeStamp", "desc"));
+            break;
+          case "createdDateAsc":
+            q = query(imagesRef, where("published", "==", true), orderBy("timeStamp", "asc"));
+            break;
+            case "mostLiked":
+              q = query(
+                imagesRef,
+                where("published", "==", true),
+                orderBy("likes", "desc"),
+              );
+              break;
+            
+            
+          default:
+            q = query(imagesRef, where("published", "==", true), orderBy("timeStamp", "asc"));
+        }
         const querySnapshot = await getDocs(q);
 
         const imageData: ImageData[] = [];
         querySnapshot.forEach((doc) => {
+          const data = doc.data() as {
+            image: string;
+            prompt: string;
+            negativePrompt: string;
+            likes: string[];
+            height: number;
+            width: number;
+            Style: string;
+            Model: string;
+            published: boolean;
+            timeStamp: Date;
+          };
+          const createdAtDate = new Date(data.timeStamp);
           imageData.push({
             id: doc.id,
-            imageUrl: doc.data().image,
-            prompt: doc.data().prompt,
-            likes: doc.data().likes,
-            height: doc.data().height,
-            width: doc.data().width,
-            style : doc.data().Style,
-            model : doc.data().Model,
+            imageUrl:data.image,
+            prompt:data.prompt,
+            negativePrompt:data.negativePrompt,
+            likes:data.likes,
+            height:data.height,
+            width:data.width,
+            style :data.Style,
+            model :data.Model,
+            timeStamp: createdAtDate,
+
           });
         });
 
@@ -80,7 +123,7 @@ const ExplorePage: React.FC = () => {
     };
 
     fetchImages();
-  }, []);
+  }, [filterOption]);
 
   const isLiked = (image: ImageData, user_email: string) => {
     return image.likes.includes(user_email);
@@ -144,7 +187,22 @@ const ExplorePage: React.FC = () => {
   
   return (
   <div>
-    <h1>Explore Images</h1>
+ <div style={{ textAlign: 'center' }}>
+        <h1 style={{ fontSize: '3em' }}>Explore</h1>
+      </div>    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1em' }}>
+        <label htmlFor="filterDropdown" style={{ marginRight: '0.5em' }}>Filter By:</label>
+        <select
+          id="filterDropdown"
+          value={filterOption}
+          onChange={(e) => setFilterOption(e.target.value)}
+        >
+          {filteringOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       {images.map((image) => (
         <div key={image.id} className="grid gap-4 relative">
@@ -191,37 +249,41 @@ const ExplorePage: React.FC = () => {
     {showLikesList && selectedImage && (
       <LikesList image={selectedImage} onClose={closeLikesList} />
     )}
-   <Modal
+  <Modal
   isOpen={isModalOpen}
   onRequestClose={closeModal}
   contentLabel="Image Modal"
   style={modalStyle}
+  ariaHideApp={false}
 >
   {selectedImage && (
-    <div className="vertical-modal-container">
-      <div className="modal-image-container">
+    <div style={{ display: 'flex', alignItems: 'center', padding: '20px' }}>
+      <div style={{ marginRight: '20px' }}>
         <Image
           src={selectedImage.imageUrl}
           alt={selectedImage.prompt}
-          height={selectedImage.height}
-          width={selectedImage.width}
+          height={512}
+          width={512}
           className="image"
         />
       </div>
-      <div className="details-container">
-        <div className="text-container">
-          <h2 className="image-prompt artistic-text">{selectedImage.prompt}</h2>
+      <div>
+        <div style={{ marginBottom: '10px' }}>
+          <h2 style={{ fontSize: '1.5em', fontWeight: 'bold' }}>{selectedImage.prompt}</h2>
         </div>
-        <hr className="horizontal-line" />
-        <div className="buttons-container">
-          <button className="button pink-button artistic-button">
+        <div style={{ marginBottom: '10px' }}>
+          <h2 style={{ fontSize: '1.2em', fontWeight: 'bold' }}>negativePrompt : {selectedImage.negativePrompt}</h2>
+        </div>
+        <hr style={{ height: '1px', background: '#ccc', border: 'none', margin: '10px 0' }} />
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <button style={{ marginBottom: '10px' }} className="button pink-button artistic-button">
             {selectedImage.model}
           </button>
-          <button className="button purple-button artistic-button">
+          <button style={{ marginBottom: '10px' }} className="button purple-button artistic-button">
             {selectedImage.style}
           </button>
           <button className="button teal-button artistic-button">
-            {selectedImage.height}*{selectedImage.width}
+            {selectedImage.height} x {selectedImage.width}
           </button>
         </div>
       </div>

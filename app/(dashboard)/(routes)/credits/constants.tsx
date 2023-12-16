@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export  const packs = [
     {
         title: "AI BEGINNER",
@@ -116,3 +118,41 @@ export  const packs = [
       },
       
 ];
+
+export const FAQSection = () => {
+  const faqs = [
+    {
+      question: "Can I cancel my subscription?",
+        answer:   <>
+        You can cancel your subscription at any time and you ll still keep your PRO benefits. You can also pause your payment. All this can be done from the Manage my subscription section under{' '}
+        <Link href="/settings">
+          <div className="text-blue-500 hover:underline">Settings .</div>
+        </Link>
+        
+      </>
+      },
+      {
+        question: "Is my data secure?",
+        answer: "Yes, we prioritize the security of your data. We use advanced security features and comply with PCI DSS standards.",
+      },
+    {
+      question: "Do credits expire?",
+      answer: "No. Any unused credits will roll over into the next month. Even if you cancel your PRO membership, you'll still have access to all the credits you received while you were subscribed.",
+    },
+    // Add more FAQ items as needed
+  ];
+
+  return (
+    <div className="mt-8">
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Pricing FAQs</h2>
+      <div className="grid gap-4">
+        {faqs.map((faq, index) => (
+          <div key={index} className="bg-white dark:bg-gray-800 p-4 rounded-md shadow-md">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{faq.question}</h3>
+            <p className="text-gray-500 dark:text-gray-400">{faq.answer}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};

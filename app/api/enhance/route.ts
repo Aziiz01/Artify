@@ -65,8 +65,9 @@ export async function Enhance(userId: string, uploadedImage: File | null, passed
           {
             method: 'POST',
             headers: {
-              ...headers,
-              ...formData.getHeaders(),
+              ...formData.getHeaders,
+              Accept: 'application/json',
+              Authorization: `Bearer ${apiKey}`,
             },
             body: formData,
           }

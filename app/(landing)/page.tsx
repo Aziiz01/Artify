@@ -1,16 +1,8 @@
-"use client"
 import { LandingNavbar } from "@/components/landing-navbar";
 import { LandingHero } from "@/components/landing-hero";
-import { LandingContent } from "@/components/landing-content";
-import { Parallax, ParallaxLayer } from '@react-spring/parallax'
 import InstructionCard from '@/components/ui/instructionCard';
 import InstructionImage from "@/components/ui/instructionImage";
-import CardModel from "@/components/ui/cardModel";
-import CarouselComponent from "@/components/ui/carousel";
-import TyperWriter from "@/components/ui/typerWriter";
-import horizon from '@/public/horizon.jpg';
 import robot from '@/public/robot.jpg';
-import Discover from "@/components/ui/discoverTransition";
 import front from '@/public/front.jpg'
 import Example from "@/components/HorizontalScrollCarousel";
 import homeBg from '@/public/homeBg.jpg';

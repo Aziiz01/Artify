@@ -14,13 +14,13 @@ import { promptOptions } from "./constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faExpand, faLightbulb, faWandSparkles } from "@fortawesome/free-solid-svg-icons";
 import { PublishButton } from "@/components/publish_button";
-import { clerkClient } from "@clerk/nextjs";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useLoginModal } from "@/hook/use-login-modal";
 import PickStyle from "@/components/ui/pickStyle";
 import "../../style.css";
 import Modal from 'react-modal';
+import { SampleButton } from "@/components/ui/sample_button";
 
 export default function HomePage() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -152,7 +152,6 @@ export default function HomePage() {
     return `${timestamp}-${randomPart}`;
   }
 
-
   const DALLE = async (values: any) => {
     try {
       setPhotos([]);
@@ -165,19 +164,16 @@ export default function HomePage() {
         for (const url of urls) {
           const documentId = generateRandomId();
           setImageId(documentId);
-    
-          // Send a POST request for each URL separately
-          await axios.post('/api/dalleStorage', { url, values, documentId });
+        await axios.post('/api/dalleStorage', { url, values, documentId });
         }     
        } else { 
         console.log('saving first')
         for (const url of urls) {
           const documentId = generateRandomId();
           setImageId(documentId);
-    
-          // Send a POST request for each URL separately
-          await axios.post('/api/dalleStorage', { url, values, documentId });
-        }        setPhotos(urls);
+         await axios.post('/api/dalleStorage', { url, values, documentId });
+        }   
+         setPhotos(urls);
       }
      
     } catch (error: any) {
@@ -192,7 +188,6 @@ export default function HomePage() {
   };
   
 const saveImagesInBackground = async (images : any) => {
-  // Save the images in the background
   const saveImagesPromises = images.map(async (img : any) => {
     const generatedImage = img.src;
     const base64Data = generatedImage.split(',')[1];
@@ -210,6 +205,7 @@ const saveImagesInBackground = async (images : any) => {
       await axios.post('/api/sdxlStorage', {
      documentId,
      textInput,
+     negativePrompt,
      selectedModel,
      selectedStyle,
      height,
@@ -228,10 +224,8 @@ const saveImagesInBackground = async (images : any) => {
     return img;
   });
 
-  // Wait for all image save promises to resolve (in the background)
   try {
     await Promise.all(saveImagesPromises);
-    // Optionally, update the UI or perform any actions after saving is complete
     console.log("Images saved successfully");
   } catch (error) {
     console.error("Error saving images:", error);
@@ -241,14 +235,13 @@ const saveImagesInBackground = async (images : any) => {
 
   const generateImage = async () => {
     setIsLoading(true);
-    router.refresh();
+    //router.refresh();
     if (isSignedIn) {
       const userId = user.id;
       try {
         if (selectedModel === 'DALL E2') {
           await DALLE(values);
         } else {
-          
             try {
               if (selectedModel === "stable-diffusion-xl-1024-v1-0" || selectedModel === "stable-diffusion-xl-1024-v0-9") {
                 setHeight(height)
@@ -260,15 +253,13 @@ const saveImagesInBackground = async (images : any) => {
               const generatedImages = await SDXL(userId, textInput,negativePrompt, selectedStyle, selectedSamples,height,width,selectedModel,cfgScale, seed, steps,fast_count);
               if (generatedImages !== null && generatedImages !== false) {
                 if (displayImagesImmediately) {
-                  console.log('displaying first')
                   setImage(generatedImages);
                   saveImagesInBackground(generatedImages);
                 } else { 
-                  console.log('saving first')
                   saveImagesInBackground(generatedImages);
                   setImage(generatedImages);
                 }
-                router.refresh();
+               // router.refresh();
               } else if (generatedImages === false) {
                 toast.error("You credit balance is insufficient!");
                 proModal.onOpen();
@@ -289,22 +280,15 @@ const saveImagesInBackground = async (images : any) => {
         }
       } finally {
         setIsLoading(false);
+        router.refresh();
+
       }
     } else {
      loginModal.onOpen();
     }
   };
   
-  const SampleButton = ({ value, selected, onClick }: { value: number, selected: number, onClick: (value: number) => void }) => (
-    <button
-      className={`bloc w-16 text-base text-gray-900 border border-gray-300 rounded-lg ${
-        selected === value ? 'bg-gray-200' : 'bg-gray-50'
-      } focus:ring-blue-900 focus:border-red-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500`}
-      onClick={() => onClick(value)}
-    >
-      {value}
-    </button>
-  );
+
   
   const openModal = (image: HTMLImageElement) => {
     setSelectedImage(image);
@@ -377,7 +361,6 @@ const saveImagesInBackground = async (images : any) => {
       <div className="px-4 lg:px-8 bg-transparent" style={{ overflowY: !mobileSize ? 'scroll' : undefined, height:'850px'  }}>
         
       <div className="bg-white rounded-lg p-4 mb-4 mt-4">
-  {/* Text Prompt Section */}
   <div >
     <h2 className="text-mm text-blue-900 font-extrabold">Text Prompt</h2>
     <div className="flex items-center">
@@ -542,10 +525,10 @@ variant="premium">
     </div>
     <div  style={{ overflowY: !mobileSize ? 'scroll' : undefined, height:'850px' }}>
       <div className="mb-8 space-y-4 text-center">
-        <h2 className="text-4xl font-bold">Explore the Power of AI</h2>
+      <h2 className="text-4xl mt-5 text-blue-900 font-extrabold">
+          Generate Art</h2>
         <p className="text-gray-500 text-lg">
-          Chat with the Smartest AI - Experience the Power of AI
-        </p>
+        Text-to-Image Wizardry: Bring Words to Life with AI-Powered Imaging        </p>
       </div>
       {isLoading && (
         <div className="p-20">
@@ -554,8 +537,9 @@ variant="premium">
       )}
 
       {(!image || image.length === 0) && !isLoading && photos.length === 0 && (
-        <Empty label="No images generated." />
-      )}
+ <div className="mb-5">
+ <Empty label="No images generated." />
+ </div>      )}
 
 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-2 ml-2 mr-2">
   {Array.isArray(image) && image.length > 0 ? (

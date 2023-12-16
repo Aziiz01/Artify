@@ -5,6 +5,7 @@ import { NextResponse } from "next/server"
 import { stripe } from "@/lib/stripe"
 import { db } from "@/firebase"
 import {collection, serverTimestamp, doc, query , where , getDocs ,setDoc, getDoc, updateDoc} from "firebase/firestore"
+import toast from "react-hot-toast"
 
 export async function POST(req: Request) {
   const body = await req.text()
@@ -31,6 +32,7 @@ export async function POST(req: Request) {
     if (!session?.metadata?.userId) {
       return new NextResponse("User id is required", { status: 400 });
     } 
+    const p= subscription.items.data[0].price.lookup_key;
     await setDoc(doc(db, "userSubscription", session?.metadata?.userId), {
       timeStamp: serverTimestamp(),
       payment_email: session?.customer_details?.email,
@@ -42,56 +44,64 @@ export async function POST(req: Request) {
         ),
        credits: subscription.items.data[0].price.metadata.credits,
     }, { merge: true });
+
     const ApiCountRef = doc(db, 'UserCredits', session?.metadata?.userId);
     const docSnap = await getDoc(ApiCountRef);
+    const p_credit= subscription.items.data[0].price.metadata.credits;
 
     if (docSnap.exists()){
-     const docData = docSnap.data();
-     const new_count = parseInt(docData.count, 10) + parseInt(subscription.items.data[0].price.metadata.credits, 10);
+     const old_count = docSnap.data().count;
+     if (p_credit === 'unlimited' ){
+      await updateDoc(ApiCountRef, {
+        count: p_credit,
+        package : p,
+        deadline : new Date(
+          subscription.current_period_end * 1000
+        )
+     })} else if (old_count === 'unlimited' && p_credit !== 'unlimited'){
+      await updateDoc(ApiCountRef, {
+        count: p_credit,
+        package : p,
+        deadline : new Date(
+          subscription.current_period_end * 1000
+        )
+     })
+     }
+      else {
+     const new_count = parseInt(old_count, 10) + parseInt(p_credit, 10);
      await updateDoc(ApiCountRef, {
       count: new_count,
+      package : p,
+      deadline : new Date(
+        subscription.current_period_end * 1000
+      )
   });
-    }else{
+   } }else{
 setDoc(ApiCountRef, {
-   count: subscription.items.data[0].price.metadata.credits }, { merge: true });
+    package : p,
+     count: p_credit,
+   deadline : new Date(
+    subscription.current_period_end * 1000
+  )
+}, { merge: true });
   }}
-
-  if (event.type === "invoice.payment_succeeded") {
-    const subscription = await stripe.subscriptions.retrieve(
-      session.subscription as string
-    )
-
+    if (event.type === "invoice.payment_succeeded") {
+      const subscription = await stripe.subscriptions.retrieve(
+        session.subscription as string )
+       
     const q = query(collection(db, "userSubscription"), where("stripeSubscriptionId", "==", subscription.id));
     const querySnapshot = await getDocs(q);
     
     querySnapshot.forEach((doc) => {
-      const docRef = doc.ref; // Get a reference to the document
+      const docRef = doc.ref; 
       const updateData = {
         stripePriceId: subscription.items.data[0].price.id,
         stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
       };
-    
-      // Update the document with the new data
-      setDoc(docRef, updateData, { merge: true });
-    
-      console.log(doc.id, " => Document updated with new data");
-
+          setDoc(docRef, updateData, { merge: true });
     });
     
-/*
-
-    await prismadb.userSubscription.update({
-      where: {
-        stripeSubscriptionId: subscription.id,
-      },
-      data: {
-        stripePriceId: subscription.items.data[0].price.id,
-        stripeCurrentPeriodEnd: new Date(
-          subscription.current_period_end * 1000
-        ),
-      },
-    })
-  */}
+}
 
   return new NextResponse(null, { status: 200 })
 };

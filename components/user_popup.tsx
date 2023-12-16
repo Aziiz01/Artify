@@ -76,10 +76,7 @@ export const UserPopup = ({ imageId }: { imageId: string }) => {
       {/* Your existing name text */}
       <span onMouseEnter={handleHover} onMouseLeave={handleLeave} style={{ cursor: "pointer" }}>
         {name}{isPro && (
-    <span style={{ backgroundColor: "green", color: "white", fontSize: "0.8em", marginLeft: "2px", padding: "2px 4px", borderRadius: "4px" }}>
-      Pro
-      <FontAwesomeIcon icon={faDollarSign} />
-    </span>
+         <span className="bg-blue-100 text-blue-800 text-mm font-semibold me-2 px-2.5 py-0.5 rounded dark:bg-blue-200 dark:text-blue-800 ms-2">PRO </span>
   )}
       
 </span>
@@ -100,10 +97,8 @@ export const UserPopup = ({ imageId }: { imageId: string }) => {
           </div>
           <p className="text-base font-semibold leading-none text-gray-900 dark:text-white">
             <a href="#">{name}</a>{isPro && (
-    <span style={{ backgroundColor: "green", color: "white", fontSize: "0.8em", marginLeft: "2px", padding: "2px 4px", borderRadius: "4px" }}>
-      Pro
-      <FontAwesomeIcon icon={faDollarSign} />
-    </span>
+              <span className="bg-blue-100 text-blue-800 text-mm font-semibold me-2 px-2.5 py-0.5 rounded dark:bg-blue-200 dark:text-blue-800 ms-2">PRO </span>
+    
   )}
           </p>
           <p className="mb-3 text-sm font-normal">

@@ -4,7 +4,7 @@ import { AiFillCheckCircle } from 'react-icons/ai';
 
 interface PricingCardProps {
   price: {
-    nickname: string;
+    lookup_key: string;
     unit_amount: number;
     id: string;
   };
@@ -12,21 +12,21 @@ interface PricingCardProps {
 
 const PricingCard: React.FC<PricingCardProps> = ({ price }) => {
   const dynamicSubTitle = (price: PricingCardProps["price"]) => {
-    if (price.nickname === "AI BEGINNER") {
-      return <p className="text-[#f1592a] mt-1">AI BEGINNER</p>;
-    } else if (price.nickname === "AI HOBBYIST") {
+    if (price.lookup_key === "Pro-Weekly") {
+      return <p className="text-[#f1592a] mt-1">Pro-Weekly</p>;
+    } else if (price.lookup_key === "AI HOBBYIST") {
       return <p className="text-[#f1592a] mt-1">AI HOBBYIST</p>;
-    } else if (price.nickname === "10-Yard Dumpster") {
+    } else if (price.lookup_key === "10-Yard Dumpster") {
       return <p className="text-[#f1592a] mt-1">AI ENTHUSIAST</p>;
-    } else if (price.nickname === "AI ENTHUSIAST") {
+    } else if (price.lookup_key === "AI ENTHUSIAST") {
       return <p className="text-[#f1592a] mt-1">AI ENTHUSIAST</p>;
-    }  else if (price.nickname === "AI ARTIST") {
+    }  else if (price.lookup_key === "AI ARTIST") {
       return <p className="text-[#f1592a] mt-1">AI ARTIST</p>;
     }
   };
 
   const dynamicDescription = (price: PricingCardProps["price"]) => {
-    if (price.nickname === "AI ARTIST") {
+    if (price.lookup_key === "AI ARTIST") {
       return (
         <div className="mt-6 space-y-4">
           <div className="flex space-x-3">
@@ -67,7 +67,7 @@ const PricingCard: React.FC<PricingCardProps> = ({ price }) => {
           <div className="border" />
         </div>
       );
-    } else if (price.nickname === "AI ENTHUSIAST") {
+    } else if (price.lookup_key === "AI ENTHUSIAST") {
       return (
         <div className="mt-6 space-y-4">
           <div className="flex space-x-3">
@@ -106,7 +106,7 @@ const PricingCard: React.FC<PricingCardProps> = ({ price }) => {
           <div className="border" />
         </div>
       );
-    } else if (price.nickname === "AI HOBBYIST") {
+    } else if (price.lookup_key === "AI HOBBYIST") {
       return (
         <div className="mt-6 space-y-4">
           <div className="flex space-x-3">
@@ -145,7 +145,7 @@ const PricingCard: React.FC<PricingCardProps> = ({ price }) => {
           <div className="border" />
         </div>
       );
-    } else if (price.nickname === "AI BEGINNER") {
+    } else if (price.lookup_key === "AI BEGINNER") {
       return (
         <div className="mt-6 space-y-4">
           <div className="flex space-x-3">
@@ -214,7 +214,7 @@ const PricingCard: React.FC<PricingCardProps> = ({ price }) => {
     <div className="border-gray-100 shadow-2xl border-4 text-center mt-10 max-w-[1040px]">
       <div>
         <div className="bg-gray-100 h-28 items-center font-bold">
-          <h4 className="text-3xl">{price.nickname}</h4>
+          <h4 className="text-3xl">{price.lookup_key}</h4>
           <p>{dynamicSubTitle(price)}</p>
         </div>
         <div>
@@ -225,7 +225,6 @@ const PricingCard: React.FC<PricingCardProps> = ({ price }) => {
                 currency: 'USD'
               })}
             </h1>
-            <h3>Additional weight just $.05 / lb</h3>
           </div>
           <ul className="flex justify-center">
             <li className="text-xl font-bold">{dynamicDescription(price)}</li>
