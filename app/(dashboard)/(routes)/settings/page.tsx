@@ -5,6 +5,7 @@ import { checkSubscription } from "@/lib/subscription";
 import { getCredits } from "@/lib/credits";
 import { auth } from "@clerk/nextjs";
 import { getPackage } from "@/lib/package";
+import { Footer } from "@/components/footer";
 
 const SettingsPage = async () => {
   const { userId } : { userId: string | null } = auth();
@@ -32,6 +33,7 @@ const p = await getPackage();
           `Your current package is ${p}`
         ): ""}
       </div>
+      <Footer />
     </div>
   );
 }

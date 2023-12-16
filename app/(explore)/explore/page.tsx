@@ -11,6 +11,7 @@ import "./style.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart } from "@fortawesome/free-solid-svg-icons";
 import { UserPopup } from "@/components/user_popup";
+import { S_Loader } from "@/components/s_loader";
 
 interface ImageData {
   id: string;
@@ -33,26 +34,34 @@ const filteringOptions = [
 const ExplorePage: React.FC = () => {
   const [showLikesList, setShowLikesList] = useState(false);
   const [images, setImages] = useState<ImageData[]>([]);
-  const [selectedImage, setSelectedImage] = useState<ImageData | null>(null);
+  const [selectedImage, setSelectedImage] = useState<any>();
   const { isSignedIn, user, isLoaded } = useUser();
   const loginModal = useLoginModal();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterOption, setFilterOption] = useState<string>("createdDateDesc");
-
+  
+const isImageLoading = true;
   const openModal = (image: ImageData) => {
     setSelectedImage(image);
     setIsModalOpen(true);
   };
+  
   const closeModal = () => {
     setSelectedImage(null);
     setIsModalOpen(false);
   };
   
-  
-  const openLikesList = (image: ImageData) => {
-    setSelectedImage(image);
-    setShowLikesList(true);
+  const modalStyle = {
+    overlay: {
+      backgroundColor: 'rgba(0, 0, 0, 0.5)', // Adjust the alpha value for darkness
+      zIndex: 1000,
+    },
+    content: {
+      maxWidth: '800px',
+      margin: 'auto',
+    },
   };
+ 
 
   const closeLikesList = () => {
     setSelectedImage(null);
@@ -177,13 +186,7 @@ const ExplorePage: React.FC = () => {
     }
   };
  
-  const modalStyle = {
-    content: {
-      display: 'grid',
-      gridTemplateColumn:'50% 50%',
-      // Adjust the height as needed
-    },
-  };
+ 
   
   return (
   <div>
@@ -203,16 +206,11 @@ const ExplorePage: React.FC = () => {
           ))}
         </select>
       </div>
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
       {images.map((image) => (
-        <div key={image.id} className="grid gap-4 relative">
-          <div
-            onClick={() => openModal(image)}
-            className="image-container"
-            style={{ cursor: 'pointer' }}
-          >
-            
-            <Image
+        <div key={image.id} className="grid gap-3 relative">
+<div className="card" onClick={() => openModal(image)}>
+<Image
               className="image h-auto max-w-full rounded-lg"
               src={image.imageUrl}
               alt={image.prompt}
@@ -220,10 +218,9 @@ const ExplorePage: React.FC = () => {
               width={image.width}
 
             />
-            <div className="image-overlay" >
-            
-              <UserPopup imageId={image.id} />
-              <div
+  <div className="card__content">
+  <UserPopup imageId={image.id} />
+ <div
                 className={`like-icon ${!isSignedIn ? 'login-required' : isLiked(image, user.emailAddresses[0].emailAddress) ? 'liked' : ''}`}
                 onClick={(e) => {
                   e.stopPropagation(); // Prevent the click event from propagating
@@ -235,13 +232,39 @@ const ExplorePage: React.FC = () => {
                 }}
                 style={{ cursor: 'pointer' }}
               >
-                <FontAwesomeIcon icon={faHeart} className="mr-1" />
+                <FontAwesomeIcon icon={faHeart} />
               </div>
-              <div className="like-count">
+ <div className="like-count">
                 {image.likes.length} likes
               </div>
-            </div>
+              <div>
+        <div style={{ marginBottom: '10px' }}>
+          <h2 style={{ fontSize: '1em', fontWeight: 'bold' }}>Prompt :</h2>
+          {image.prompt}
+        </div>
+        {((image.negativePrompt) && (image.negativePrompt !== '') )?
+        <div style={{ marginBottom: '10px' }}>
+          <h2 style={{ fontSize: '1.2em', fontWeight: 'bold' }}>negativePrompt : </h2>
+          {image.negativePrompt}
+        </div>
+: null}
+        <hr style={{ height: '1px', background: '#ccc', border: 'none', margin: '10px 0' }} />
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div style={{ marginBottom: '10px' }} >
+            {image.model}
           </div>
+          <div style={{ marginBottom: '10px' }} >
+            {image.style}
+          </div>
+          <div>
+            {image.height} x {image.width}
+          </div>
+        </div>
+      </div>
+  </div>
+</div>
+
+
         </div>
       ))}
     </div>
@@ -249,47 +272,35 @@ const ExplorePage: React.FC = () => {
     {showLikesList && selectedImage && (
       <LikesList image={selectedImage} onClose={closeLikesList} />
     )}
-  <Modal
-  isOpen={isModalOpen}
-  onRequestClose={closeModal}
-  contentLabel="Image Modal"
-  style={modalStyle}
-  ariaHideApp={false}
->
-  {selectedImage && (
-    <div style={{ display: 'flex', alignItems: 'center', padding: '20px' }}>
-      <div style={{ marginRight: '20px' }}>
-        <Image
-          src={selectedImage.imageUrl}
-          alt={selectedImage.prompt}
-          height={512}
-          width={512}
-          className="image"
-        />
-      </div>
-      <div>
-        <div style={{ marginBottom: '10px' }}>
-          <h2 style={{ fontSize: '1.5em', fontWeight: 'bold' }}>{selectedImage.prompt}</h2>
+ <Modal
+      isOpen={isModalOpen}
+      onRequestClose={closeModal}
+      contentLabel="Image Modal"
+      style={modalStyle}
+    >
+      {selectedImage && (
+        
+        <div className="vertical-modal-container">
+                    {isImageLoading && 
+        <div className="absolute inset-0 flex items-center justify-center">
+                <S_Loader />
+              </div>} 
+
+          <div className="modal-image-container">
+
+            <Image
+              src={selectedImage.imageUrl}
+              alt="selectedImage"
+              fill
+              className="image"
+
+            />
+            
+          </div> 
         </div>
-        <div style={{ marginBottom: '10px' }}>
-          <h2 style={{ fontSize: '1.2em', fontWeight: 'bold' }}>negativePrompt : {selectedImage.negativePrompt}</h2>
-        </div>
-        <hr style={{ height: '1px', background: '#ccc', border: 'none', margin: '10px 0' }} />
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <button style={{ marginBottom: '10px' }} className="button pink-button artistic-button">
-            {selectedImage.model}
-          </button>
-          <button style={{ marginBottom: '10px' }} className="button purple-button artistic-button">
-            {selectedImage.style}
-          </button>
-          <button className="button teal-button artistic-button">
-            {selectedImage.height} x {selectedImage.width}
-          </button>
-        </div>
-      </div>
-    </div>
-  )}
-</Modal>
+      )}
+    </Modal>
+  
 
   </div>
 );

@@ -13,11 +13,12 @@ import { faEye, faEyeSlash, faHeart } from "@fortawesome/free-solid-svg-icons";
 import { UserPopup } from "@/components/user_popup";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { S_Loader } from "@/components/s_loader";
 
 interface ImageData {
   id: string;
   imageUrl: string;
-  textInput: string;
+  prompt: string;
   negativePrompt:string;
   likes: string[];
   height: number;
@@ -41,6 +42,8 @@ const CreationsPage: React.FC = () => {
   const loginModal = useLoginModal();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterOption, setFilterOption] = useState<string>("createdDateDesc");
+  const [loading, setLoading] = useState(true);  
+  let n;
 
   const openModal = (image: ImageData) => {
     setSelectedImage(image);
@@ -82,6 +85,7 @@ const CreationsPage: React.FC = () => {
     }
   };
   useEffect(() => {
+
     const fetchImages = async () => {
       if (!isSignedIn) {
         loginModal.onOpen();
@@ -112,49 +116,54 @@ const CreationsPage: React.FC = () => {
           }
   
           const querySnapshot = await getDocs(q);
-  
-          const imageData: ImageData[] = [];
-          querySnapshot.forEach((doc) => {
-            const data = doc.data() as {
-              image: string;
-              textInput: string;
-              negativePrompt: string;
-              likes: string[];
-              height: number;
-              width: number;
-              Style: string;
-              Model: string;
-              published: boolean;
-              timeStamp: Date;
-            };
-            const createdAtDate = new Date(data.timeStamp);
-  
-            imageData.push({
-              id: doc.id,
-              imageUrl: data.image,
-              textInput: data.textInput,
-              negativePrompt : data.negativePrompt,
-              likes: data.likes,
-              height: data.height,
-              width: data.width,
-              style: data.Style,
-              model: data.Model,
-              published: data.published,
-              timeStamp: createdAtDate,
+          if (querySnapshot==null) {
+            return null;
+          } else {   const imageData: ImageData[] = [];
+            querySnapshot.forEach((doc) => {
+              const data = doc.data() as {
+                image: string;
+                prompt: string;
+                negativePrompt: string;
+                likes: string[];
+                height: number;
+                width: number;
+                Style: string;
+                Model: string;
+                published: boolean;
+                timeStamp: Date;
+              };
+              const createdAtDate = new Date(data.timeStamp);
+    
+              imageData.push({
+                id: doc.id,
+                imageUrl: data.image,
+                prompt: data.prompt,
+                negativePrompt : data.negativePrompt,
+                likes: data.likes,
+                height: data.height,
+                width: data.width,
+                style: data.Style,
+                model: data.Model,
+                published: data.published,
+                timeStamp: createdAtDate,
+              });
             });
-          });
-  
-          setImages(imageData);
+    
+            setImages(imageData);
+          }
         } catch (error) {
           console.error("Error fetching images:", error);
         }
       }
     };
-  
     if (isLoaded && isSignedIn) {
       fetchImages();
+      if (fetchImages == null){
+        n=null;
+      }
+      setLoading(false);
     }
-  }, [isLoaded, isSignedIn, user, loginModal, filterOption]);
+  }, [isLoaded, isSignedIn, user, loginModal, filterOption,n]);
   
   
   const isLiked = (image: ImageData, user_email: string) => {
@@ -210,16 +219,19 @@ const CreationsPage: React.FC = () => {
   };
  
   const modalStyle = {
+    overlay: {
+      backgroundColor: 'rgba(0, 0, 0, 0.5)', // Adjust the alpha value for darkness
+      zIndex: 1000,
+    },
     content: {
-      display: 'grid',
-      gridTemplateColumn:'50% 50%',
-      // Adjust the height as needed
+      maxWidth: '800px',
+      margin: 'auto',
     },
   };
   
   return (
     <div>
-      {images.length === 0 ? (
+      {n? (
         <div className="text-center mt-8">
           <h1 className="text-3xl font-semibold mb-4">You dont have any creations</h1>
           <p className="text-lg text-gray-500 mb-4">Start generating art and more</p>
@@ -233,10 +245,18 @@ const CreationsPage: React.FC = () => {
     </div>       
    </div>
       ) : (
+       
         <>
          <div style={{ textAlign: 'center' }}>
         <h1 style={{ fontSize: '3em' }}>My Creations</h1>
       </div>
+    
+         {loading ? (
+            <div className="flex flex-col items-center mt-8 mb-8 ">
+            <S_Loader />
+          </div>
+      ) : (
+        <>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1em' }}>
         <label htmlFor="filterDropdown" style={{ marginRight: '0.5em' }}>Filter By:</label>
         <select
@@ -251,38 +271,35 @@ const CreationsPage: React.FC = () => {
           ))}
         </select>
       </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {images.map((image) => (
-              <div key={image.id} className="grid gap-4 relative">
-                <div
-                  onClick={() => openModal(image)}
-                  className="image-container"
-                  style={{ cursor: 'pointer' }}
-                >
-                  <Image
-                    className="image h-auto max-w-full rounded-lg"
-                    src={image.imageUrl}
-                    alt={image.textInput}
-                    height={image.height}
-                    width={image.width}
-                  />
-                  <div className="image-overlay">
-                    <UserPopup imageId={image.id} />
-                    <div
-                      className={`like-icon ${!isSignedIn ? 'login-required' : isLiked(image, user.emailAddresses[0].emailAddress) ? 'liked' : ''}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (!isSignedIn) {
-                          loginModal.onOpen();
-                        } else if (!isLiked(image, user.emailAddresses[0].emailAddress)) {
-                          handleLike(image.id);
-                        }
-                      }}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <FontAwesomeIcon icon={faHeart} className="mr-1" />
-                    </div>
-                    <div
+             <div key={image.id} className="grid gap-3 relative">
+             <div className="card" onClick={() => openModal(image)}>
+             <Image
+                           className="image h-auto max-w-full rounded-lg"
+                           src={image.imageUrl}
+                           alt={image.prompt}
+                           height={image.height}
+                           width={image.width}
+             
+                         />
+               <div className="card__content">
+               <UserPopup imageId={image.id} />
+              <div
+                             className={`like-icon ${!isSignedIn ? 'login-required' : isLiked(image, user.emailAddresses[0].emailAddress) ? 'liked' : ''}`}
+                             onClick={(e) => {
+                               e.stopPropagation(); // Prevent the click event from propagating
+                               if (!isSignedIn) {
+                                 loginModal.onOpen();
+                               } else if (!isLiked(image, user.emailAddresses[0].emailAddress)) {
+                                 handleLike(image.id); // Handle the like action
+                               }
+                             }}
+                             style={{ cursor: 'pointer' }}
+                           >
+                             <FontAwesomeIcon icon={faHeart} />
+                           </div>
+                           <div
                       className="publish-icon"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -296,58 +313,73 @@ const CreationsPage: React.FC = () => {
                         <>Publish<FontAwesomeIcon icon={faEye} title="Published" /></>
                       )}
                     </div>
-                    <div className="like-count">
-                      {image.likes.length} likes
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <div className="like-count">
+                             {image.likes.length} likes
+                           </div>
+                           <div>
+                     <div style={{ marginBottom: '10px' }}>
+                       <h2 style={{ fontSize: '1em', fontWeight: 'bold' }}>Prompt :</h2>
+                       {image.prompt}
+                     </div>
+                     {((image.negativePrompt) && (image.negativePrompt !== '') )?
+                     <div style={{ marginBottom: '10px' }}>
+                       <h2 style={{ fontSize: '1.2em', fontWeight: 'bold' }}>negativePrompt : </h2>
+                       {image.negativePrompt}
+                     </div>
+             : null}
+                     <hr style={{ height: '1px', background: '#ccc', border: 'none', margin: '10px 0' }} />
+                     <div style={{ display: 'flex', flexDirection: 'column' }}>
+                       <div style={{ marginBottom: '10px' }} >
+                         {image.model}
+                       </div>
+                       <div style={{ marginBottom: '10px' }} >
+                         {image.style}
+                       </div>
+                       <div>
+                         {image.height} x {image.width}
+                       </div>
+                     </div>
+                   </div>
+               </div>
+             </div>
+             
+             
+                     </div>
             ))}
           </div>
           {showLikesList && selectedImage && (
             <LikesList image={selectedImage} onClose={closeLikesList} />
           )}
           <Modal
-  isOpen={isModalOpen}
-  onRequestClose={closeModal}
-  contentLabel="Image Modal"
-  style={modalStyle}
-  ariaHideApp={false}
->
-  {selectedImage && (
-    <div style={{ display: 'flex', alignItems: 'center', padding: '20px' }}>
-      <div style={{ marginRight: '20px' }}>
-        <Image
-          src={selectedImage.imageUrl}
-          alt={selectedImage.textInput}
-          height={512}
-          width={512}
-          className="image"
-        />
-      </div>
-      <div>
-        <div style={{ marginBottom: '10px' }}>
-          <h2 style={{ fontSize: '1.5em', fontWeight: 'bold' }}>{selectedImage.textInput}</h2>
+      isOpen={isModalOpen}
+      onRequestClose={closeModal}
+      contentLabel="Image Modal"
+      style={modalStyle}
+    >
+      {selectedImage && (
+        
+        <div className="vertical-modal-container">
+                     
+        <div className="absolute inset-0 flex items-center justify-center">
+                <S_Loader />
+              </div>
+
+          <div className="modal-image-container">
+
+            <Image
+              src={selectedImage.imageUrl}
+              alt="selectedImage"
+              fill
+              className="image"
+
+            />
+            
+          </div> 
         </div>
-        <div style={{ marginBottom: '10px' }}>
-          <h2 style={{ fontSize: '1.2em', fontWeight: 'bold' }}>negativePrompt : {selectedImage.negativePrompt}</h2>
-        </div>
-        <hr style={{ height: '1px', background: '#ccc', border: 'none', margin: '10px 0' }} />
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <button style={{ marginBottom: '10px' }} className="button pink-button artistic-button">
-            {selectedImage.model}
-          </button>
-          <button style={{ marginBottom: '10px' }} className="button purple-button artistic-button">
-            {selectedImage.style}
-          </button>
-          <button className="button teal-button artistic-button">
-            {selectedImage.height} x {selectedImage.width}
-          </button>
-        </div>
-      </div>
-    </div>
-  )}
-</Modal>
+      )}
+    </Modal>
+    </>
+)}
         </>
       )}
     </div>

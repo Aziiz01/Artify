@@ -1,0 +1,79 @@
+/* Reset some default styles for better consistency */
+body, h1, h2, p, ul, table {
+    margin: 0;
+    padding: 0;
+}
+
+/* Global Styles */
+body {
+    font-family: 'Arial', sans-serif;
+    line-height: 1.6;
+}
+
+/* Container Styles */
+.privacy-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Title Styles */
+.privacy-title {
+    color: #333;
+    font-size: 45px;
+    margin-bottom: 20px;
+    text-align: center; /* Center the text */
+}
+
+
+/* Last Updated Styles */
+.last-updated {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+/* Section Heading Styles */
+h2 {
+    color: #333;
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+/* Paragraph Styles */
+p {
+    color: #444;
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+
+/* List Styles */
+ul {
+    list-style-type: disc;
+    margin-left: 20px;
+}
+
+/* Table Styles */
+.privacy-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.privacy-table th, .privacy-table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+
+.privacy-table th {
+    background-color: #f2f2f2;
+}
+
+/* Address Styles */
+address {
+    color: #555;
+    font-style: normal;
+    font-size: 14px;
+    margin-top: 20px;
+}

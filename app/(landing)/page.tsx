@@ -30,6 +30,7 @@ const cardData = [
 ];
 
 const LandingPage = () => {
+
   
   return ( 
     <div className="flex flex-col">

@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import FormData from 'form-data';
 
 export async function Enhance(userId: string, uploadedImage: File | null, passedImage: string, textInput: string, negativePrompt: string, image_strength: number, selectedSamples: number, selectedModel: string, selectedStyle: string, cfgScale: number, seed: number, steps: number, fast_count: number) {
-  const apiKey = "sk-6NoWpvUXGEKd2J5M1G0bDgLNZTzPPvwOfzdXhgHqQGBptoBX";
+  const apiKey = "sk-hfHFcGo7XF9HI8F1DJKRyfQZFBkj8nSGSeT1TXhwRKHsGdps";
   const count = (3 * selectedSamples) + fast_count;
 
   try {

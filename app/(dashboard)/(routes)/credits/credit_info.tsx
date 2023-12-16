@@ -88,10 +88,6 @@ export const Info = () =>{
     </figure>
 </div>
 <FAQSection />
-
-
-   
-
   </div>
     )
 }
