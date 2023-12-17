@@ -360,51 +360,32 @@ const saveImagesInBackground = async (images : any) => {
     }}>
       <div className="px-4 lg:px-8 bg-transparent" style={{ overflowY: !mobileSize ? 'scroll' : undefined, height:'850px'  }}>
         
-      <div className="bg-white rounded-lg p-4 mb-4 mt-4">
-  <div >
-    <h2 className="text-mm text-blue-900 font-extrabold">Text Prompt</h2>
-    <div className="flex items-center">
-      <p className="text-gray-400 font-bold text-sm">
-        Describe what you want the AI to create
-      </p>
-      <button
-        className="bg-gray-200 text-gray-500 py-1 px-2 rounded-md ml-auto mb-1"
+   <div className="form p-4 mb-4 mt-4">
+   <div className="flex flex-col">
+   <div className="flex items-center">
+  <div className="span">Text Prompt</div>
+  <button
+        className="button-surprise ml-auto mb-1"
         onClick={handleSurpriseMeClick}
       >
         <FontAwesomeIcon icon={faLightbulb} className="mr-1" />
         Surprise Me
       </button>
-    </div>
-
-  {/* Input Section */}
-   
-    <div className="relative">
-      <input
-        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-red-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+</div>
+  <input className="input"
         type="text"
-        placeholder="Your text prompt"
+        placeholder="Describe what you want the AI to create"
         value={textInput}
-        onChange={(e) => setTextInput(e.target.value)}
-      />
-    </div>
-  </div>
-
-      <h2 className="block text-mm text-blue-900 font-extrabold mb-2 mt-3">Choose a style : <span className="text-1xl ">{selectedStyle}</span> </h2>
-      <PickStyle onSelectedStyleChange={handleSelectedStyleChange} />
-      <div
-      className={`save-time-container ${clicked ? "clicked" : ""}`}
-      onClick={handleButtonClick}
-    >
-      <div className="inner-effect mt-3"></div>
-      <p>Fast Process (+2 credits)</p>
-      <Clock/>
-    </div>
-    <div className="flex gap-3 mt-3">
-  <h2 className="text-mm pt-5 text-blue-900 font-extrabold">Samples</h2>
-
+        onChange={(e) => setTextInput(e.target.value)} />
+</div> 
+<div className="span">Pick a Style : {selectedStyle}</div>
+ <PickStyle onSelectedStyleChange={handleSelectedStyleChange} />
+     
+ <div className="flex gap-3">
+    <div className="span">Samples</div>
   <div className="flex gap-2">
-    
-    {[1, 2, 4, 6, 8].map((value) => (
+
+    {[1, 2, 6, 8, 10].map((value) => (
       <SampleButton
         key={value}
         value={value}
@@ -413,46 +394,61 @@ const saveImagesInBackground = async (images : any) => {
       />
     ))}
   </div>
-</div>
+</div>  
 <div className="flex gap-3">
-        <h2 className="text-mm pt-5 text-blue-900 font-extrabold">Algorithm Model</h2>
-        <div>
-          <select className="bloc w-200 px-4 mt-4 text-base text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-900 focus:border-red-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={selectedModel} onChange={handleModelChange}>
+    <div className="span mt-2">Algorithm Model</div>
+    <div>
+          <select className="bloc w-200 px-4 text-base text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-900 focus:border-red-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={selectedModel} onChange={handleModelChange}>
             <option value="stable-diffusion-xl-1024-v1-0">Stable Diffusion XL 1.0 (Pro only)</option>
             <option value="stable-diffusion-xl-1024-v0-9">Stable Diffusion XL 0.9 (Pro only)</option>
             <option value="stable-diffusion-v1-6">Stable Diffusion 1.6</option>
             <option value="DALL E2">DALL E2</option>
           </select>
         </div>
-      </div>
-      <label>
+    </div>
+    <div
+      className={`save-time-container ${clicked ? "clicked" : ""}`}
+      onClick={handleButtonClick}
+    >
+      <div className="inner-effect mt-3"></div>
+      <p>Fast Process (+2 credits)</p>
+      <Clock/>
+    </div>
+    <label>
         
-        <div className="text-mm pt-5 text-blue-900 font-extrabold mb-2"
-> Show Advanced Options <input
-          type="checkbox"
-          checked={showAdvancedOptions}
-          onChange={() => setShowAdvancedOptions(!showAdvancedOptions)}
-        /></div>
+        
+<div className="flex items-center">
+<div className="span mr-5">Show Advanced Options</div>
+
+  <div>
+    <input
+      id="checkbox"
+      type="checkbox"
+      name="checkbox"
+      checked={showAdvancedOptions}
+      onChange={() => setShowAdvancedOptions(!showAdvancedOptions)}
+    />
+    <label className="label" htmlFor="checkbox"></label>
+  </div>
+</div>
 
       </label>
       {showAdvancedOptions && (
         <>
-        
-       <h2 className="block text-mm text-blue-900 font-extrabold mb-2 mt-3">Negative Prompt</h2>
-         <div className="relative">
-      <input
-        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-red-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 mb-3"
+           <div className="flex flex-col">
+
+        <div className="span">Negative Prompt</div>
+        <input className="input"
         type="text"
-        placeholder="What you want to avoid"
+        placeholder="Describe what you want the AI to avoid"
         value={negativePrompt}
-        onChange={(e) => setNegativePrompt(e.target.value)}
-      />
-    </div>
+        onChange={(e) => setNegativePrompt(e.target.value)} />
+</div>
   
   
-       <div className="flex gap-2">
-       <h2 className="block text-mm text-blue-900 font-extrabold mb-2 mt-3">Aspect Ratio</h2>
-       {Object.entries(ratioMappings).map(([ratio, { width, height, selectable }]) => (
+<div className="flex gap-3">
+    <div className="span">Aspect Ratio</div>
+ {Object.entries(ratioMappings).map(([ratio, { width, height, selectable }]) => (
   <button
     key={ratio}
     className={`bloc w-16 text-base rounded-lg ${
@@ -472,8 +468,8 @@ const saveImagesInBackground = async (images : any) => {
 </div>
 
 
-      <div className="flex mt-7 gap-3">
-        <h2 className="text-mm text-blue-900 font-extrabold">CFG_Scale</h2>
+      <div className="flex gap-3">
+      <div className="span">CFG Scale</div>
         <input
           type="range"
           id="cfgScale"
@@ -484,10 +480,15 @@ const saveImagesInBackground = async (images : any) => {
           onChange={handleCFG}
         />
         <p>{cfgScale}</p>
+        <div className="tooltip">
+  <div className="icon">i</div>
+  <div className="tooltiptext">How closely the process follows the given prompt text (higher values bring your image closer to the prompt)</div>
+</div>
+
       </div>
 
-      <div className="flex mt-7 gap-3">
-        <h2 className="text-mm text-blue-900 font-extrabold">Steps</h2>
+      <div className="flex gap-3">
+      <div className="span">Steps</div>
         <input
           type="range"
           id="steps"
@@ -497,22 +498,29 @@ const saveImagesInBackground = async (images : any) => {
           value={steps}
           onChange={handleSteps}
         />
-        <p>{steps}</p>
+        <p>{steps}</p> 
+        <div className="tooltip">
+  <div className="icon">i</div>
+  <div className="tooltiptext">Number of diffusion steps to run</div>
+</div>
       </div>
 
-      <div className="flex mt-7 gap-3">
-        <h2 className="text-mm text-blue-900 font-extrabold">Seed</h2>
-        <input
-          className="w-50 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-red-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-          type="text"
-          placeholder="Seed"
-          value={seed}
-          onChange={handleSeed}
-        />
+      <div className="flex flex-col">
+      <div className="span">Seed <div className="tooltip">
+  <div className="icon">i</div>
+  <div className="tooltiptext">Choose either to exclude this option or input 0 to use a random seed for noise</div>
+</div>
+</div>
+      
+      <input className="input"
+        type="text"
+        placeholder="0 for optimized generation"
+        value={seed}
+        onChange={handleSeed} />
       </div>
       </>
     )}
-      <Button
+ <Button
         onClick={handleGenerate}
         disabled={isLoading}
         className="mt-4 w-full relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium text-white rounded-lg group bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-purple-500 group-hover:to-pink-500 hover:text-black   dark:text-white focus:ring-4 focus:outline-none focus:ring-purple-200 dark:focus:ring-purple-800"
@@ -520,8 +528,7 @@ variant="premium">
         <span>
          {isLoading ? 'Generating...' : `Generate`}
         </span>
-      </Button>
-    </div>
+      </Button></div>
     </div>
     <div  style={{ overflowY: !mobileSize ? 'scroll' : undefined, height:'850px' }}>
       <div className="mb-8 space-y-4 text-center">
@@ -531,15 +538,17 @@ variant="premium">
         Text-to-Image Wizardry: Bring Words to Life with AI-Powered Imaging        </p>
       </div>
       {isLoading && (
-        <div className="p-20">
-          <Loader />
-        </div>
-      )}
+  <div className="p-20 flex justify-center items-center">
+      <Loader />
+  </div>
+)}
 
-      {(!image || image.length === 0) && !isLoading && photos.length === 0 && (
- <div className="mb-5">
- <Empty label="No images generated." />
- </div>      )}
+{(!image || image.length === 0) && !isLoading && photos.length === 0 && (
+  <div className="flex justify-center items-center mb-5">
+    <Empty label="No images generated." />
+  </div>
+)}
+
 
 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-2 ml-2 mr-2">
   {Array.isArray(image) && image.length > 0 ? (

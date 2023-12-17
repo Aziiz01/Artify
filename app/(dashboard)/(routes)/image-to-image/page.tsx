@@ -300,13 +300,20 @@ const saveImagesInBackground = async (images : any) => {
   </div>
           <label>
         
-        <div className="text-mm pt-5 text-blue-900 font-extrabold">
-           Show Advanced Options
-            <input
-          type="checkbox"
-          checked={showAdvancedOptions}
-          onChange={() => setShowAdvancedOptions(!showAdvancedOptions)}
-        /></div>
+          <div className="text-mm pt-5 text-blue-900 font-extrabold" style={{ display: 'flex' }}>
+  Show Advanced Options
+  <div className="container" >
+    <input
+      id="checkbox"
+      type="checkbox"
+      name="checkbox"
+      checked={showAdvancedOptions}
+      onChange={() => setShowAdvancedOptions(!showAdvancedOptions)}
+    />
+    <label className="label" htmlFor="checkbox"></label>
+  </div>
+</div>
+
 
       </label>
       {showAdvancedOptions && (
@@ -410,11 +417,14 @@ Enhance Images
         Transform Images with Cutting-Edge Image-to-Image Models
        </p>
       </div>
-          {isLoading && (
-            <div className="p-20">
-              <Loader />
-            </div>
-          )}
+      {isLoading && (
+  <div className="p-20 flex justify-center items-center h-screen">
+    <div className="text-center">
+      <Loader />
+    </div>
+  </div>
+)}
+
           {generatedImage == null  && !isLoading && (
             <div className="mb-5">
             <Empty label="No images generated." />
@@ -445,7 +455,6 @@ Enhance Images
 
 
 
-      {/*DALLE PHOTOS */}
      
     </div>
   );

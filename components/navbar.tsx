@@ -21,6 +21,7 @@ const font = Montserrat({ weight: '600', subsets: ['latin'] });
   const credits = getCredits();
 
   return (
+    <div>
     <nav className="p-4 bg-transparent flex items-center justify-between">
       <div className="flex items-center gap-10">
         <Link href="/" className="flex items-center">
@@ -87,6 +88,7 @@ const font = Montserrat({ weight: '600', subsets: ['latin'] });
 
       </div>
     </nav>
+    </div>
   )
 }
 export default Navbar;
