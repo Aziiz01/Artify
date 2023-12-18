@@ -1,57 +1,90 @@
 "use client"
-import React from 'react';
-import { useState } from 'react';
-import robot from '@/public/robot.jpg';
-
+import React, { useState } from 'react';
+import Modal from 'react-modal';
+import { styleData } from '@/app/static/styles';
+import "@/app/(dashboard)/style.css"
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPalette } from '@fortawesome/free-solid-svg-icons';
 export default function PickStyle({ onSelectedStyleChange }: { onSelectedStyleChange: (newSelectedStyle: string) => void }) {
   const [selected, setSelected] = useState<string>('');
-
-  const styleData = [
-    {
-      backgroundImg: robot.src,
-      style: 'anime',
-    },
-    {
-      backgroundImg: robot.src,
-      style: 'photographic',
-    },
-    {
-      backgroundImg: robot.src,
-      style: '3d-model',
-    },
-    {
-      backgroundImg: robot.src,
-      style: 'cinematic',
-    },
-  ];
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleSelectStyle = (style: string) => {
     setSelected(style);
-    onSelectedStyleChange(style); // Pass the selected style to the parent component
+    onSelectedStyleChange(style);
   };
 
+  const openModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
+
+  const modalStyle = {
+    overlay: {
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      zIndex: 1000,
+    },
+    content: {
+      maxWidth: '800px',
+      margin: 'auto',
+    },
+  };
+
+  const stylesGrid = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(4, 1fr)', // Set four cards per row
+    gap: '10px', // Adjust the gap between cards
+  };
+   
   return (
     <>
-      <div className="border-blue-400 flex" style={{ width: '500px', height: '100px', gap: '5px' }}>
-        {styleData.map((style) => (
-          <div
-            key={style.style}
-            style={{
-              backgroundImage: `url(${style.backgroundImg})`,
-              backgroundPosition: 'center',
-              backgroundSize: 'fit',
-              width: '90px',
-              height: '90px',
-              cursor: 'pointer',
-              filter:selected === style.style ? 'blur(1px)' : 'none',
-            }}
-            onClick={() => handleSelectStyle(style.style)}
-          >
-            {style.style}
-          </div>
-        ))}
-
-      </div>
+      <button
+       className="button-surprise ml-auto mb-1"
+       onClick={openModal}>      
+     <FontAwesomeIcon icon={faPalette} className="mr-1" />
+       Pick Style</button>
+      <Modal
+        isOpen={isModalOpen}
+        onRequestClose={closeModal}
+        contentLabel="Style Modal"
+        style={modalStyle}
+      >
+        <div style={stylesGrid}>
+          {styleData.map((style) => (
+            <div
+              key={style.style}
+              style={{
+                backgroundImage: `url(${style.backgroundImg})`,
+                backgroundPosition: 'center',
+                backgroundSize: 'auto',
+                width: '100%',
+                height: '200px',
+                cursor: 'pointer',
+                filter: selected === style.style ? 'blur(1px)' : 'none',
+              }}
+              onClick={() => handleSelectStyle(style.style)}
+            >
+              {style.style}
+            </div>
+          ))}
+        </div>
+        <div
+          style={{
+            position: 'absolute',
+            top: '10px',
+            right: '10px',
+            cursor: 'pointer',
+            color: '#fff',
+            fontSize: '20px',
+          }}
+          onClick={closeModal}
+        >
+          &#10006;
+        </div>
+      </Modal>
     </>
   );
 }

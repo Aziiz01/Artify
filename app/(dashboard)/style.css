@@ -208,7 +208,7 @@
 .form {
   --input-focus: #2d8cf0;
   --font-color: #323232;
-  --font-color-sub: #666;
+  --font-color-sub: #000000;
   --bg-color: rgb(255, 255, 255);
   --main-color: black;
   padding: 20px;
@@ -263,6 +263,34 @@
   box-shadow: 0px 0px var(--main-color);
   transform: translate(3px, 3px);
 }
+/* CSS */
+.login-with {
+  display: flex;
+  gap: 20px;
+}
+
+
+
+/* CSS */
+.button-log {
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  border-radius: 100%;
+  border: 2px solid var(--main-color);
+  background-color: var(--bg-color);
+  box-shadow: 4px 4px var(--main-color);
+  color: var(--font-color);
+  font-size: 25px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.selected {
+  background-color: rgb(147, 147, 147); /* Add your desired light grey color here */
+}
+
 
 .button-surprise {
   margin-bottom: auto;
@@ -327,4 +355,37 @@
   border-radius: 50%;
   text-align: center;
   line-height: 20px;
+}
+
+.slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 10px;
+  border-radius: 5px;
+  background-color: #4158D0;
+  background-image: linear-gradient(43deg, #4158D0 0%, #C850C0 46%, #FFCC70 100%);
+  outline: none;
+  opacity: 0.7;
+  -webkit-transition: .2s;
+  transition: opacity .2s;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #4c00ff;
+  background-image: linear-gradient(160deg, #4900f5 0%, #80D0C7 100%);
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #0093E9;
+  background-image: linear-gradient(160deg, #0093E9 0%, #80D0C7 100%);
+  cursor: pointer;
 }

@@ -124,8 +124,9 @@ export default function HomePage() {
     setSeed(event.target.value);
   };
 
-  const handleSamples = (value : number) => {
+  const handleSamples = (value : any) => {
     setSelectedSamples(value);
+    console.log(value);
   };
   
   const handleModelChange = (event: any) => {
@@ -378,23 +379,33 @@ const saveImagesInBackground = async (images : any) => {
         value={textInput}
         onChange={(e) => setTextInput(e.target.value)} />
 </div> 
-<div className="span">Pick a Style : {selectedStyle}</div>
- <PickStyle onSelectedStyleChange={handleSelectedStyleChange} />
-     
- <div className="flex gap-3">
-    <div className="span">Samples</div>
-  <div className="flex gap-2">
-
-    {[1, 2, 6, 8, 10].map((value) => (
-      <SampleButton
-        key={value}
-        value={value}
-        selected={selectedSamples}
-        onClick={handleSamples}
-      />
-    ))}
+<div className="flex flex-col">
+  <div className="span">Pick a Style: {selectedStyle}</div>
+  <div className="ml-auto">
+    <PickStyle onSelectedStyleChange={handleSelectedStyleChange} />
   </div>
-</div>  
+</div>
+
+
+
+<div className="flex gap-3">
+  <div className="span">Samples</div>
+  <div className="flex gap-2">
+    <div className="login-with">
+      {[1, 2, 6, 8, 10].map((value) => (
+        <div
+          className={`button-log ${selectedSamples === value ? 'selected' : ''}`}
+          onClick={() => handleSamples(value)}
+          key={value}
+        >
+          <b>{value}</b>
+        </div>
+      ))}
+    </div>
+  </div>
+</div>
+
+  
 <div className="flex gap-3">
     <div className="span mt-2">Algorithm Model</div>
     <div>
@@ -471,8 +482,9 @@ const saveImagesInBackground = async (images : any) => {
       <div className="flex gap-3">
       <div className="span">CFG Scale</div>
         <input
+        className="slider mt-2"
           type="range"
-          id="cfgScale"
+          id="myRange"
           name="cfgScale"
           min={0}
           max={35}
@@ -480,24 +492,15 @@ const saveImagesInBackground = async (images : any) => {
           onChange={handleCFG}
         />
         <p>{cfgScale}</p>
+        
         <div className="tooltip">
   <div className="icon">i</div>
   <div className="tooltiptext">How closely the process follows the given prompt text (higher values bring your image closer to the prompt)</div>
 </div>
-
       </div>
-
       <div className="flex gap-3">
       <div className="span">Steps</div>
-        <input
-          type="range"
-          id="steps"
-          name="steps"
-          min={10}
-          max={150}
-          value={steps}
-          onChange={handleSteps}
-        />
+      <input id="myRange" className="slider mt-2" value={steps} max="150" min="10" type="range" onChange={handleSteps} />
         <p>{steps}</p> 
         <div className="tooltip">
   <div className="icon">i</div>
