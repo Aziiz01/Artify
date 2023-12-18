@@ -20,14 +20,14 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/firebase";
 import { useUser } from "@clerk/nextjs";
 import toast from "react-hot-toast";
-import { checkApiLimit, incrementApiLimit } from "@/lib/api-limit";
-import { checkSubscription, countCredit } from "@/lib/subscription";
 import { useProModal } from "@/hook/use-pro-modal";
 import axios from "axios";
 import { useLoginModal } from "@/hook/use-login-modal";
 import { PublishButton } from "@/components/publish_button";
 import "../../style.css"
 import { Upscale } from "@/app/api/upscale/route";
+
+
 export default function UpscalePage() {
   const { isSignedIn, user, isLoaded } = useUser();
   const router = useRouter();

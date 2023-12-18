@@ -1,7 +1,3 @@
-import { auth } from "@clerk/nextjs";
-
-import prismadb from "@/lib/prismadb";
-import { MAX_FREE_COUNTS } from "@/constants";
 import { doc, serverTimestamp, getDoc, setDoc , increment} from "firebase/firestore";
 import { db } from "@/firebase";
 

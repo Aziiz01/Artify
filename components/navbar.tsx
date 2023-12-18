@@ -11,9 +11,6 @@ import { getApiLimitCount } from "@/lib/api-limit";
 import { checkSubscription } from "@/lib/subscription";
 import { getCredits } from "@/lib/credits";
 import { cn } from "@/lib/utils";
-import FullScreenModal from "./fullScreenModal";
-import { RxHamburgerMenu } from "react-icons/rx";
-import { HoverImageLinks } from './HoverImageLinks';
 import "./css/nav.css"
 
 

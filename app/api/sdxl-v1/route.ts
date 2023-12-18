@@ -14,7 +14,7 @@ export async function SDXL(userId : string,textInput: string,negativePrompt:stri
       };
     const count=selectedSamples+fast_count;
 
-     const freeTrial = await checkApiLimit(userId,count);;
+     const freeTrial = await checkApiLimit(userId,count);
     const isPro = await checkSubscription(userId);
 
     if (!freeTrial && !isPro) {
