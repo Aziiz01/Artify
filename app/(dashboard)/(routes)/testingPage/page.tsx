@@ -57,7 +57,9 @@ export interface imageData{
              <div className="px-4 lg:px-8 bg-transparent" style={{ height:'850px'  }}>
                 <div className="bg-white rounded-lg p-4 mb-4 mt-4">
                    <div>
-
+                    <h1>
+                        heyy heyy!!!
+                    </h1>
                    </div>
                 </div>
              </div>

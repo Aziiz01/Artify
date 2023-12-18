@@ -1,8 +1,10 @@
 "use client"
 import React,{useState} from 'react'
 
+type GenerateImageProp = (data: FormData) => Promise<void>;
 
-function SideBarForm({generateImage}:{generateImage:(data:FormData)=>void}) {
+
+function SideBarForm({generateImage}:{generateImage:GenerateImageProp}) {
     const [prompt, setPrompt] = useState<string>("");
     const [style, setStyle] = useState<string | undefined>(undefined);
     const [samples, setSamples] = useState<string | undefined>(undefined);
