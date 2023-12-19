@@ -12,7 +12,7 @@ const DashboardLayout = async ({
 const credits = await getCredits();
 //<ParticlesBackground />
   return ( 
-    <div >
+    <div className="bg-gradient-to-br from-gray-300 to-blue-200" >
  <div className="bg-gray-900 ">
             <Navbar />
             </div>  

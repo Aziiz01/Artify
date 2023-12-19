@@ -249,35 +249,47 @@ export default function UpscalePage() {
       backgroundColor: 'transparent'
     }}>
       <div className="px-4 lg:px-8 bg-transparent" style={{ overflowY: !mobileSize ? 'scroll' : undefined, height: '850px' }}>
-      <div className="bg-white rounded-lg p-4 mb-4 mt-4">
+      <div className="form p-4 mb-4 mt-4">
+   <div className="flex flex-col">
+   <div className="flex items-center">
+   {uploadedImage || passedImage =='' ? ( 
+  <>
+  <div className="span">
+   Input init image
+ </div>      
+  <input type="file" className="block w-full text-lg text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" onChange={handleImageUpload} />
+</>
+): null}       
+      {passedImage || uploadedImage ? (
+              <Image
+                width={512}
+                height={512}
+                src={passedImage || (uploadedImage ? URL.createObjectURL(uploadedImage) : "")}
+                alt="Uploaded image"
+              />
+              ) : null}
+</div> 
 
-        <h2 className="text-mm mt-5 text-blue-900 font-extrabold">Image Upscaler</h2>
-        <input type="file" onChange={handleImageUpload} className="mt-4 block w-full text-lg text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" />
-        {passedImage || uploadedImage ? (
-          <Image
-            priority={true}
-            width={512}
-            height={512}
-            src={passedImage || (uploadedImage ? URL.createObjectURL(uploadedImage) : "")}
-            alt="Uploaded image"
-          />
-        ) : null}
-         <div
+
+    <div
       className={`save-time-container ${clicked ? "clicked" : ""}`}
       onClick={handleButtonClick}
     >
-      <div className="inner-effect"></div>
+      <div className="inner-effect mt-3"></div>
       <p>Fast Process (+2 credits)</p>
-      <Clock />
+      <Clock/>
     </div>
-        <Button
-          onClick={handleUpscale} disabled={isLoading}
-          className="mt-4 w-full relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium text-white rounded-lg group bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-purple-500 group-hover:to-pink-500 hover:text-black   dark:text-white focus:ring-4 focus:outline-none focus:ring-purple-200 dark:focus:ring-purple-800"
+  
+    
+ <Button
+        onClick={handleUpscale}
+        disabled={isLoading}
+        className="mt-4 w-full relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium text-white rounded-lg group bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-purple-500 group-hover:to-pink-500 hover:text-black   dark:text-white focus:ring-4 focus:outline-none focus:ring-purple-200 dark:focus:ring-purple-800"
 variant="premium">
-          <span>
-            {isLoading ? 'Upscaling...' : 'Upscale'}
-          </span>
-        </Button>
+        <span>
+         {isLoading ? 'Generating...' : `Generate`}
+        </span>
+      </Button></div>
       </div>
       </div>
       <div style={{ overflowY: !mobileSize ? 'scroll' : undefined, height: '850px' }}>
@@ -289,14 +301,14 @@ Upscale Images
           Enhance Your Visual Odyssey: Unleashing the Power of 2x Upscaling AI          </p>
         </div>
         {isLoading && (
-          <div className="p-8 rounded-lg w-full flex items-center justify-center bg-muted">
-            <Loader />
-          </div>
-        )}
+  <div className="p-20 flex justify-center items-center">
+      <Loader />
+  </div>
+)}
         {generatedImage == null && !isLoading && (
- <div className="mb-5">
+ <div className="flex justify-center items-center mb-5">
  <Empty label="No images generated." />
- </div>
+</div>
          )}
 
         <>

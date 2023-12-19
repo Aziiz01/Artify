@@ -21,6 +21,8 @@ import PickStyle from "@/components/ui/pickStyle";
 import "../../style.css";
 import Modal from 'react-modal';
 import { SampleButton } from "@/components/ui/sample_button";
+import { Special_button } from "@/components/ui/special_button";
+import { Fast_process } from "@/components/ui/fast_process";
 
 export default function HomePage() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -118,6 +120,7 @@ export default function HomePage() {
     setDisplayImagesImmediately(!displayImagesImmediately)
     const newCount = clicked ? 0 : 2;
     setCount(newCount);
+    console.log(newCount)
   };
 
   const handleSeed = (event: any) => {
@@ -343,7 +346,6 @@ const saveImagesInBackground = async (images : any) => {
     }
   };
   const modalStyle = {
-    // Add your custom modal styles here
     overlay: {
       backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
@@ -417,17 +419,18 @@ const saveImagesInBackground = async (images : any) => {
           </select>
         </div>
     </div>
-    <div
-      className={`save-time-container ${clicked ? "clicked" : ""}`}
-      onClick={handleButtonClick}
-    >
-      <div className="inner-effect mt-3"></div>
-      <p>Fast Process (+2 credits)</p>
-      <Clock/>
-    </div>
+    <div className="flex">
+
+    <Fast_process
+        clicked={clicked} 
+        onClick={handleButtonClick}
+      />
+    <div className="tooltip mt-3 ml-3">
+  <div className="icon">i</div>
+  <div className="tooltiptext">Fast Process cuts generation time by 40%, streamlining slow processes. It efficiently accelerates tasks for quicker results</div>
+</div>
+</div>
     <label>
-        
-        
 <div className="flex items-center">
 <div className="span mr-5">Show Advanced Options</div>
 
@@ -523,15 +526,11 @@ const saveImagesInBackground = async (images : any) => {
       </div>
       </>
     )}
- <Button
-        onClick={handleGenerate}
-        disabled={isLoading}
-        className="mt-4 w-full relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium text-white rounded-lg group bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-purple-500 group-hover:to-pink-500 hover:text-black   dark:text-white focus:ring-4 focus:outline-none focus:ring-purple-200 dark:focus:ring-purple-800"
-variant="premium">
-        <span>
-         {isLoading ? 'Generating...' : `Generate`}
-        </span>
-      </Button></div>
+    <Special_button buttonText= {isLoading ? 'Generating...' : `Generate`}
+     onClick={handleGenerate}
+     disabled={isLoading}
+       />
+ </div>
     </div>
     <div  style={{ overflowY: !mobileSize ? 'scroll' : undefined, height:'850px' }}>
       <div className="mb-8 space-y-4 text-center">

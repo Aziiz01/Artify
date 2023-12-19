@@ -23,6 +23,7 @@ import "../../style.css";
 import { Clock } from "lucide-react";
 import { Enhance } from "@/app/api/enhance/route";
 import { SampleButton } from "@/components/ui/sample_button";
+import { Fast_process } from "@/components/ui/fast_process";
 export default function ImageToImagePage() {
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [passedImage, setPassedImage] = useState('');
@@ -236,33 +237,22 @@ const saveImagesInBackground = async (images : any) => {
       gridTemplateRows: mobileSize ? '50% 50%' : undefined,
     }}>
       <div className="px-4 lg:px-8 bg-transparent" style={{ overflowY: !mobileSize ? 'scroll' : undefined, height:'850px' }}>
-      <div className="bg-white rounded-lg p-4 mb-4 mt-4">
-
-        <div className="flex items-center">
-          <h2 className="text-mm text-blue-900 font-extrabold ">
-            Text Prompt
-          </h2>
-        </div>
-        <div className="relative flex items-center">
-          <p className="text-gray-400 text-lg font-bold">
-            Describe what you want the AI to create
-          </p>
-        </div>
+      <div className="form p-4 mb-4 mt-4">
+   <div className="flex flex-col">
+  <div className="span">Text Prompt</div>
+ 
+  <input className="input"
+        type="text"
+        placeholder="Describe what you want the AI to create"
+        value={textInput}
+        onChange={(e) => setTextInput(e.target.value)} />
+</div> 
         
-          <input
-            className=" bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-red-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 mb-4"
-            type="text"
-            placeholder="Your text prompt"
-            value={textInput}
-            onChange={(e) => setTextInput(e.target.value)}
-          />
-         
-          
 { passedImage =='' ? ( 
   <>
-   <h2 className="text-mm mt-5 text-blue-900  font-extrabold">
+  <div className="span">
    Input init image
- </h2>      
+ </div>      
   <input type="file" className="block w-full text-lg text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" onChange={handleImageUpload} />
 </>
 ): null}             {passedImage || uploadedImage ? (
@@ -273,36 +263,62 @@ const saveImagesInBackground = async (images : any) => {
                 alt="Uploaded image"
               />
               ) : null}
-          <h2 className="text-mm pt-5 text-blue-900 font-extrabold">Choose a style : <span className="text-1xl ">{selectedStyle}</span> </h2>
-          <PickStyle onSelectedStyleChange={handleSelectedStyleChange} />
-          <div
-      className={`save-time-container ${clicked ? "clicked" : ""}`}
-      onClick={handleButtonClick}
-    >
-      <div className="inner-effect"></div>
-      <p>Fast Process (+2 credits)</p>
-      <Clock />
-    </div>
-    <div className="flex gap-3 mt-3">
-  <h2 className="text-mm pt-5 text-blue-900 font-extrabold">Samples</h2>
+<div className="flex flex-col">
+  <div className="span">Pick a Style: {selectedStyle}</div>
+  <div className="ml-auto">
+    <PickStyle onSelectedStyleChange={handleSelectedStyleChange} />
+  </div>
+</div>
 
-    <div className="flex gap-2">
-    
-    {[1, 2, 4, 6, 8].map((value) => (
-      <SampleButton
-        key={value}
-        value={value}
-        selected={selectedSamples}
-        onClick={handleSamples}
-      />
-    ))}
+
+
+<div className="flex gap-3">
+  <div className="span">Samples</div>
+  <div className="flex gap-2">
+    <div className="login-with">
+      {[1, 2, 6, 8, 10].map((value) => (
+        <div
+          className={`button-log ${selectedSamples === value ? 'selected' : ''}`}
+          onClick={() => handleSamples(value)}
+          key={value}
+        >
+          <b>{value}</b>
+        </div>
+      ))}
+    </div>
   </div>
-  </div>
-          <label>
+</div>
+
+  
+<div className="flex gap-3">
+    <div className="span mt-2">Algorithm Model</div>
+    <div>
+          <select className="bloc w-200 px-4 text-base text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-900 focus:border-red-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={selectedModel} onChange={handleModelChange}>
+            <option value="stable-diffusion-xl-1024-v1-0">Stable Diffusion XL 1.0 (Pro only)</option>
+            <option value="stable-diffusion-v1-6">Stable Diffusion 1.6</option>
+          </select>
+        </div>
+    </div>
+    <div className="flex">
+
+<Fast_process
+    clicked={clicked} 
+    onClick={handleButtonClick}
+  />
+<div className="tooltip mt-3 ml-3">
+<div className="icon">i</div>
+<div className="tooltiptext">Fast Process cuts generation time by 40%, streamlining slow processes. It efficiently accelerates tasks for quicker results</div>
+</div>
+</div>
+    <label>
         
-          <div className="text-mm pt-5 text-blue-900 font-extrabold" style={{ display: 'flex' }}>
-  Show Advanced Options
-  <div className="container" >
+        
+<div className="flex items-center">
+<div className="span mr-5">Show Advanced Options</div>
+ <div className="flex gap-3 mt-5">
+       
+          </div>
+  <div>
     <input
       id="checkbox"
       type="checkbox"
@@ -314,27 +330,18 @@ const saveImagesInBackground = async (images : any) => {
   </div>
 </div>
 
-
       </label>
       {showAdvancedOptions && (
         <>
-         <h2 className="block text-mm text-blue-900 font-extrabold mb-2 mt-3">Negative Prompt</h2>
-         <div className="relative">
-      <input
-        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-red-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 mb-3"
-        type="text"
-        placeholder="What you want to avoid"
-        value={negativePrompt}
-        onChange={(e) => setNegativePrompt(e.target.value)}
-      />
-    </div>
-    <div className="flex gap-3 mt-5">
-            <h2 className="text-mm text-blue-900 font-extrabold">
+        <div className="flex items-center">
+
+         <div className="span mr-10">
               Image Strength
-            </h2>
+            </div>
             <input
+              className="slider mt-2 mr-3"
               type="range"
-              id="imgStrength"
+              id="myRange"
               name="imageStrength"
               min={0}
               max={1}
@@ -342,71 +349,70 @@ const saveImagesInBackground = async (images : any) => {
               value={image_strength}
               onChange={handleImgStrength}
             />
-            <h4 className="text-1xl">{image_strength}</h4>
-          </div>
-          <div className="flex gap-3">
-        <h2 className="text-mm pt-5 text-blue-900 font-extrabold">Algorithm Model</h2>
-        <div>
-          <select className="bloc w-200 px-4 mt-4 text-base text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-900 focus:border-red-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={selectedModel} onChange={handleModelChange}>
-            <option value="stable-diffusion-xl-1024-v1-0">Stable Diffusion XL 1.0 (Pro only)</option>
-            <option value="stable-diffusion-v1-6">Stable Diffusion 1.6</option>
-          </select>
-        </div>
+            <p>{image_strength}</p>
+            </div>
+           <div className="flex flex-col">
+
+        <div className="span">Negative Prompt</div>
+        <input className="input"
+        type="text"
+        placeholder="Describe what you want the AI to avoid"
+        value={negativePrompt}
+        onChange={(e) => setNegativePrompt(e.target.value)} />
+</div>
+        <div className="flex gap-3">
+      <div className="span">CFG Scale</div>
+        <input
+        className="slider mt-2"
+          type="range"
+          id="myRange"
+          name="cfgScale"
+          min={0}
+          max={35}
+          value={cfgScale}
+          onChange={handleCFG}
+        />
+        <p>{cfgScale}</p>
+        
+        <div className="tooltip">
+  <div className="icon">i</div>
+  <div className="tooltiptext">How closely the process follows the given prompt text (higher values bring your image closer to the prompt)</div>
+</div>
       </div>
-          <div className="flex gap-3 mt-5">
-            <h2 className="text-mm text-blue-900 font-extrabold">
-              CFG_Scale
-            </h2>
-            <input
-              type="range"
-              id="cfgScale"
-              name="cfgScale"
-              min={0}
-              max={35}
-              value={cfgScale}
-              onChange={handleCFG}
-            />
-            <h4 className="text-1xl">{cfgScale}</h4>
-          </div>
-          <div className="flex mt-5 gap-3">
-            <h2 className="text-mm text-blue-900 font-extrabold">
-              Steps
-            </h2>
-            <input
-              type="range"
-              id="steps"
-              name="steps"
-              min={10}
-              max={150}
-              value={steps}
-              onChange={handleSteps}
-            />
-            <h4>{steps}</h4>
-          </div>
-          <div className="flex mt-5 gap-3">
-            <h2 className="text-mm mt-1 text-blue-900 font-extrabold">
-              Seed
-            </h2>
-            <input
-              className=" bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-red-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"// Remove left padding
-              type="text"
-              placeholder="Seed"
-              value={seed}
-              onChange={handleSeed}
-            />
-          </div>
-   
-         </>
-      )}
-          <Button
-            onClick={handleGenerate} disabled={isLoading}
-            className="mt-4 w-full relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium text-white rounded-lg group bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-purple-500 group-hover:to-pink-500 hover:text-black   dark:text-white focus:ring-4 focus:outline-none focus:ring-purple-200 dark:focus:ring-purple-800"
-            variant="premium">
-            <span >  
-              {isLoading ? 'Generating...' : 'Generate'}
-            </span>
-          </Button>
+      <div className="flex gap-3">
+      <div className="span">Steps</div>
+      <input id="myRange" className="slider mt-2" value={steps} max="150" min="10" type="range" onChange={handleSteps} />
+        <p>{steps}</p> 
+        <div className="tooltip">
+  <div className="icon">i</div>
+  <div className="tooltiptext">Number of diffusion steps to run</div>
+</div>
       </div>
+
+      <div className="flex flex-col">
+      <div className="span">Seed <div className="tooltip">
+  <div className="icon">i</div>
+  <div className="tooltiptext">Choose either to exclude this option or input 0 to use a random seed for noise</div>
+</div>
+</div>
+      
+      <input className="input"
+        type="text"
+        placeholder="0 for optimized generation"
+        value={seed}
+        onChange={handleSeed} />
+      </div>
+      </>
+    )}
+ <Button
+        onClick={handleGenerate}
+        disabled={isLoading}
+        className="mt-4 w-full relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium text-white rounded-lg group bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-purple-500 group-hover:to-pink-500 hover:text-black   dark:text-white focus:ring-4 focus:outline-none focus:ring-purple-200 dark:focus:ring-purple-800"
+variant="premium">
+        <span>
+         {isLoading ? 'Generating...' : `Generate`}
+        </span>
+      </Button></div>
      </div>
       <div  style={{ overflowY: !mobileSize ? 'scroll' : undefined, height:'850px' }}>
       <div className=" space-y-4 text-center">
@@ -417,18 +423,16 @@ Enhance Images
         Transform Images with Cutting-Edge Image-to-Image Models
        </p>
       </div>
-      {isLoading && (
-  <div className="p-20 flex justify-center items-center h-screen">
-    <div className="text-center">
+     {isLoading && (
+  <div className="p-20 flex justify-center items-center">
       <Loader />
-    </div>
   </div>
 )}
 
           {generatedImage == null  && !isLoading && (
-            <div className="mb-5">
-            <Empty label="No images generated." />
-            </div>
+             <div className="flex justify-center items-center mb-5">
+             <Empty label="No images generated." />
+           </div>
           )}
        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-8">
         {Array.isArray(generatedImage) && generatedImage.length > 0 ? (
