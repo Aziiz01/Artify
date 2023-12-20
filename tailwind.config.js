@@ -12,6 +12,10 @@ module.exports = {
 
 	],
   theme: {
+    fontFamily: {
+      abc : [ 'Asap', "sans-serif"]
+    
+    },
     container: {
       center: true,
       padding: "2rem",

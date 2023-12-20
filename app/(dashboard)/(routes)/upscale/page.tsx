@@ -1,13 +1,5 @@
 'use client'
-// to implement passedImage 
 import React, { useState, ChangeEvent, useEffect } from "react";
-import * as Generation from "../../../generation/generation_pb";
-import {
-  executeGenerationRequest,
-  onGenerationComplete,
-  buildGenerationRequest,
-} from "../../../../lib/helpers";// Adjust the import path as needed
-import { client, metadata } from "../../../../lib/grpc-client";
 import Image from "next/image";
 import { CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,14 +12,14 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/firebase";
 import { useUser } from "@clerk/nextjs";
 import toast from "react-hot-toast";
-import { checkApiLimit, incrementApiLimit } from "@/lib/api-limit";
-import { checkSubscription, countCredit } from "@/lib/subscription";
 import { useProModal } from "@/hook/use-pro-modal";
 import axios from "axios";
 import { useLoginModal } from "@/hook/use-login-modal";
 import { PublishButton } from "@/components/publish_button";
 import "../../style.css"
 import { Upscale } from "@/app/api/upscale/route";
+import { Special_button } from "@/components/ui/special_button";
+import { Fast_process } from "@/components/ui/fast_process";
 export default function UpscalePage() {
   const { isSignedIn, user, isLoaded } = useUser();
   const router = useRouter();
@@ -250,13 +242,11 @@ export default function UpscalePage() {
     }}>
       <div className="px-4 lg:px-8 bg-transparent" style={{ overflowY: !mobileSize ? 'scroll' : undefined, height: '850px' }}>
       <div className="form p-4 mb-4 mt-4">
-   <div className="flex flex-col">
-   <div className="flex items-center">
    {uploadedImage || passedImage =='' ? ( 
   <>
   <div className="span">
    Input init image
- </div>      
+ </div>     
   <input type="file" className="block w-full text-lg text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" onChange={handleImageUpload} />
 </>
 ): null}       
@@ -268,33 +258,31 @@ export default function UpscalePage() {
                 alt="Uploaded image"
               />
               ) : null}
-</div> 
 
 
-    <div
-      className={`save-time-container ${clicked ? "clicked" : ""}`}
-      onClick={handleButtonClick}
-    >
-      <div className="inner-effect mt-3"></div>
-      <p>Fast Process (+2 credits)</p>
-      <Clock/>
-    </div>
+<div className="flex mt-3 mb-5">
+
+<Fast_process
+    clicked={clicked} 
+    onClick={handleButtonClick}
+  />
+<div className="tooltip mt-3 ml-3">
+<div className="icon">i</div>
+<div className="tooltiptext">Fast Process cuts generation time by 40%, streamlining slow processes. It efficiently accelerates tasks for quicker results</div>
+</div>
   
     
- <Button
-        onClick={handleUpscale}
-        disabled={isLoading}
-        className="mt-4 w-full relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium text-white rounded-lg group bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-purple-500 group-hover:to-pink-500 hover:text-black   dark:text-white focus:ring-4 focus:outline-none focus:ring-purple-200 dark:focus:ring-purple-800"
-variant="premium">
-        <span>
-         {isLoading ? 'Generating...' : `Generate`}
-        </span>
-      </Button></div>
+   
+      </div>
+      <Special_button buttonText= {isLoading ? 'Upscaling...' : `Upscale`}
+     onClick={handleUpscale}
+     disabled={isLoading}
+       />
       </div>
       </div>
       <div style={{ overflowY: !mobileSize ? 'scroll' : undefined, height: '850px' }}>
         <div className="mb-8 space-y-4 text-center">
-          <h2 className="text-4xl mt-5 text-blue-900 font-extrabold">
+          <h2 className="font-abc text-6xl mt-5 text-blue-900 font-extrabold">
 Upscale Images       
    </h2>
           <p className="text-gray-500 text-lg">

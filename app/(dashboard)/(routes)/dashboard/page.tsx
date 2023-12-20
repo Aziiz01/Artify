@@ -534,7 +534,7 @@ const saveImagesInBackground = async (images : any) => {
     </div>
     <div  style={{ overflowY: !mobileSize ? 'scroll' : undefined, height:'850px' }}>
       <div className="mb-8 space-y-4 text-center">
-      <h2 className="text-4xl mt-5 text-blue-900 font-extrabold">
+      <h2 className="font-abc text-6xl mt-5 text-blue-900 font-extrabold">
           Generate Art</h2>
         <p className="text-gray-500 text-lg">
         Text-to-Image Wizardry: Bring Words to Life with AI-Powered Imaging        </p>

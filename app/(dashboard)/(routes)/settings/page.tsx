@@ -6,6 +6,7 @@ import { getCredits } from "@/lib/credits";
 import { auth } from "@clerk/nextjs";
 import { getPackage } from "@/lib/package";
 import { Footer } from "@/components/footer";
+import { Payment_Button } from "@/components/payment_button";
 
 const SettingsPage = async () => {
   const { userId } : { userId: string | null } = auth();
@@ -14,13 +15,14 @@ const SettingsPage = async () => {
 const p = await getPackage();
   return ( 
     <div>
-      <Heading
-        title="Settings"
-        description="Manage account settings."
-        icon={Settings}
-        iconColor="text-gray-700"
-        bgColor="bg-gray-700/10"
-      />
+    <div className=" space-y-4 text-center mb-10">
+    <h2 className="font-abc text-6xl mt-5 text-blue-900 font-extrabold">
+Settings Page
+        </h2>
+        <p className="text-gray-500 text-lg">
+        Explore your settings page to conveniently view credits, manage packages, and oversee your subscriptions effortlessly
+                       </p>
+      </div>
       <div className="px-4 lg:px-8 space-y-4">
         <div className="text-muted-foreground text-sm">
           {isPro ? "You are currently on a Pro plan." : "You are currently on a free plan."}
@@ -33,6 +35,8 @@ const p = await getPackage();
           `Your current package is ${p}`
         ): ""}
       </div>
+      <Payment_Button />
+
       <Footer />
     </div>
   );

@@ -7,6 +7,7 @@ import Image from "next/image";
 import { Info } from "@/app/(dashboard)/(routes)/credits/credit_info";
 import { Footer } from "@/components/footer";
 import { S_Loader } from "@/components/s_loader";
+import { Payment_Button } from "@/components/payment_button";
 const Pricing = () => {
   const [prices, setPrices] = useState<any[]>([]);
   const router = useRouter();

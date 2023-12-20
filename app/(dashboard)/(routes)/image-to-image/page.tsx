@@ -24,6 +24,7 @@ import { Clock } from "lucide-react";
 import { Enhance } from "@/app/api/enhance/route";
 import { SampleButton } from "@/components/ui/sample_button";
 import { Fast_process } from "@/components/ui/fast_process";
+import { Special_button } from "@/components/ui/special_button";
 export default function ImageToImagePage() {
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [passedImage, setPassedImage] = useState('');
@@ -404,19 +405,15 @@ const saveImagesInBackground = async (images : any) => {
       </div>
       </>
     )}
- <Button
-        onClick={handleGenerate}
-        disabled={isLoading}
-        className="mt-4 w-full relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium text-white rounded-lg group bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-purple-500 group-hover:to-pink-500 hover:text-black   dark:text-white focus:ring-4 focus:outline-none focus:ring-purple-200 dark:focus:ring-purple-800"
-variant="premium">
-        <span>
-         {isLoading ? 'Generating...' : `Generate`}
-        </span>
-      </Button></div>
+<Special_button buttonText= {isLoading ? 'Generating...' : `Generate`}
+     onClick={handleGenerate}
+     disabled={isLoading}
+       />
+      </div>
      </div>
       <div  style={{ overflowY: !mobileSize ? 'scroll' : undefined, height:'850px' }}>
       <div className=" space-y-4 text-center">
-      <h2 className="text-4xl mt-5 text-blue-900 font-extrabold">
+      <h2 className="font-abc text-6xl mt-5 text-blue-900 font-extrabold">
 Enhance Images
         </h2>
         <p className="text-gray-500 text-lg">

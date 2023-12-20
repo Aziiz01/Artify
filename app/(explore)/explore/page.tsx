@@ -53,7 +53,7 @@ const isImageLoading = true;
   
   const modalStyle = {
     overlay: {
-      backgroundColor: 'rgba(0, 0, 0, 0.5)', // Adjust the alpha value for darkness
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
       zIndex: 1000,
     },
     content: {

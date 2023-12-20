@@ -5,6 +5,7 @@ import { Zap } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 import { Button } from "@/components/ui/button";
+import { Special_button } from "./ui/special_button";
 
 export const SubscriptionButton = ({ isPro}: { isPro: boolean }) => {
   const [loading, setLoading] = useState(false);
@@ -24,9 +25,12 @@ export const SubscriptionButton = ({ isPro}: { isPro: boolean }) => {
   };
 
   return (
-    <Button variant={isPro ? "default" : "premium"} disabled={loading} onClick={onClick}>
-      {isPro ? "Manage Subscription" : "Upgrade"}
-      {!isPro && <Zap className="w-4 h-4 ml-2 fill-white" />}
-    </Button>
+    <Special_button
+  disabled={loading}
+  onClick={onClick}
+  buttonText={isPro ? "Manage Subscription" : "Upgrade"}
+>
+</Special_button>
+
   );
 };

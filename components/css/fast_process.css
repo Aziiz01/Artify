@@ -31,8 +31,8 @@
   }
   
   .fast__icon {
-    width: 48px;
-    height: 40px;
+    width: 38px;
+    height: 30px;
     background-color: var(--clr);
     display: grid;
     place-items: center;
@@ -46,7 +46,7 @@
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    max-width: 150px;
+    max-width: 200px;
   }
   
   .fast:hover .fast__text {
