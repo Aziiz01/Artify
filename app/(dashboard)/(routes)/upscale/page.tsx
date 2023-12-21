@@ -20,6 +20,8 @@ import "../../style.css"
 import { Upscale } from "@/app/api/upscale/route";
 import { Special_button } from "@/components/ui/special_button";
 import { Fast_process } from "@/components/ui/fast_process";
+import Modal from 'react-modal';
+
 export default function UpscalePage() {
   const { isSignedIn, user, isLoaded } = useUser();
   const router = useRouter();
@@ -36,6 +38,9 @@ export default function UpscalePage() {
   const [displayImagesImmediately, setDisplayImagesImmediately] = useState(false);
   const [clicked, setClicked] = useState(false);
   const [fast_count, setCount] = useState(0);
+  const [selectedImage, setSelectedImage] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
 
   useEffect(() => {
     const handleResize = () => {
@@ -73,7 +78,15 @@ export default function UpscalePage() {
 
     getImageFromId();
   }, [imageId])
-
+  const openModal = (image: HTMLImageElement) => {
+      setSelectedImage(image);
+    setIsModalOpen(true);
+  };
+  
+  const closeModal = () => {
+    setSelectedImage(null);
+    setIsModalOpen(false);
+  };
 
   // Handle image upload
   const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
@@ -148,11 +161,14 @@ export default function UpscalePage() {
     }
   };
 
-
-
-  const handleEnhance = (event: any) => {
-    const url = `/image-to-image?imageId=${imageId}`;
-    window.location.href = url;
+  const modalStyle = {
+    overlay: {
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    content: {
+      maxWidth: '800px',
+      margin: 'auto',
+    },
   };
 
   const handleUpscale = async () => {
@@ -300,27 +316,56 @@ Upscale Images
          )}
 
         <>
-          <br />
-          {generatedImage && (
-            <>
-              <h2>Upscaled Image:</h2>
-              {generatedImage.map((img, index) => (
-                <Card key={index} className="">
-                  <div className="relative aspect-square">
-                    <Image priority={false} height={img.height} width={img.width} src={img.src} alt={`Generated Image ${index + 1}`} />
-                  </div>
-                  <CardFooter className="p-2">
-                    <Button onClick={() => openImageInNewTab(img)} variant="secondary" className="w-full">
-                      <Download className="h-4 w-4 mr-2" />
-                      Download
-                    </Button>
-                    <Button onClick={handleEnhance}>Enhance</Button>
-                    <PublishButton imageId={documentId} />
-                  </CardFooter>
-                </Card>
-              ))}
-            </>
-          )}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-2 ml-2 mr-2">
+  {generatedImage ? (
+    generatedImage.map((img, index) => (
+      <div key={index} className="flex flex-col items-center">
+        <div className="image-container" onClick={() => openModal(img)}>
+          <Image
+            className="rounded-lg image-hover"
+            src={img.src}
+            alt={`Generated Image ${index + 1}`}
+            height={1024}
+            width={1024}
+          />
+          <div className="image-overlay">
+            <p className="text-white">Click to view in full size</p>
+          </div>
+        </div>
+        <div className="flex gap-1 mt-2">
+          <Button onClick={() => openImageInNewTab(img)} variant="secondary">
+            <Download className="h-3 w-3 mr-1" /> Download
+          </Button>
+          
+          <PublishButton imageId={documentId} />
+        </div>
+      </div>
+    ))
+  ) : !isLoading && generatedImage === null ? (
+    <Empty label="No images generated." />
+  ) : null}
+</div>
+  
+<Modal
+      isOpen={isModalOpen}
+      onRequestClose={closeModal}
+      contentLabel="Image Modal"
+      style={modalStyle}
+    >
+      {selectedImage && (
+        <div className="vertical-modal-container">
+          <div className="modal-image-container">
+            <Image
+              src={selectedImage}
+              alt="selectedImage"
+              fill
+              className="image"
+            />
+           
+          </div> 
+        </div>
+      )}
+    </Modal>
         </>
 
       </div>

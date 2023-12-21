@@ -19,7 +19,8 @@ const lastName =user?.lastName;
     const urls = body.url;
 const prompt = body.values.prompt;
 const amount = body.values.amount;
-const resolution = body.values.resolution;
+const height = body.values.height;
+const width = body.values.width;
 const docId = body.documentId;
 
     if (!userId) {
@@ -50,9 +51,11 @@ const docId = body.documentId;
         lastName : lastName,
         userId: userId,
         image: imageUrl,
+        Model :'DALLE',
         textInput: prompt,
         amount : amount,
-        resolution : resolution,
+        height : height,
+        width : width,
         published: false, 
         likes: [] ,
         timeStamp: serverTimestamp(),

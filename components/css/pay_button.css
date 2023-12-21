@@ -1,4 +1,4 @@
-.container {
+.effectss {
     background-color: #ffffff;
     display: flex;
     width: 500px;
@@ -8,12 +8,12 @@
     transition: 0.3s ease-in-out;
   }
   
-  .container:hover {
+  .effectss:hover {
     transform: scale(1.03);
     width: 220px;
   }
   
-  .container:hover .left-side {
+  .effectss:hover .left-side {
     width: 100%;
   }
   
@@ -83,11 +83,11 @@
   }
   
   @media only screen and (max-width: 480px) {
-    .container {
+    .effectss {
       transform: scale(0.7);
     }
   
-    .container:hover {
+    .effectss:hover {
       transform: scale(0.74);
     }
   
@@ -107,11 +107,11 @@
     margin: 10px 0 0 -30px;
   }
   
-  .container:hover .card {
+  .effectss:hover .card {
     animation: slide-top 1.2s cubic-bezier(0.645, 0.045, 0.355, 1) both;
   }
   
-  .container:hover .post {
+  .effectss:hover .post {
     animation: slide-post 1s cubic-bezier(0.165, 0.84, 0.44, 1) both;
   }
   
@@ -225,7 +225,7 @@
     text-align: center;
   }
   
-  .container:hover .dollar {
+  .effectss:hover .dollar {
     animation: fade-in-fwd 0.3s 1s backwards;
   }
   

@@ -23,6 +23,7 @@ import Modal from 'react-modal';
 import { SampleButton } from "@/components/ui/sample_button";
 import { Special_button } from "@/components/ui/special_button";
 import { Fast_process } from "@/components/ui/fast_process";
+import { S_Loader } from "@/components/s_loader";
 
 export default function HomePage() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -148,7 +149,9 @@ export default function HomePage() {
   const values = {
     prompt: `${textInput} , ${selectedStyle}`,
     amount: selectedSamples,
-    resolution: `${512}x${512}`,
+    resolution : `${512}x${512}`,
+    height: 512,
+    width :512
   }
   function generateRandomId() {
     const timestamp = Date.now();
@@ -243,6 +246,11 @@ const saveImagesInBackground = async (images : any) => {
     if (isSignedIn) {
       const userId = user.id;
       try {
+        if (textInput === '') {
+          toast.error("Please Insert A Prompt !");
+          setIsLoading(false);
+          return;
+        }
         if (selectedModel === 'DALL E2') {
           await DALLE(values);
         } else {
@@ -270,7 +278,7 @@ const saveImagesInBackground = async (images : any) => {
               } else {
                 proModal.onOpen();
                 console.log('User is not eligible for this operation.');
-              }
+              } 
             } catch (error : any) {
               if (error.response && error.response.status === 403) {
                 proModal.onOpen();
@@ -292,12 +300,15 @@ const saveImagesInBackground = async (images : any) => {
     }
   };
   
-
-  
-  const openModal = (image: HTMLImageElement) => {
-    setSelectedImage(image);
+  const openModal = (image?: HTMLImageElement | undefined, src?: string | undefined) => {
+    if (image) {
+      setSelectedImage(image);
+    } else if (src && src !== '') {
+      setSelectedImage(src);
+    }
     setIsModalOpen(true);
   };
+  
   const closeModal = () => {
     setSelectedImage(null);
     setIsModalOpen(false);
@@ -332,10 +343,7 @@ const saveImagesInBackground = async (images : any) => {
     // Redirect to the new URL
     window.location.href = url;
   };
-  const openImageInNewWindow = (img : any) => {
-    const fullSizeImage = img.src; // Replace this with the appropriate property of your image object
-    window.open(fullSizeImage, '_blank', 'width=auto,height=auto');
-  };
+
   const openImageInNewTab = (img : any) => {
     if (img && img.src) {
       const link = document.createElement('a');
@@ -345,6 +353,16 @@ const saveImagesInBackground = async (images : any) => {
       link.click();
     }
   };
+  const downloadImg = (src: string) => {
+    if (src !== '') {
+      const link = document.createElement('a');
+      link.href = src;
+      link.target = '_blank';
+      link.download = 'image.png'; // Provide a default name for the downloaded image
+      link.click();
+    }
+  };
+  
   const modalStyle = {
     overlay: {
       backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -390,8 +408,8 @@ const saveImagesInBackground = async (images : any) => {
 
 
 
-<div className="flex gap-3">
-  <div className="span">Samples</div>
+<div className=" gap-3">
+  <div className="span">Samples :</div>
   <div className="flex gap-2">
     <div className="login-with">
       {[1, 2, 6, 8, 10].map((value) => (
@@ -408,7 +426,7 @@ const saveImagesInBackground = async (images : any) => {
 </div>
 
   
-<div className="flex gap-3">
+<div className=" gap-3">
     <div className="span mt-2">Algorithm Model</div>
     <div>
           <select className="bloc w-200 px-4 text-base text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-900 focus:border-red-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={selectedModel} onChange={handleModelChange}>
@@ -593,44 +611,58 @@ const saveImagesInBackground = async (images : any) => {
       contentLabel="Image Modal"
       style={modalStyle}
     >
+       <div className="absolute inset-0 flex items-center justify-center">
+                <S_Loader />
+              </div>
       {selectedImage && (
         <div className="vertical-modal-container">
           <div className="modal-image-container">
             <Image
-              src={selectedImage.src}
+              src={selectedImage}
               alt="selectedImage"
               fill
               className="image"
             />
-             <div className="image-text-container">
-              <p className="image-text">{textInput}</p>
-            </div>
+           
           </div> 
         </div>
       )}
     </Modal>
   
-
-      {photos && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-8">
-          {photos.map((src) => (
-            <ImageCard key={src} className="rounded-lg overflow-hidden">
-            <div className="relative aspect-square">
-              <Image fill alt="Generated" src={src} />
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-2 ml-2 mr-2">
+      {photos ? (
+          photos.map((src , index) => (
+            <div key={index} className="flex flex-col items-center">
+            <div className="image-container" onClick={() => openModal(undefined,src)}>
+              <Image
+                className="rounded-lg image-hover"
+                src={src}
+                alt={`Generated Image ${index + 1}`}
+                height={1024}
+                width={1024}
+              />
+              <div className="image-overlay">
+                <p className="text-white">Click to view in full size</p>
+              </div>
             </div>
-            <ImageCardFooter className="p-2">
-              <Button onClick={() => window.open(src)} variant="secondary" className="w-full">
-                <Download className="h-4 w-4 mr-2" />
-                Open Image
+            <div className="flex gap-1 mt-2">
+              <Button onClick={() => downloadImg(src)} variant="secondary">
+                <Download className="h-3 w-3 mr-1" /> Download
               </Button>
-              <Button onClick={handleEnhance}>Enhance</Button>
-              <Button onClick={handleUpscale}>Upscale</Button>
+              <Button onClick={handleEnhance} variant="secondary">
+                <FontAwesomeIcon icon={faWandSparkles} className="h-3 w-3 mr-1" /> Enhance
+              </Button>
+              <Button onClick={handleUpscale} variant="secondary">
+                <FontAwesomeIcon icon={faExpand} className="h-3 w-3 mr-1" /> Upscale
+              </Button>
               <PublishButton imageId={imageId} />
-            </ImageCardFooter>
-          </ImageCard>
-          ))}
-    </div>
-      )}
+            </div>
+          </div>
+          ))
+      ) : !isLoading && photos === null ? (
+        <Empty label="No images generated." />
+      ) : null}
+      </div>
    </div>
    </div>
   )}

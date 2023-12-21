@@ -16,6 +16,7 @@ import { useUser } from "@clerk/nextjs";
 import { useProModal } from "@/hook/use-pro-modal";
 import toast from "react-hot-toast";
 import axios from "axios";
+import Modal from 'react-modal';
 import { useLoginModal } from "@/hook/use-login-modal";
 import PickStyle from "@/components/ui/pickStyle";
 import { PublishButton } from "@/components/publish_button";
@@ -25,6 +26,10 @@ import { Enhance } from "@/app/api/enhance/route";
 import { SampleButton } from "@/components/ui/sample_button";
 import { Fast_process } from "@/components/ui/fast_process";
 import { Special_button } from "@/components/ui/special_button";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faExpand, faWandSparkles } from "@fortawesome/free-solid-svg-icons";
+import { S_Loader } from "@/components/s_loader";
+
 export default function ImageToImagePage() {
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [passedImage, setPassedImage] = useState('');
@@ -51,6 +56,8 @@ const [image_strength, setImgStrength] = useState(0.35); // Set an initial value
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [negativePrompt, setNegativePrompt] = useState('bad,blurry');
   const [selectedModel, setSelectedModel] = useState('stable-diffusion-xl-1024-v1-0');
+  const [selectedImage, setSelectedImage] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
   
@@ -195,8 +202,13 @@ const saveImagesInBackground = async (images : any) => {
     } else {
       const userId = user.id;
       try {
+        if (textInput === '') {
+          toast.error("Please Insert A Prompt !");
+          setIsLoading(false);
+          return;
+        } else {
           const generatedImages = await Enhance(userId,uploadedImage,passedImage,textInput,negativePrompt,image_strength,selectedSamples,selectedModel,selectedStyle,cfgScale,seed,steps,fast_count)
-          if (generatedImages !== null && generatedImages !== false) {
+          if (generatedImages !== null && generatedImages !== false ) {
             if (displayImagesImmediately) {
               console.log('displaying first')
               setGeneratedImage(generatedImages);
@@ -215,7 +227,7 @@ const saveImagesInBackground = async (images : any) => {
           }
           router.refresh();
 
-        }
+        }}
        catch (error) {
         setIsLoading(false);
         console.error("Failed to make image-to-image request:", error);
@@ -229,7 +241,26 @@ const saveImagesInBackground = async (images : any) => {
     const newCount = clicked ? 0 : 2;
     setCount(newCount);
   };
-
+ 
+  const openModal = (image: HTMLImageElement) => {
+      setSelectedImage(image);
+    
+    setIsModalOpen(true);
+  };
+  
+  const closeModal = () => {
+    setSelectedImage(null);
+    setIsModalOpen(false);
+  };
+  const modalStyle = {
+    overlay: {
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    content: {
+      maxWidth: '800px',
+      margin: 'auto',
+    },
+  };
   return (
     <div style={{
       display:'grid',
@@ -431,27 +462,63 @@ Enhance Images
              <Empty label="No images generated." />
            </div>
           )}
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-8">
-        {Array.isArray(generatedImage) && generatedImage.length > 0 ? (
-          generatedImage.map((img, index) => (
-            <Card key={index} className="">
-            <div className="relative aspect-square">
-              <Image height={img.height} width={img.width} src={img.src} alt={`Generated Image ${index + 1}`} />
-            </div>
-            <CardFooter className="p-2">
-            <Button onClick={() => openImageInNewTab(img)} variant="secondary" className="w-full">
-                <Download className="h-4 w-4 mr-2" />
-                Download
-              </Button>
-              <Button onClick={handleEnhance}>Enhance</Button>
-              <Button onClick={handleUpscale}>Upscale</Button>
-              <PublishButton imageId={f_imageId} />
-            </CardFooter>
-          </Card>
-          ))
-        
-        ) : null}
+       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-2 ml-2 mr-2">
+  {Array.isArray(generatedImage) && generatedImage.length > 0 ? (
+    generatedImage.map((img, index) => (
+      <div key={index} className="flex flex-col items-center">
+        <div className="image-container" onClick={() => openModal(img)}>
+          <Image
+            className="rounded-lg image-hover"
+            src={img.src}
+            alt={`Generated Image ${index + 1}`}
+            height={1024}
+            width={1024}
+          />
+          <div className="image-overlay">
+            <p className="text-white">Click to view in full size</p>
+          </div>
+        </div>
+        <div className="flex gap-1 mt-2">
+          <Button onClick={() => openImageInNewTab(img)} variant="secondary">
+            <Download className="h-3 w-3 mr-1" /> Download
+          </Button>
+          <Button onClick={handleEnhance} variant="secondary">
+            <FontAwesomeIcon icon={faWandSparkles} className="h-3 w-3 mr-1" /> Enhance
+          </Button>
+          <Button onClick={handleUpscale} variant="secondary">
+            <FontAwesomeIcon icon={faExpand} className="h-3 w-3 mr-1" /> Upscale
+          </Button>
+          <PublishButton imageId={f_imageId} />
+        </div>
       </div>
+    ))
+  )  : null}
+</div>
+<Modal
+      isOpen={isModalOpen}
+      onRequestClose={closeModal}
+      contentLabel="Image Modal"
+      style={modalStyle}
+    >
+       <div className="absolute inset-0 flex items-center justify-center">
+                <S_Loader />
+              </div>
+
+              
+      {selectedImage && (
+        <div className="vertical-modal-container">
+          <div className="modal-image-container">
+            <Image
+              src={selectedImage}
+              alt="selectedImage"
+              fill
+              className="image"
+            />
+           
+          </div> 
+        </div>
+      )}
+    </Modal>
       </div>
 
 

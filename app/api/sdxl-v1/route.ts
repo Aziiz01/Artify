@@ -1,12 +1,13 @@
 import { checkSubscription, countCredit } from "@/lib/subscription";
 import { incrementApiLimit, checkApiLimit } from "@/lib/api-limit";
+import toast from "react-hot-toast";
 
 
 export async function SDXL(userId : string,textInput: string,negativePrompt:string, selectedStyle : string,selectedSamples : number,height : number,width : number, selectedModel:string,cfgScale : number,seed :number, steps: number, fast_count: number ) {
 
   try {
      const path =`https://api.stability.ai/v1/generation/${selectedModel}/text-to-image`;
-     const apiKey = "sk-hfHFcGo7XF9HI8F1DJKRyfQZFBkj8nSGSeT1TXhwRKHsGdps";
+     const apiKey = "sk-5ZsXF8IuUTMG2CP7DBGqO978F5zCC3xJeQDnP836Fo87IXBp";
       const headers = {
         Accept: "application/json",
         Authorization: `Bearer ${apiKey}`,
@@ -20,6 +21,8 @@ export async function SDXL(userId : string,textInput: string,negativePrompt:stri
     if (!freeTrial && !isPro) {
       return null;
     }
+
+  
     const calcul =await countCredit(userId,count);
       if (!calcul){
         return false;

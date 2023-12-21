@@ -4,7 +4,7 @@ import axios from "axios";
 import toast from 'react-hot-toast';
 
 export async function Upscale(userId: string, uploadedImage: File | null, passedImage: string, selectedModel: string, fast_count: number) {
-  const apiKey = "sk-hfHFcGo7XF9HI8F1DJKRyfQZFBkj8nSGSeT1TXhwRKHsGdps";
+  const apiKey = "sk-5ZsXF8IuUTMG2CP7DBGqO978F5zCC3xJeQDnP836Fo87IXBp";
 
   const count = 3;
   console.log("fast_count: " + fast_count)

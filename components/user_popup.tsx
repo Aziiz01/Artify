@@ -81,14 +81,15 @@ export const UserPopup = ({ imageId }: { imageId: string }) => {
       
 </span>
       <div
-        ref={(ref) => (popoverRef.current = ref)} // Set the ref using a callback
+        ref={(ref) => (popoverRef.current = ref)} 
         id="popover-user-profile"
         role="tooltip"
-        className="absolute z-10 invisible inline-block w-64 text-sm text-gray-500 transition-opacity duration-300 bg-white border border-gray-200 rounded-lg shadow-sm opacity-0 dark:text-gray-400 dark:bg-gray-800 dark:border-gray-600"
+        className="absolute z-50 invisible inline-block w-64 text-sm text-gray-500 transition-opacity duration-300 bg-white border border-gray-200 rounded-lg shadow-sm opacity-0 dark:text-gray-400 dark:bg-gray-800 dark:border-gray-600"
         onMouseEnter={handleHover}
         onMouseLeave={handleLeave}
+        style={{ top: 50, left: 20 }}
+
       >
-        {/* Your popover content */}
         <div className="p-3">
           <div className="flex items-cen
           ter justify-between mb-2">
