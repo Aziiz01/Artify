@@ -148,7 +148,7 @@ import { Footer } from "@/components/footer";
               factor={1}
               speed={0.5}
               style={{
-              backgroundColor: 'rgba(0, 0, 0, 1)', /* Black with 70% opacity */
+              backgroundColor: 'rgba(0, 0, 0, 1)',
               display:'flex',
               flexDirection:'column',
               zIndex:'1'}}>

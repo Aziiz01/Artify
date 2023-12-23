@@ -179,6 +179,11 @@ export default function UpscalePage() {
     } else {
       const userId = user.id;
       try {
+        if (uploadedImage == undefined) {
+          toast.error("Please Insert An Image !");
+          setIsLoading(false);
+          return;
+        } else {
         const imageElement = document.createElement("img");
         if (passedImage) {
           imageElement.src = passedImage;
@@ -231,7 +236,7 @@ export default function UpscalePage() {
                 setIsLoading(false);
               }
             }
-          
+        }
         
       } catch (error) {
         console.error("Error handling image:", error);
@@ -261,7 +266,7 @@ export default function UpscalePage() {
    {uploadedImage || passedImage =='' ? ( 
   <>
   <div className="span">
-   Input init image
+   Input init image (PNG Format required)
  </div>     
   <input type="file" className="block w-full text-lg text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" onChange={handleImageUpload} />
 </>
@@ -309,11 +314,11 @@ Upscale Images
       <Loader />
   </div>
 )}
-        {generatedImage == null && !isLoading && (
- <div className="flex justify-center items-center mb-5">
- <Empty label="No images generated." />
-</div>
-         )}
+       {generatedImage == null  && !isLoading && (
+             <div className="flex justify-center items-center mb-5">
+             <Empty label="No images generated." />
+           </div>
+          )}
 
         <>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-2 ml-2 mr-2">
@@ -341,8 +346,6 @@ Upscale Images
         </div>
       </div>
     ))
-  ) : !isLoading && generatedImage === null ? (
-    <Empty label="No images generated." />
   ) : null}
 </div>
   

@@ -364,14 +364,17 @@ const saveImagesInBackground = async (images : any) => {
   };
   
   const modalStyle = {
-    overlay: {
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    },
-    content: {
-      maxWidth: '800px',
-      margin: 'auto',
-    },
-  };
+  overlay: {
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  content: {
+    maxWidth: '800px',
+    margin: 'auto',
+    border: 'none',
+    background: 'rgba(255, 255, 255, 0.8)', // Adjust the transparency level as needed
+  },
+};
+
  return(
     <div style={{
       display:'grid',

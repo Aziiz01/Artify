@@ -50,18 +50,34 @@
 .like-icon.login-required {
   color: #ccc; /* Change the heart icon color to a light gray */
   cursor: pointer; /* Show a pointer cursor to indicate it's clickable */
-}
-.vertical-modal-container {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  text-align: center;
-  padding: 20px;
+}/* Add these styles to your global styles or within your component styles */
+
+/* Custom styles for the modal */
+.custom-modal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80%; /* Adjust the width as needed */
+  max-width: 600px; /* Set a maximum width if necessary */
+  background-color: #fff; /* Set the background color */
+  border-radius: 8px; /* Add border-radius for rounded corners */
+  outline: none; /* Remove the default outline */
 }
 
-.modal-image-container {
-  margin-bottom: 20px;
+/* Custom styles for the overlay */
+.custom-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5); /* Set the overlay background color with transparency */
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
+
 
 
 
