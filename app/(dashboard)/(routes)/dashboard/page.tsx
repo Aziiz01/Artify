@@ -24,6 +24,7 @@ import { SampleButton } from "@/components/ui/sample_button";
 import { Special_button } from "@/components/ui/special_button";
 import { Fast_process } from "@/components/ui/fast_process";
 import { S_Loader } from "@/components/s_loader";
+import { checkSubscription } from "@/lib/subscription";
 
 export default function HomePage() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -75,13 +76,34 @@ export default function HomePage() {
     
   }, []);
 
+  const isPaid = async () => {
+    if (isSignedIn) {
+      const userId = user.id;
+      const isPro = await checkSubscription(userId);
+      console.log('isPro:', isPro); // Add this line for debugging
+
+      return isPro;
+    } 
+  };
   useEffect(() => {
-    setIsMounted(true);
+    const setIsMountedAndOpenModal = async () => {
+      setIsMounted(true);
+      const isPro = await isPaid();
+      console.log('isPro in useEffect:', isPro); // Add this line for debugging
+
+      if (!isPro) {
+        proModal.onOpen();
+      }
+    };
+  
+    setIsMountedAndOpenModal();
   }, []);
 
   if (!isLoaded) {
     return null;
   }
+
+ 
 
   const handleSelectedStyleChange = (newSelectedStyle: string) => {
     setSelectedStyle(newSelectedStyle);
@@ -148,6 +170,9 @@ export default function HomePage() {
   };
   const values = {
     prompt: `${textInput} , ${selectedStyle}`,
+    textInput: `${textInput}`,
+    style: `${selectedStyle}`,
+
     amount: selectedSamples,
     resolution : `${512}x${512}`,
     height: 512,
@@ -383,7 +408,8 @@ const saveImagesInBackground = async (images : any) => {
       gridTemplateRows: mobileSize ? '50% 50%' : undefined,
     }}>
       <div className="px-4 lg:px-8 bg-transparent" style={{ overflowY: !mobileSize ? 'scroll' : undefined, height:'850px'  }}>
-        
+      
+
    <div className="form p-4 mb-4 mt-4">
    <div className="flex flex-col">
    <div className="flex items-center">
@@ -410,36 +436,6 @@ const saveImagesInBackground = async (images : any) => {
 </div>
 
 
-
-<div className=" gap-3">
-  <div className="span">Samples :</div>
-  <div className="flex gap-2">
-    <div className="login-with">
-      {[1, 2, 6, 8, 10].map((value) => (
-        <div
-          className={`button-log ${selectedSamples === value ? 'selected' : ''}`}
-          onClick={() => handleSamples(value)}
-          key={value}
-        >
-          <b>{value}</b>
-        </div>
-      ))}
-    </div>
-  </div>
-</div>
-
-  
-<div className=" gap-3">
-    <div className="span mt-2">Algorithm Model</div>
-    <div>
-          <select className="bloc w-200 px-4 text-base text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-900 focus:border-red-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={selectedModel} onChange={handleModelChange}>
-            <option value="stable-diffusion-xl-1024-v1-0">Stable Diffusion XL 1.0 (Pro only)</option>
-            <option value="stable-diffusion-xl-1024-v0-9">Stable Diffusion XL 0.9 (Pro only)</option>
-            <option value="stable-diffusion-v1-6">Stable Diffusion 1.6</option>
-            <option value="DALL E2">DALL E2</option>
-          </select>
-        </div>
-    </div>
     <div className="flex">
 
     <Fast_process
@@ -481,6 +477,36 @@ const saveImagesInBackground = async (images : any) => {
 </div>
   
   
+
+<div className=" gap-3">
+  <div className="span">Samples :</div>
+  <div className="flex gap-2">
+    <div className="login-with">
+      {[1, 2, 6, 8, 10].map((value) => (
+        <div
+          className={`button-log ${selectedSamples === value ? 'selected' : ''}`}
+          onClick={() => handleSamples(value)}
+          key={value}
+        >
+          <b>{value}</b>
+        </div>
+      ))}
+    </div>
+  </div>
+</div>
+
+  
+<div className=" gap-3">
+    <div className="span mt-2">Algorithm Model</div>
+    <div>
+          <select className="bloc w-200 px-4 text-base text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-900 focus:border-red-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={selectedModel} onChange={handleModelChange}>
+            <option value="stable-diffusion-xl-1024-v1-0">Stable Diffusion XL 1.0 (Pro only)</option>
+            <option value="stable-diffusion-xl-1024-v0-9">Stable Diffusion XL 0.9 (Pro only)</option>
+            <option value="stable-diffusion-v1-6">Stable Diffusion 1.6</option>
+            <option value="DALL E2">DALL E2</option>
+          </select>
+        </div>
+    </div>
 <div className="flex gap-3">
     <div className="span">Aspect Ratio</div>
  {Object.entries(ratioMappings).map(([ratio, { width, height, selectable }]) => (

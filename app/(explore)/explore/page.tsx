@@ -12,6 +12,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart } from "@fortawesome/free-solid-svg-icons";
 import { UserPopup } from "@/components/user_popup";
 import { S_Loader } from "@/components/s_loader";
+import { checkSubscription } from "@/lib/subscription";
+import { useProModal } from "@/hook/use-pro-modal";
 
 interface ImageData {
   id: string;
@@ -39,7 +41,8 @@ const ExplorePage: React.FC = () => {
   const loginModal = useLoginModal();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterOption, setFilterOption] = useState<string>("createdDateDesc");
-  
+  const proModal = useProModal();
+
 const isImageLoading = true;
   const openModal = (image: ImageData) => {
     setSelectedImage(image);
@@ -67,7 +70,28 @@ const isImageLoading = true;
     setSelectedImage(null);
     setShowLikesList(false);
   };
+  const isPaid = async () => {
+    if (isSignedIn) {
+      const userId = user.id;
+      const isPro = await checkSubscription(userId);
+      console.log('isPro:', isPro); // Add this line for debugging
+
+      return isPro;
+    } 
+  };
+  useEffect(() => {
+    const setIsMountedAndOpenModal = async () => {
+      const isPro = await isPaid();
+      console.log('isPro in useEffect:', isPro); // Add this line for debugging
+
+      if (!isPro) {
+        proModal.onOpen();
+      }
+    };
   
+    setIsMountedAndOpenModal();
+  }, []);
+
   useEffect(() => {
     const fetchImages = async () => {
       try {

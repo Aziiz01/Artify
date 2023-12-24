@@ -18,6 +18,8 @@ const lastName =user?.lastName;
     const body = await req.json();
     const urls = body.url;
 const prompt = body.values.prompt;
+const textInput = body.values.textInput;
+const style = body.values.style;
 const amount = body.values.amount;
 const height = body.values.height;
 const width = body.values.width;
@@ -52,7 +54,8 @@ const docId = body.documentId;
         userId: userId,
         image: imageUrl,
         Model :'DALLE',
-        textInput: prompt,
+        prompt: textInput,
+        style: style,
         amount : amount,
         height : height,
         width : width,

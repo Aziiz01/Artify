@@ -21,6 +21,7 @@ import { Upscale } from "@/app/api/upscale/route";
 import { Special_button } from "@/components/ui/special_button";
 import { Fast_process } from "@/components/ui/fast_process";
 import Modal from 'react-modal';
+import { checkSubscription } from "@/lib/subscription";
 
 export default function UpscalePage() {
   const { isSignedIn, user, isLoaded } = useUser();
@@ -77,7 +78,31 @@ export default function UpscalePage() {
     }
 
     getImageFromId();
-  }, [imageId])
+  }, [imageId]);
+
+  const isPaid = async () => {
+    if (isSignedIn) {
+      const userId = user.id;
+      const isPro = await checkSubscription(userId);
+      console.log('isPro:', isPro); // Add this line for debugging
+
+      return isPro;
+    } 
+  };
+  useEffect(() => {
+    const setIsMountedAndOpenModal = async () => {
+      const isPro = await isPaid();
+      console.log('isPro in useEffect:', isPro); // Add this line for debugging
+
+      if (!isPro) {
+        proModal.onOpen();
+      }
+    };
+  
+    setIsMountedAndOpenModal();
+  }, []);
+
+
   const openModal = (image: HTMLImageElement) => {
       setSelectedImage(image);
     setIsModalOpen(true);

@@ -14,6 +14,8 @@ import { UserPopup } from "@/components/user_popup";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { S_Loader } from "@/components/s_loader";
+import { checkSubscription } from "@/lib/subscription";
+import { useProModal } from "@/hook/use-pro-modal";
 
 interface ImageData {
   id: string;
@@ -43,6 +45,8 @@ const CreationsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterOption, setFilterOption] = useState<string>("createdDateDesc");
   const [loading, setLoading] = useState(true);  
+  const proModal = useProModal();
+
   let n;
 
   const openModal = (image: ImageData) => {
@@ -84,6 +88,29 @@ const CreationsPage: React.FC = () => {
       console.error("Error toggling publish status:", error);
     }
   };
+
+  const isPaid = async () => {
+    if (isSignedIn) {
+      const userId = user.id;
+      const isPro = await checkSubscription(userId);
+      console.log('isPro:', isPro); // Add this line for debugging
+
+      return isPro;
+    } 
+  };
+  useEffect(() => {
+    const setIsMountedAndOpenModal = async () => {
+      const isPro = await isPaid();
+      console.log('isPro in useEffect:', isPro); // Add this line for debugging
+
+      if (!isPro) {
+        proModal.onOpen();
+      }
+    };
+  
+    setIsMountedAndOpenModal();
+  }, []);
+
   useEffect(() => {
 
     const fetchImages = async () => {

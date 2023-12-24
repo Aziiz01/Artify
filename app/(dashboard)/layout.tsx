@@ -13,7 +13,7 @@ const credits = await getCredits();
  <div className="bg-gray-900 ">
             <Navbar />
             </div>  
-                <main className="bg-white"  >
+                <main  >
                   <UserCredits credits={credits} />
         {children}
       </main>

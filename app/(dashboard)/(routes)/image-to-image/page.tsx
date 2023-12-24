@@ -29,6 +29,7 @@ import { Special_button } from "@/components/ui/special_button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faExpand, faWandSparkles } from "@fortawesome/free-solid-svg-icons";
 import { S_Loader } from "@/components/s_loader";
+import { checkSubscription } from "@/lib/subscription";
 
 export default function ImageToImagePage() {
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
@@ -102,6 +103,27 @@ const [image_strength, setImgStrength] = useState(0.35); // Set an initial value
   }
     getImageFromId();
   },[imageId])
+  const isPaid = async () => {
+    if (isSignedIn) {
+      const userId = user.id;
+      const isPro = await checkSubscription(userId);
+      console.log('isPro:', isPro); // Add this line for debugging
+
+      return isPro;
+    } 
+  };
+  useEffect(() => {
+    const setIsMountedAndOpenModal = async () => {
+      const isPro = await isPaid();
+      console.log('isPro in useEffect:', isPro); // Add this line for debugging
+
+      if (!isPro) {
+        proModal.onOpen();
+      }
+    };
+  
+    setIsMountedAndOpenModal();
+  }, []);
 
 
 

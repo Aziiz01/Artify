@@ -31,6 +31,7 @@ import { faExpand, faWandSparkles } from "@fortawesome/free-solid-svg-icons";
 import { S_Loader } from "@/components/s_loader";
 import { Animation_post } from "@/app/api/animation/route";
 import { Result } from "@/app/api/result_animation/route";
+import { checkSubscription } from "@/lib/subscription";
 
 export default function AnimationPage() {
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
@@ -94,6 +95,27 @@ const [cfgScale, setCfgScale] = useState(5);
   }
     getImageFromId();
   },[imageId])
+  const isPaid = async () => {
+    if (isSignedIn) {
+      const userId = user.id;
+      const isPro = await checkSubscription(userId);
+      console.log('isPro:', isPro); // Add this line for debugging
+
+      return isPro;
+    } 
+  };
+  useEffect(() => {
+    const setIsMountedAndOpenModal = async () => {
+      const isPro = await isPaid();
+      console.log('isPro in useEffect:', isPro); // Add this line for debugging
+
+      if (!isPro) {
+        proModal.onOpen();
+      }
+    };
+  
+    setIsMountedAndOpenModal();
+  }, []);
 
 
 

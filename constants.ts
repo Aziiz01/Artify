@@ -26,14 +26,14 @@ export const tools = [
   },
   
   {
-    label: 'Video Generation',
+    label: 'Animation Generation',
     icon: VideoIcon,
     color: "text-orange-700",
     bgColor: "bg-orange-700/10",
     href: '/video',
   },
   {
-    label: 'Music Generation',
+    label: 'Music Generation (coming soon)',
     icon: Music,
     color: "text-green-700",
     bgColor: "bg-green-700/10",

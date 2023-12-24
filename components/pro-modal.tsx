@@ -27,14 +27,13 @@ const router = useRouter();
     router.push('/credits');
     proModal.onClose();
   }
-
   return (
     <Dialog open={proModal.isOpen} onOpenChange={proModal.onClose}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="flex justify-center items-center flex-col gap-y-4 pb-2">
             <div className="flex items-center gap-x-2 font-bold text-xl">
-              Upgrade to Genius
+              Upgrade to Imaginify
               <Badge variant="premium" className="uppercase text-sm py-1">
                 pro
               </Badge>
@@ -49,6 +48,11 @@ const router = useRouter();
                   </div>
                   <div className="font-semibold text-sm">
                     {tool.label}
+                    {tool.href === '/video' && ( // Check if the tool is for Animation Generation
+                      <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium leading-4 bg-orange-700 text-white">
+                        New
+                      </span>
+                    )}
                   </div>
                 </div>
                 <Check className="text-primary w-5 h-5" />
