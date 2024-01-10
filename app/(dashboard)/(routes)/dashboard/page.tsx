@@ -25,7 +25,6 @@ import { Special_button } from "@/components/ui/special_button";
 import { Fast_process } from "@/components/ui/fast_process";
 import { S_Loader } from "@/components/s_loader";
 import { checkSubscription } from "@/lib/subscription";
-
 export default function HomePage() {
   const { isSignedIn, user, isLoaded } = useUser();
   const proModal = useProModal();
@@ -400,6 +399,8 @@ const saveImagesInBackground = async (images : any) => {
   },
 };
 
+
+
  return(
     <div style={{
       display:'grid',
@@ -407,8 +408,9 @@ const saveImagesInBackground = async (images : any) => {
       gridTemplateColumns: !mobileSize ? '40% 60%' : undefined,
       gridTemplateRows: mobileSize ? '50% 50%' : undefined,
     }}>
+       
       <div className="px-4 lg:px-8 bg-transparent" style={{ overflowY: !mobileSize ? 'scroll' : undefined, height:'850px'  }}>
-      
+    
 
    <div className="form p-4 mb-4 mt-4">
    <div className="flex flex-col">
@@ -586,11 +588,13 @@ const saveImagesInBackground = async (images : any) => {
         <p className="text-gray-500 text-lg">
         Text-to-Image Wizardry: Bring Words to Life with AI-Powered Imaging        </p>
       </div>
+    
       {isLoading && (
   <div className="p-20 flex justify-center items-center">
       <Loader />
   </div>
 )}
+
 
 {(!image || image.length === 0) && !isLoading && photos.length === 0 && (
   <div className="flex justify-center items-center mb-5">
@@ -630,7 +634,10 @@ const saveImagesInBackground = async (images : any) => {
       </div>
     ))
   ) : !isLoading && photos === null ? (
+    <>
     <Empty label="No images generated." />
+   
+  </>
   ) : null}
 </div>
   
@@ -692,7 +699,10 @@ const saveImagesInBackground = async (images : any) => {
         <Empty label="No images generated." />
       ) : null}
       </div>
-   </div>
+      <div className="fixed bottom-0 w-full bg-blue-100 text-gray-800 p-4 overflow-hidden">
+        <div className="whitespace-nowrap animate-scrollLeft">Your moving text goes here</div>
+      </div>
+     </div>
    </div>
   )}
 

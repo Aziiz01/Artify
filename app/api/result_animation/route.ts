@@ -45,8 +45,6 @@ export async function Result(id :string) {
         }
       
   
-      
-    
   } catch (error) {
     console.error('Error while animating:', error);
     toast.error('Error while animating, Please try again or Contact support');

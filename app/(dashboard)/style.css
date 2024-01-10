@@ -405,3 +405,20 @@
   background-image: linear-gradient(160deg, #0093E9 0%, #80D0C7 100%);
   cursor: pointer;
 }
+.movingBar {
+  background-color: #333;
+  color: #fff;
+  padding: 1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  animation: scrollLeft 10s linear infinite; /* Adjust animation duration as needed */
+}
+
+@keyframes scrollLeft {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
