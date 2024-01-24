@@ -360,179 +360,163 @@ const saveImagesInBackground = async (images : any) => {
       gridTemplateRows: mobileSize ? '50% 50%' : undefined,
     }}>
       <div className="px-4 lg:px-8 bg-transparent" style={{ overflowY: !mobileSize ? 'scroll' : undefined, height:'850px'  }}>
-        
-   <div className="form p-4 mb-4 mt-4">
-   <div className="flex flex-col">
-   <div className="flex items-center">
-  <div className="span">Text Prompt</div>
-  <button
-        className="button-surprise ml-auto mb-1"
-        onClick={handleSurpriseMeClick}
-      >
-        <FontAwesomeIcon icon={faLightbulb} className="mr-1" />
-        Surprise Me
-      </button>
-</div>
-  <input className="input"
-        type="text"
-        placeholder="Describe what you want the AI to create"
-        value={textInput}
-        onChange={(e) => setTextInput(e.target.value)} />
-</div> 
-<div className="flex flex-col">
-  <div className="span">Pick a Style: {selectedStyle}</div>
-  <div className="ml-auto">
-    <PickStyle onSelectedStyleChange={handleSelectedStyleChange} />
-  </div>
-</div>
-
-
-
-<div className="flex gap-3">
-  <div className="span">Samples</div>
-  <div className="flex gap-2">
-    <div className="login-with">
-      {[1, 2, 6, 8, 10].map((value) => (
-        <div
-          className={`button-log ${selectedSamples === value ? 'selected' : ''}`}
-          onClick={() => handleSamples(value)}
-          key={value}
-        >
-          <b>{value}</b>
+        <div className="form p-4 mb-4 mt-4">
+          <div className="flex flex-col">
+            <div className="flex items-center">
+              <div className="span">Text Prompt</div>
+              <button
+                className="button-surprise ml-auto mb-1"
+                onClick={handleSurpriseMeClick}
+              >
+              <FontAwesomeIcon icon={faLightbulb} className="mr-1" />
+                Surprise Me
+              </button>
+            </div>
+            <input className="input"
+              type="text"
+              placeholder="Describe what you want the AI to create"
+              value={textInput}
+              onChange={(e) => setTextInput(e.target.value)} />
+          </div> 
+          <div className="flex flex-col">
+            <div className="span">Pick a Style: {selectedStyle}</div>
+            <div className="ml-auto">
+              <PickStyle onSelectedStyleChange={handleSelectedStyleChange} />
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <div className="span">Samples</div>
+            <div className="flex gap-2">
+              <div className="login-with">
+                {[1, 2, 6, 8, 10].map((value) => (
+                  <div
+                    className={`button-log ${selectedSamples === value ? 'selected' : ''}`}
+                    onClick={() => handleSamples(value)}
+                    key={value}
+                  >
+                    <b>{value}</b>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <div className="span mt-2">Algorithm Model</div>
+              <div>
+                <select className="bloc w-200 px-4 text-base text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-900 focus:border-red-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={selectedModel} onChange={handleModelChange}>
+                  <option value="stable-diffusion-xl-1024-v1-0">Stable Diffusion XL 1.0 (Pro only)</option>
+                  <option value="stable-diffusion-xl-1024-v0-9">Stable Diffusion XL 0.9 (Pro only)</option>
+                  <option value="stable-diffusion-v1-6">Stable Diffusion 1.6</option>
+                  <option value="DALL E2">DALL E2</option>
+                </select>
+              </div>
+            </div>
+            <div
+              className={`save-time-container ${clicked ? "clicked" : ""}`}
+              onClick={handleButtonClick}
+            >
+              <div className="inner-effect mt-3"></div>
+              <p>Fast Process (+2 credits)</p>
+              <Clock/>
+            </div>
+            <label>
+              <div className="flex items-center">
+                <div className="span mr-5">Show Advanced Options</div>
+                <div>
+                  <input
+                    id="checkbox"
+                    type="checkbox"
+                    name="checkbox"
+                    checked={showAdvancedOptions}
+                    onChange={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                  />
+                  <label className="label" htmlFor="checkbox"></label>
+                </div>
+              </div>
+            </label>
+            {showAdvancedOptions && (
+            <>
+              <div className="flex flex-col">
+                <div className="span">Negative Prompt</div>
+                <input className="input"
+                type="text"
+                placeholder="Describe what you want the AI to avoid"
+                value={negativePrompt}
+                onChange={(e) => setNegativePrompt(e.target.value)} />
+              </div>
+              <div className="flex gap-3">
+                <div className="span">Aspect Ratio</div>
+                {Object.entries(ratioMappings).map(([ratio, { width, height, selectable }]) => (
+                <button
+                  key={ratio}
+                  className={`bloc w-16 text-base rounded-lg ${
+                    !selectable
+                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed border border-gray-300'
+                      : ratio === selectedRatio
+                      ? 'bg-gray-300 text-gray-700 border border-gray-500'
+                      : 'bg-gray-50 text-gray-900 focus:ring-blue-900 focus:border-red-500 border border-gray-300'
+                  } dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500`}
+                  onClick={() => selectable && handleRatioClick(ratio)}
+                  disabled={!selectable}
+                  >
+                  {ratio}
+                </button>
+                ))} 
+              </div>
+              <div className="flex gap-3">
+                <div className="span">CFG Scale</div>
+                <input
+                className="slider mt-2"
+                  type="range"
+                  id="myRange"
+                  name="cfgScale"
+                  min={0}
+                  max={35}
+                  value={cfgScale}
+                  onChange={handleCFG}
+                />
+                <p>{cfgScale}</p>    
+                <div className="tooltip">
+                  <div className="icon">i</div>
+                  <div className="tooltiptext">How closely the process follows the given prompt text (higher values bring your image closer to the prompt)</div>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="span">Steps</div>
+                <input id="myRange" className="slider mt-2" value={steps} max="150" min="10" type="range" onChange={handleSteps} />
+                <p>{steps}</p> 
+                <div className="tooltip">
+                  <div className="icon">i</div>
+                  <div className="tooltiptext">Number of diffusion steps to run</div>
+                </div>
+              </div>
+              <div className="flex flex-col">
+                <div className="span">Seed <div className="tooltip">
+                    <div className="icon">i</div>
+                    <div className="tooltiptext">Choose either to exclude this option or input 0 to use a random seed for noise</div>
+                  </div>
+                </div>
+                <input className="input"
+                  type="text"
+                  placeholder="0 for optimized generation"
+                  value={seed}
+                  onChange={handleSeed} />
+              </div>
+            </>
+            )}
+            <Button
+              onClick={handleGenerate}
+              disabled={isLoading}
+              className="mt-4 w-full relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium text-white rounded-lg group bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-purple-500 group-hover:to-pink-500 hover:text-black   dark:text-white focus:ring-4 focus:outline-none focus:ring-purple-200 dark:focus:ring-purple-800"
+              variant="premium">
+              <span>
+                {isLoading ? 'Generating...' : `Generate`}
+              </span>
+            </Button>
+          </div>
         </div>
-      ))}
-    </div>
-  </div>
-</div>
 
-  
-<div className="flex gap-3">
-    <div className="span mt-2">Algorithm Model</div>
-    <div>
-          <select className="bloc w-200 px-4 text-base text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-900 focus:border-red-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={selectedModel} onChange={handleModelChange}>
-            <option value="stable-diffusion-xl-1024-v1-0">Stable Diffusion XL 1.0 (Pro only)</option>
-            <option value="stable-diffusion-xl-1024-v0-9">Stable Diffusion XL 0.9 (Pro only)</option>
-            <option value="stable-diffusion-v1-6">Stable Diffusion 1.6</option>
-            <option value="DALL E2">DALL E2</option>
-          </select>
-        </div>
-    </div>
-    <div
-      className={`save-time-container ${clicked ? "clicked" : ""}`}
-      onClick={handleButtonClick}
-    >
-      <div className="inner-effect mt-3"></div>
-      <p>Fast Process (+2 credits)</p>
-      <Clock/>
-    </div>
-    <label>
         
-        
-<div className="flex items-center">
-<div className="span mr-5">Show Advanced Options</div>
-
-  <div>
-    <input
-      id="checkbox"
-      type="checkbox"
-      name="checkbox"
-      checked={showAdvancedOptions}
-      onChange={() => setShowAdvancedOptions(!showAdvancedOptions)}
-    />
-    <label className="label" htmlFor="checkbox"></label>
-  </div>
-</div>
-
-      </label>
-      {showAdvancedOptions && (
-        <>
-           <div className="flex flex-col">
-
-        <div className="span">Negative Prompt</div>
-        <input className="input"
-        type="text"
-        placeholder="Describe what you want the AI to avoid"
-        value={negativePrompt}
-        onChange={(e) => setNegativePrompt(e.target.value)} />
-</div>
-  
-  
-<div className="flex gap-3">
-    <div className="span">Aspect Ratio</div>
- {Object.entries(ratioMappings).map(([ratio, { width, height, selectable }]) => (
-  <button
-    key={ratio}
-    className={`bloc w-16 text-base rounded-lg ${
-      !selectable
-        ? 'bg-gray-200 text-gray-500 cursor-not-allowed border border-gray-300'
-        : ratio === selectedRatio
-        ? 'bg-gray-300 text-gray-700 border border-gray-500'
-        : 'bg-gray-50 text-gray-900 focus:ring-blue-900 focus:border-red-500 border border-gray-300'
-    } dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500`}
-    onClick={() => selectable && handleRatioClick(ratio)}
-    disabled={!selectable}
-  >
-    {ratio}
-  </button>
-))}
-
-</div>
-
-
-      <div className="flex gap-3">
-      <div className="span">CFG Scale</div>
-        <input
-        className="slider mt-2"
-          type="range"
-          id="myRange"
-          name="cfgScale"
-          min={0}
-          max={35}
-          value={cfgScale}
-          onChange={handleCFG}
-        />
-        <p>{cfgScale}</p>
-        
-        <div className="tooltip">
-  <div className="icon">i</div>
-  <div className="tooltiptext">How closely the process follows the given prompt text (higher values bring your image closer to the prompt)</div>
-</div>
-      </div>
-      <div className="flex gap-3">
-      <div className="span">Steps</div>
-      <input id="myRange" className="slider mt-2" value={steps} max="150" min="10" type="range" onChange={handleSteps} />
-        <p>{steps}</p> 
-        <div className="tooltip">
-  <div className="icon">i</div>
-  <div className="tooltiptext">Number of diffusion steps to run</div>
-</div>
-      </div>
-
-      <div className="flex flex-col">
-      <div className="span">Seed <div className="tooltip">
-  <div className="icon">i</div>
-  <div className="tooltiptext">Choose either to exclude this option or input 0 to use a random seed for noise</div>
-</div>
-</div>
-      
-      <input className="input"
-        type="text"
-        placeholder="0 for optimized generation"
-        value={seed}
-        onChange={handleSeed} />
-      </div>
-      </>
-    )}
- <Button
-        onClick={handleGenerate}
-        disabled={isLoading}
-        className="mt-4 w-full relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium text-white rounded-lg group bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-purple-500 group-hover:to-pink-500 hover:text-black   dark:text-white focus:ring-4 focus:outline-none focus:ring-purple-200 dark:focus:ring-purple-800"
-variant="premium">
-        <span>
-         {isLoading ? 'Generating...' : `Generate`}
-        </span>
-      </Button></div>
-    </div>
     <div  style={{ overflowY: !mobileSize ? 'scroll' : undefined, height:'850px' }}>
       <div className="mb-8 space-y-4 text-center">
       <h2 className="text-4xl mt-5 text-blue-900 font-extrabold">
@@ -541,10 +525,10 @@ variant="premium">
         Text-to-Image Wizardry: Bring Words to Life with AI-Powered Imaging        </p>
       </div>
       {isLoading && (
-  <div className="p-20 flex justify-center items-center">
-      <Loader />
-  </div>
-)}
+        <div className="p-20 flex justify-center items-center">
+            <Loader />
+        </div>
+      )}
 
 {(!image || image.length === 0) && !isLoading && photos.length === 0 && (
   <div className="flex justify-center items-center mb-5">

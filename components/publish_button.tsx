@@ -9,6 +9,8 @@ import { doc, updateDoc , getDoc } from "firebase/firestore";
 import { db } from "@/firebase";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
+
+
 export const PublishButton =  ({ imageId}: { imageId: string }) => {
   const [loading, setLoading] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
