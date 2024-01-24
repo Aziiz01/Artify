@@ -29,21 +29,19 @@ import { Special_button } from "@/components/ui/special_button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faExpand, faWandSparkles } from "@fortawesome/free-solid-svg-icons";
 import { S_Loader } from "@/components/s_loader";
+import { Animation_post } from "@/app/api/animation/route";
+import { Result } from "@/app/api/result_animation/route";
 import { checkSubscription } from "@/lib/subscription";
 
-export default function ImageToImagePage() {
+export default function AnimationPage() {
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [passedImage, setPassedImage] = useState('');
   const { isSignedIn, user, isLoaded } = useUser();
   const router = useRouter();
-  const [generatedImage, setGeneratedImage] = useState<HTMLImageElement[] | null>(null);
-  const [textInput, setTextInput] = useState('');
+  const [video, setVideo] = useState<any>();
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedStyle, setSelectedStyle] = useState('');
-  const [selectedSamples, setSelectedSamples] = useState(1);
 const [cfgScale, setCfgScale] = useState(5); 
-const [image_strength, setImgStrength] = useState(0.35); // Set an initial value, e.g., 0
-  const [steps, setSteps] = useState(30); // Set an initial value, e.g., 0
+  const [motion_bucket_id, setMotion] = useState(40); // Set an initial value, e.g., 0
   const [seed, setSeed] = useState(123463446);
   const searchParams = useSearchParams()
   const imageId = searchParams.get('imageId')
@@ -55,8 +53,6 @@ const [image_strength, setImgStrength] = useState(0.35); // Set an initial value
   const [clicked, setClicked] = useState(false);
   const [fast_count, setCount] = useState(0);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
-  const [negativePrompt, setNegativePrompt] = useState('bad,blurry');
-  const [selectedModel, setSelectedModel] = useState('stable-diffusion-xl-1024-v1-0');
   const [selectedImage, setSelectedImage] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -77,12 +73,8 @@ const [image_strength, setImgStrength] = useState(0.35); // Set an initial value
 
   }, []);
 
-  const handleSelectedStyleChange = (newSelectedStyle: string) => {
-    setSelectedStyle(newSelectedStyle);
-  };
-  const handleModelChange = (event: any) => {
-    setSelectedModel(event.target.value);
-  };
+ 
+  
   useEffect (() => {
     const getImageFromId = async () => {
       const docRef = doc(db, "images", `${imageId}`);
@@ -131,21 +123,16 @@ const [image_strength, setImgStrength] = useState(0.35); // Set an initial value
     setSeed(event.target.value);
   };
   
-  const handleSamples = (value : number) => {
-    setSelectedSamples(value);
+  const handleMotion = (event: any) => {
+    const motion_bucket_id = event.target.value;
+    setMotion(motion_bucket_id);
   };
+  
   const handleCFG = (event: any) => {
     const selectedCFG = event.target.value;
     setCfgScale(selectedCFG);
   };
-  const handleImgStrength = (event: any) => {
-    const selectedStrength = event.target.value;
-    setImgStrength(selectedStrength);
-  };
-  const handleSteps = (event: any) => {
-    const selectedSteps = event.target.value;
-    setSteps(selectedSteps);
-  };
+  
   // Handle image upload
   const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] || null;
@@ -157,7 +144,7 @@ const [image_strength, setImgStrength] = useState(0.35); // Set an initial value
       const link = document.createElement('a');
       link.href = img.src;
       link.target = '_blank';
-      link.download = 'image.png'; // Provide a default name for the downloaded image
+      link.download = 'animation.mp4'; // Provide a default name for the downloaded image
       link.click();
     }
   };
@@ -166,22 +153,11 @@ const [image_strength, setImgStrength] = useState(0.35); // Set an initial value
     const randomPart = Math.floor(Math.random() * 1000000);
     return `${timestamp}-${randomPart}`;
   }
-  const handleEnhance = (event: any) => {
-    const url = `/image-to-image?imageId=${imageId}`;
-
-    // Redirect to the new URL
-    window.location.href = url;
-  };
-  const handleUpscale = (event: any) => {
-    const url = `/upscale?imageId=${imageId}`;
-
-    // Redirect to the new URL
-    window.location.href = url;
-  };
+  
   // Define a function to save images in the background
-const saveImagesInBackground = async (images : any) => {
+const saveVideoInBackground = async (video : any) => {
   // Save the images in the background
-  const saveImagesPromises = images.map(async (img : any) => {
+  const saveVideoPromises = video.map(async (img : any) => {
     const generatedImage = img.src;
     const base64Data = generatedImage.split(',')[1];
     const documentId = generateRandomId();
@@ -191,14 +167,9 @@ const saveImagesInBackground = async (images : any) => {
     try {
       await axios.post('/api/sdxlStorage', {
         documentId,
-        textInput,
-        selectedStyle,
-        height,
-        width,
-        selectedSamples,
         cfgScale,
         seed,
-        steps,
+        motion_bucket_id,
         base64Data,
       });
     } catch (error) {
@@ -210,7 +181,7 @@ const saveImagesInBackground = async (images : any) => {
   });
 
   try {
-     await Promise.all(saveImagesPromises);
+     await Promise.all(saveVideoPromises);
     console.log("Images saved successfully");
   } catch (error) {
     console.error("Error saving images:", error);
@@ -224,28 +195,26 @@ const saveImagesInBackground = async (images : any) => {
     } else {
       const userId = user.id;
       try {
-        if (textInput === '') {
-          toast.error("Please Insert A Prompt !");
-          setIsLoading(false);
-          return;
-        } else if (uploadedImage == undefined) {
+        if (uploadedImage == undefined) {
           toast.error("Please Insert An Image !");
           setIsLoading(false);
           return;
         } else {
-          const generatedImages = await Enhance(userId,uploadedImage,passedImage,textInput,negativePrompt,image_strength,selectedSamples,selectedModel,selectedStyle,cfgScale,seed,steps,fast_count)
-          if (generatedImages !== null && generatedImages !== false ) {
+          const id = await Animation_post(userId,uploadedImage,passedImage,seed,cfgScale,motion_bucket_id,fast_count)
+          if (id !== null && id !== false ) {
+            const generatedVideo = await Result(id);
+
             if (displayImagesImmediately) {
               console.log('displaying first')
-              setGeneratedImage(generatedImages);
-              saveImagesInBackground(generatedImages);
+              setVideo(generatedVideo);
+              saveVideoInBackground(generatedVideo);
             } else  { 
               console.log('saving first')
-              saveImagesInBackground(generatedImages);
-              setGeneratedImage(generatedImages);
+              saveVideoInBackground(generatedVideo);
+              setVideo(generatedVideo);
             }
             setIsLoading(false);
-          } else if (!generatedImages) {
+          } else if (!id) {
             proModal.onOpen();
             setIsLoading(false);
           } else {
@@ -268,7 +237,7 @@ const saveImagesInBackground = async (images : any) => {
     setCount(newCount);
   };
  
-  const openModal = (image: HTMLImageElement) => {
+  const openModal = (image: any) => {
       setSelectedImage(image);
     
     setIsModalOpen(true);
@@ -296,20 +265,14 @@ const saveImagesInBackground = async (images : any) => {
     }}>
       <div className="px-4 lg:px-8 bg-transparent" style={{ overflowY: !mobileSize ? 'scroll' : undefined, height:'850px' }}>
       <div className="form p-4 mb-4 mt-4">
-   <div className="flex flex-col">
-  <div className="span">Text Prompt</div>
- 
-  <input className="input"
-        type="text"
-        placeholder="Describe what you want the AI to create"
-        value={textInput}
-        onChange={(e) => setTextInput(e.target.value)} />
-</div> 
+
         
 { passedImage =='' ? ( 
   <>
   <div className="span">
-   Input init image (PNG Format required)
+   Input init image (JPG/PNG Format required) (1024x576
+576x1024
+768x768)
  </div>      
   <input type="file" className="block w-full text-lg text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" onChange={handleImageUpload} />
 </>
@@ -323,42 +286,10 @@ const saveImagesInBackground = async (images : any) => {
                 alt="Uploaded image"
               />
               ) : null}
-<div className="flex flex-col">
-  <div className="span">Pick a Style: {selectedStyle}</div>
-  <div className="ml-auto">
-    <PickStyle onSelectedStyleChange={handleSelectedStyleChange} />
-  </div>
-</div>
 
-
-
-<div className="flex gap-3">
-  <div className="span">Samples</div>
-  <div className="flex gap-2">
-    <div className="login-with">
-      {[1, 2, 6, 8, 10].map((value) => (
-        <div
-          className={`button-log ${selectedSamples === value ? 'selected' : ''}`}
-          onClick={() => handleSamples(value)}
-          key={value}
-        >
-          <b>{value}</b>
-        </div>
-      ))}
-    </div>
-  </div>
-</div>
 
   
-<div className="flex gap-3">
-    <div className="span mt-2">Algorithm Model</div>
-    <div>
-          <select className="bloc w-200 px-4 text-base text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-900 focus:border-red-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" value={selectedModel} onChange={handleModelChange}>
-            <option value="stable-diffusion-xl-1024-v1-0">Stable Diffusion XL 1.0 (Pro only)</option>
-            <option value="stable-diffusion-v1-6">Stable Diffusion 1.6</option>
-          </select>
-        </div>
-    </div>
+
     <div className="flex">
 
 <Fast_process
@@ -370,57 +301,8 @@ const saveImagesInBackground = async (images : any) => {
 <div className="tooltiptext">Fast Process cuts generation time by 40%, streamlining slow processes. It efficiently accelerates tasks for quicker results</div>
 </div>
 </div>
-    <label>
-        
-        
-<div className="flex items-center">
-<div className="span mr-5">Show Advanced Options</div>
- <div className="flex gap-3 mt-5">
-       
-          </div>
-  <div>
-    <input
-      id="checkbox"
-      type="checkbox"
-      name="checkbox"
-      checked={showAdvancedOptions}
-      onChange={() => setShowAdvancedOptions(!showAdvancedOptions)}
-    />
-    <label className="label" htmlFor="checkbox"></label>
-  </div>
-</div>
 
-      </label>
-      {showAdvancedOptions && (
-        <>
-        <div className="flex items-center">
-
-         <div className="span mr-10">
-              Image Strength
-            </div>
-            <input
-              className="slider mt-2 mr-3"
-              type="range"
-              id="myRange"
-              name="imageStrength"
-              min={0}
-              max={1}
-              step={0.01} 
-              value={image_strength}
-              onChange={handleImgStrength}
-            />
-            <p>{image_strength}</p>
-            </div>
-           <div className="flex flex-col">
-
-        <div className="span">Negative Prompt</div>
-        <input className="input"
-        type="text"
-        placeholder="Describe what you want the AI to avoid"
-        value={negativePrompt}
-        onChange={(e) => setNegativePrompt(e.target.value)} />
-</div>
-        <div className="flex gap-3">
+<div className="flex gap-3">
       <div className="span">CFG Scale</div>
         <input
         className="slider mt-2"
@@ -428,7 +310,7 @@ const saveImagesInBackground = async (images : any) => {
           id="myRange"
           name="cfgScale"
           min={0}
-          max={35}
+          max={10}
           value={cfgScale}
           onChange={handleCFG}
         />
@@ -440,14 +322,27 @@ const saveImagesInBackground = async (images : any) => {
 </div>
       </div>
       <div className="flex gap-3">
-      <div className="span">Steps</div>
-      <input id="myRange" className="slider mt-2" value={steps} max="150" min="10" type="range" onChange={handleSteps} />
-        <p>{steps}</p> 
+      <div className="span">motion_bucket_id</div>
+        <input
+        className="slider mt-2"
+          type="range"
+          id="myRange"
+          name="motion"
+          min={1}
+          max={255}
+          value={motion_bucket_id}
+          onChange={handleMotion}
+        />
+        <p>{motion_bucket_id}</p>
+        
         <div className="tooltip">
   <div className="icon">i</div>
-  <div className="tooltiptext">Number of diffusion steps to run</div>
+  <div className="tooltiptext">Lower values generally result in less motion in the output video, while higher values generally result in more motion.</div>
 </div>
       </div>
+      
+
+        
 
       <div className="flex flex-col">
       <div className="span">Seed <div className="tooltip">
@@ -461,9 +356,9 @@ const saveImagesInBackground = async (images : any) => {
         placeholder="0 for optimized generation"
         value={seed}
         onChange={handleSeed} />
-      </div>
-      </>
-    )}
+      </div>  
+
+  
 <Special_button buttonText= {isLoading ? 'Generating...' : `Generate`}
      onClick={handleGenerate}
      disabled={isLoading}
@@ -473,10 +368,9 @@ const saveImagesInBackground = async (images : any) => {
       <div  style={{ overflowY: !mobileSize ? 'scroll' : undefined, height:'850px' }}>
       <div className=" space-y-4 text-center">
       <h2 className="font-abc text-6xl mt-5 text-blue-900 font-extrabold">
-Enhance Images
-        </h2>
+Animate Your Images        </h2>
         <p className="text-gray-500 text-lg">
-        Transform Images with Cutting-Edge Image-to-Image Models
+        Transform images into captivating videos effortlessly with our powerful and intuitive video generation tool.
        </p>
       </div>
      {isLoading && (
@@ -485,42 +379,32 @@ Enhance Images
   </div>
 )}
 
-          {generatedImage == null  && !isLoading && (
+          {video == null  && !isLoading && (
              <div className="flex justify-center items-center mb-5">
-             <Empty label="No images generated." />
+             <Empty label="No videos generated." />
            </div>
           )}
        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-2 ml-2 mr-2">
-  {Array.isArray(generatedImage) && generatedImage.length > 0 ? (
-    generatedImage.map((img, index) => (
-      <div key={index} className="flex flex-col items-center">
-        <div className="image-container" onClick={() => openModal(img)}>
-          <Image
-            className="rounded-lg image-hover"
-            src={img.src}
-            alt={`Generated Image ${index + 1}`}
-            height={1024}
-            width={1024}
-          />
+{video ?
+      <div  className="flex flex-col items-center">
+        <div className="image-container" onClick={() => openModal(video)}>
+        <video controls className="w-full aspect-video mt-8 rounded-lg border bg-black">
+            <source src={video} />
+          </video>
           <div className="image-overlay">
             <p className="text-white">Click to view in full size</p>
           </div>
         </div>
         <div className="flex gap-1 mt-2">
-          <Button onClick={() => openImageInNewTab(img)} variant="secondary">
+          <Button onClick={() => openImageInNewTab(video)} variant="secondary">
             <Download className="h-3 w-3 mr-1" /> Download
           </Button>
-          <Button onClick={handleEnhance} variant="secondary">
-            <FontAwesomeIcon icon={faWandSparkles} className="h-3 w-3 mr-1" /> Enhance
-          </Button>
-          <Button onClick={handleUpscale} variant="secondary">
-            <FontAwesomeIcon icon={faExpand} className="h-3 w-3 mr-1" /> Upscale
-          </Button>
+         
           <PublishButton imageId={f_imageId} />
         </div>
       </div>
-    ))
-  )  : null}
+    
+   : null}
 </div>
 <Modal
       isOpen={isModalOpen}
@@ -536,12 +420,9 @@ Enhance Images
       {selectedImage && (
         <div className="vertical-modal-container">
           <div className="modal-image-container">
-            <Image
-              src={selectedImage}
-              alt="selectedImage"
-              fill
-              className="image"
-            />
+          <video controls className="w-full aspect-video mt-8 rounded-lg border bg-black">
+            <source src={video} />
+          </video>
            
           </div> 
         </div>
@@ -552,6 +433,7 @@ Enhance Images
 
 
      
+   
     </div>
   );
 }

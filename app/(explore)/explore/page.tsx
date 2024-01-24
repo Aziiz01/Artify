@@ -7,11 +7,13 @@ import { useUser } from "@clerk/nextjs";
 import LikesList from "./LikesList";
 import { useLoginModal } from "@/hook/use-login-modal";
 import Modal from 'react-modal';
-import "./style.css";
+import "../../static/creation_explore.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart } from "@fortawesome/free-solid-svg-icons";
 import { UserPopup } from "@/components/user_popup";
 import { S_Loader } from "@/components/s_loader";
+import { checkSubscription } from "@/lib/subscription";
+import { useProModal } from "@/hook/use-pro-modal";
 
 interface ImageData {
   id: string;
@@ -39,7 +41,8 @@ const ExplorePage: React.FC = () => {
   const loginModal = useLoginModal();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterOption, setFilterOption] = useState<string>("createdDateDesc");
-  
+  const proModal = useProModal();
+
 const isImageLoading = true;
   const openModal = (image: ImageData) => {
     setSelectedImage(image);
@@ -53,7 +56,7 @@ const isImageLoading = true;
   
   const modalStyle = {
     overlay: {
-      backgroundColor: 'rgba(0, 0, 0, 0.5)', // Adjust the alpha value for darkness
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
       zIndex: 1000,
     },
     content: {
@@ -67,7 +70,28 @@ const isImageLoading = true;
     setSelectedImage(null);
     setShowLikesList(false);
   };
+  const isPaid = async () => {
+    if (isSignedIn) {
+      const userId = user.id;
+      const isPro = await checkSubscription(userId);
+      console.log('isPro:', isPro); // Add this line for debugging
+
+      return isPro;
+    } 
+  };
+  useEffect(() => {
+    const setIsMountedAndOpenModal = async () => {
+      const isPro = await isPaid();
+      console.log('isPro in useEffect:', isPro); // Add this line for debugging
+
+      if (!isPro) {
+        proModal.onOpen();
+      }
+    };
   
+    setIsMountedAndOpenModal();
+  }, []);
+
   useEffect(() => {
     const fetchImages = async () => {
       try {
@@ -219,9 +243,10 @@ const isImageLoading = true;
 
             />
   <div className="card__content">
-  <UserPopup imageId={image.id} />
- <div
-                className={`like-icon ${!isSignedIn ? 'login-required' : isLiked(image, user.emailAddresses[0].emailAddress) ? 'liked' : ''}`}
+  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+
+               <UserPopup imageId={image.id} />
+               <button className="Btn"
                 onClick={(e) => {
                   e.stopPropagation(); // Prevent the click event from propagating
                   if (!isSignedIn) {
@@ -229,14 +254,18 @@ const isImageLoading = true;
                   } else if (!isLiked(image, user.emailAddresses[0].emailAddress)) {
                     handleLike(image.id); // Handle the like action
                   }
-                }}
-                style={{ cursor: 'pointer' }}
-              >
-                <FontAwesomeIcon icon={faHeart} />
-              </div>
- <div className="like-count">
-                {image.likes.length} likes
-              </div>
+                }}>
+  <span className="leftContainer">
+  <FontAwesomeIcon icon={faHeart} />
+    <span className="like"> {!isSignedIn ? 'Like' :isLiked(image, user.emailAddresses[0].emailAddress) ? 'liked' : 'Like'}</span>
+  </span>
+  <span className="likeCount">
+  {image.likes.length} likes
+  </span>
+</button>
+           </div>
+           <hr style={{ height: '1px', background: '#ccc', border: 'none', margin: '10px 0' }} />
+
               <div>
         <div style={{ marginBottom: '10px' }}>
           <h2 style={{ fontSize: '1em', fontWeight: 'bold' }}>Prompt :</h2>

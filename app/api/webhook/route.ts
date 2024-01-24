@@ -1,11 +1,9 @@
 import Stripe from "stripe"
 import { headers } from "next/headers"
 import { NextResponse } from "next/server"
-
 import { stripe } from "@/lib/stripe"
 import { db } from "@/firebase"
 import {collection, serverTimestamp, doc, query , where , getDocs ,setDoc, getDoc, updateDoc} from "firebase/firestore"
-import toast from "react-hot-toast"
 
 export async function POST(req: Request) {
   const body = await req.text()

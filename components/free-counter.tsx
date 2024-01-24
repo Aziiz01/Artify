@@ -9,6 +9,7 @@ import { useProModal } from "@/hook/use-pro-modal";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
+import { Special_button } from "./ui/special_button";
 
 export const FreeCounter = ({
   isPro = false,
@@ -47,10 +48,7 @@ export const FreeCounter = ({
         <>
       
           <Link href="/credits">
-          <Button variant="premium">
-            Get More Credits
-            <Zap className="w-4 h-4 ml-2 fill-white" />
-          </Button>
+        <Special_button buttonText="Get More Credits"/>
           </Link>
         </>
       ) : (

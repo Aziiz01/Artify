@@ -1,13 +1,5 @@
 'use client'
-// to implement passedImage 
 import React, { useState, ChangeEvent, useEffect } from "react";
-import * as Generation from "../../../generation/generation_pb";
-import {
-  executeGenerationRequest,
-  onGenerationComplete,
-  buildGenerationRequest,
-} from "../../../../lib/helpers";// Adjust the import path as needed
-import { client, metadata } from "../../../../lib/grpc-client";
 import Image from "next/image";
 import { CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,14 +12,17 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/firebase";
 import { useUser } from "@clerk/nextjs";
 import toast from "react-hot-toast";
-import { checkApiLimit, incrementApiLimit } from "@/lib/api-limit";
-import { checkSubscription, countCredit } from "@/lib/subscription";
 import { useProModal } from "@/hook/use-pro-modal";
 import axios from "axios";
 import { useLoginModal } from "@/hook/use-login-modal";
 import { PublishButton } from "@/components/publish_button";
 import "../../style.css"
 import { Upscale } from "@/app/api/upscale/route";
+import { Special_button } from "@/components/ui/special_button";
+import { Fast_process } from "@/components/ui/fast_process";
+import Modal from 'react-modal';
+import { checkSubscription } from "@/lib/subscription";
+
 export default function UpscalePage() {
   const { isSignedIn, user, isLoaded } = useUser();
   const router = useRouter();
@@ -44,6 +39,9 @@ export default function UpscalePage() {
   const [displayImagesImmediately, setDisplayImagesImmediately] = useState(false);
   const [clicked, setClicked] = useState(false);
   const [fast_count, setCount] = useState(0);
+  const [selectedImage, setSelectedImage] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
 
   useEffect(() => {
     const handleResize = () => {
@@ -80,8 +78,40 @@ export default function UpscalePage() {
     }
 
     getImageFromId();
-  }, [imageId])
+  }, [imageId]);
 
+  const isPaid = async () => {
+    if (isSignedIn) {
+      const userId = user.id;
+      const isPro = await checkSubscription(userId);
+      console.log('isPro:', isPro); // Add this line for debugging
+
+      return isPro;
+    } 
+  };
+  useEffect(() => {
+    const setIsMountedAndOpenModal = async () => {
+      const isPro = await isPaid();
+      console.log('isPro in useEffect:', isPro); // Add this line for debugging
+
+      if (!isPro) {
+        proModal.onOpen();
+      }
+    };
+  
+    setIsMountedAndOpenModal();
+  }, []);
+
+
+  const openModal = (image: HTMLImageElement) => {
+      setSelectedImage(image);
+    setIsModalOpen(true);
+  };
+  
+  const closeModal = () => {
+    setSelectedImage(null);
+    setIsModalOpen(false);
+  };
 
   // Handle image upload
   const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
@@ -156,11 +186,14 @@ export default function UpscalePage() {
     }
   };
 
-
-
-  const handleEnhance = (event: any) => {
-    const url = `/image-to-image?imageId=${imageId}`;
-    window.location.href = url;
+  const modalStyle = {
+    overlay: {
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    content: {
+      maxWidth: '800px',
+      margin: 'auto',
+    },
   };
 
   const handleUpscale = async () => {
@@ -171,6 +204,11 @@ export default function UpscalePage() {
     } else {
       const userId = user.id;
       try {
+        if (uploadedImage == undefined) {
+          toast.error("Please Insert An Image !");
+          setIsLoading(false);
+          return;
+        } else {
         const imageElement = document.createElement("img");
         if (passedImage) {
           imageElement.src = passedImage;
@@ -223,7 +261,7 @@ export default function UpscalePage() {
                 setIsLoading(false);
               }
             }
-          
+        }
         
       } catch (error) {
         console.error("Error handling image:", error);
@@ -249,78 +287,113 @@ export default function UpscalePage() {
       backgroundColor: 'transparent'
     }}>
       <div className="px-4 lg:px-8 bg-transparent" style={{ overflowY: !mobileSize ? 'scroll' : undefined, height: '850px' }}>
-      <div className="bg-white rounded-lg p-4 mb-4 mt-4">
+      <div className="form p-4 mb-4 mt-4">
+   {uploadedImage || passedImage =='' ? ( 
+  <>
+  <div className="span">
+   Input init image (PNG Format required)
+ </div>     
+  <input type="file" className="block w-full text-lg text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" onChange={handleImageUpload} />
+</>
+): null}       
+      {passedImage || uploadedImage ? (
+              <Image
+                width={512}
+                height={512}
+                src={passedImage || (uploadedImage ? URL.createObjectURL(uploadedImage) : "")}
+                alt="Uploaded image"
+              />
+              ) : null}
 
-        <h2 className="text-mm mt-5 text-blue-900 font-extrabold">Image Upscaler</h2>
-        <input type="file" onChange={handleImageUpload} className="mt-4 block w-full text-lg text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" />
-        {passedImage || uploadedImage ? (
-          <Image
-            priority={true}
-            width={512}
-            height={512}
-            src={passedImage || (uploadedImage ? URL.createObjectURL(uploadedImage) : "")}
-            alt="Uploaded image"
-          />
-        ) : null}
-         <div
-      className={`save-time-container ${clicked ? "clicked" : ""}`}
-      onClick={handleButtonClick}
-    >
-      <div className="inner-effect"></div>
-      <p>Fast Process (+2 credits)</p>
-      <Clock />
-    </div>
-        <Button
-          onClick={handleUpscale} disabled={isLoading}
-          className="mt-4 w-full relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium text-white rounded-lg group bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-purple-500 group-hover:to-pink-500 hover:text-black   dark:text-white focus:ring-4 focus:outline-none focus:ring-purple-200 dark:focus:ring-purple-800"
-variant="premium">
-          <span>
-            {isLoading ? 'Upscaling...' : 'Upscale'}
-          </span>
-        </Button>
+
+<div className="flex mt-3 mb-5">
+
+<Fast_process
+    clicked={clicked} 
+    onClick={handleButtonClick}
+  />
+<div className="tooltip mt-3 ml-3">
+<div className="icon">i</div>
+<div className="tooltiptext">Fast Process cuts generation time by 40%, streamlining slow processes. It efficiently accelerates tasks for quicker results</div>
+</div>
+  
+    
+   
+      </div>
+      <Special_button buttonText= {isLoading ? 'Upscaling...' : `Upscale`}
+     onClick={handleUpscale}
+     disabled={isLoading}
+       />
       </div>
       </div>
       <div style={{ overflowY: !mobileSize ? 'scroll' : undefined, height: '850px' }}>
         <div className="mb-8 space-y-4 text-center">
-          <h2 className="text-4xl mt-5 text-blue-900 font-extrabold">
+          <h2 className="font-abc text-6xl mt-5 text-blue-900 font-extrabold">
 Upscale Images       
    </h2>
           <p className="text-gray-500 text-lg">
           Enhance Your Visual Odyssey: Unleashing the Power of 2x Upscaling AI          </p>
         </div>
         {isLoading && (
-          <div className="p-8 rounded-lg w-full flex items-center justify-center bg-muted">
-            <Loader />
-          </div>
-        )}
-        {generatedImage == null && !isLoading && (
- <div className="mb-5">
- <Empty label="No images generated." />
- </div>
-         )}
+  <div className="p-20 flex justify-center items-center">
+      <Loader />
+  </div>
+)}
+       {generatedImage == null  && !isLoading && (
+             <div className="flex justify-center items-center mb-5">
+             <Empty label="No images generated." />
+           </div>
+          )}
 
         <>
-          <br />
-          {generatedImage && (
-            <>
-              <h2>Upscaled Image:</h2>
-              {generatedImage.map((img, index) => (
-                <Card key={index} className="">
-                  <div className="relative aspect-square">
-                    <Image priority={false} height={img.height} width={img.width} src={img.src} alt={`Generated Image ${index + 1}`} />
-                  </div>
-                  <CardFooter className="p-2">
-                    <Button onClick={() => openImageInNewTab(img)} variant="secondary" className="w-full">
-                      <Download className="h-4 w-4 mr-2" />
-                      Download
-                    </Button>
-                    <Button onClick={handleEnhance}>Enhance</Button>
-                    <PublishButton imageId={documentId} />
-                  </CardFooter>
-                </Card>
-              ))}
-            </>
-          )}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-2 ml-2 mr-2">
+  {generatedImage ? (
+    generatedImage.map((img, index) => (
+      <div key={index} className="flex flex-col items-center">
+        <div className="image-container" onClick={() => openModal(img)}>
+          <Image
+            className="rounded-lg image-hover"
+            src={img.src}
+            alt={`Generated Image ${index + 1}`}
+            height={1024}
+            width={1024}
+          />
+          <div className="image-overlay">
+            <p className="text-white">Click to view in full size</p>
+          </div>
+        </div>
+        <div className="flex gap-1 mt-2">
+          <Button onClick={() => openImageInNewTab(img)} variant="secondary">
+            <Download className="h-3 w-3 mr-1" /> Download
+          </Button>
+          
+          <PublishButton imageId={documentId} />
+        </div>
+      </div>
+    ))
+  ) : null}
+</div>
+  
+<Modal
+      isOpen={isModalOpen}
+      onRequestClose={closeModal}
+      contentLabel="Image Modal"
+      style={modalStyle}
+    >
+      {selectedImage && (
+        <div className="vertical-modal-container">
+          <div className="modal-image-container">
+            <Image
+              src={selectedImage}
+              alt="selectedImage"
+              fill
+              className="image"
+            />
+           
+          </div> 
+        </div>
+      )}
+    </Modal>
         </>
 
       </div>

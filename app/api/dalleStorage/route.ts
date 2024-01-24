@@ -18,8 +18,11 @@ const lastName =user?.lastName;
     const body = await req.json();
     const urls = body.url;
 const prompt = body.values.prompt;
+const textInput = body.values.textInput;
+const style = body.values.style;
 const amount = body.values.amount;
-const resolution = body.values.resolution;
+const height = body.values.height;
+const width = body.values.width;
 const docId = body.documentId;
 
     if (!userId) {
@@ -50,9 +53,12 @@ const docId = body.documentId;
         lastName : lastName,
         userId: userId,
         image: imageUrl,
-        textInput: prompt,
+        Model :'DALLE',
+        prompt: textInput,
+        style: style,
         amount : amount,
-        resolution : resolution,
+        height : height,
+        width : width,
         published: false, 
         likes: [] ,
         timeStamp: serverTimestamp(),

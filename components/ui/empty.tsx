@@ -9,21 +9,26 @@ export const Empty = ({
   label
 }: EmptyProps) => {
   return (
-    <>
-   <div className="pyramid-loader">
-  <div className="wrapper">
-    <span className="side side1"></span>
-    <span className="side side2"></span>
-    <span className="side side3"></span>
-    <span className="side side4"></span>
-    <span className="shadow"></span>
-  </div>  
-  <p className="text-muted-foreground text-lg text-center">
-        {label}
-      </p>
+    <div>
+  <div className="grid grid-cols-2 gap-10">
+  <div className="toold-card">
+  <Image className ="imgd" src="/toold.svg" height={20} width={10}  alt="toolImage"/>
+  <div className="text">
+    <p className="h3"> Enahance your images </p>
+    <p className="p">PRO ONLY </p>
+
+</div></div>
+   
+  <div className="toold-card p-4">
+Enhance Images  </div>
+  <div className="toold-card p-4">
+Upscaling  </div>
+  <div className="toold-card p-4">
+    Animate Images
+  </div>
 </div>
 
  
-      </>
+      </div>
   );
 };

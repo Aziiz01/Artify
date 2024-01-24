@@ -7,13 +7,15 @@ import { useUser } from "@clerk/nextjs";
 import LikesList from "./LikesList";
 import { useLoginModal } from "@/hook/use-login-modal";
 import Modal from 'react-modal';
-import "./style.css";
+import "../../../static/creation_explore.css"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEye, faEyeSlash, faHeart } from "@fortawesome/free-solid-svg-icons";
 import { UserPopup } from "@/components/user_popup";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { S_Loader } from "@/components/s_loader";
+import { checkSubscription } from "@/lib/subscription";
+import { useProModal } from "@/hook/use-pro-modal";
 
 interface ImageData {
   id: string;
@@ -43,6 +45,8 @@ const CreationsPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterOption, setFilterOption] = useState<string>("createdDateDesc");
   const [loading, setLoading] = useState(true);  
+  const proModal = useProModal();
+
   let n;
 
   const openModal = (image: ImageData) => {
@@ -84,6 +88,29 @@ const CreationsPage: React.FC = () => {
       console.error("Error toggling publish status:", error);
     }
   };
+
+  const isPaid = async () => {
+    if (isSignedIn) {
+      const userId = user.id;
+      const isPro = await checkSubscription(userId);
+      console.log('isPro:', isPro); // Add this line for debugging
+
+      return isPro;
+    } 
+  };
+  useEffect(() => {
+    const setIsMountedAndOpenModal = async () => {
+      const isPro = await isPaid();
+      console.log('isPro in useEffect:', isPro); // Add this line for debugging
+
+      if (!isPro) {
+        proModal.onOpen();
+      }
+    };
+  
+    setIsMountedAndOpenModal();
+  }, []);
+
   useEffect(() => {
 
     const fetchImages = async () => {
@@ -159,7 +186,7 @@ const CreationsPage: React.FC = () => {
     if (isLoaded && isSignedIn) {
       fetchImages();
       if (fetchImages == null){
-        n=null;
+       const n=null;
       }
       setLoading(false);
     }
@@ -284,38 +311,39 @@ const CreationsPage: React.FC = () => {
              
                          />
                <div className="card__content">
+               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+
                <UserPopup imageId={image.id} />
-              <div
-                             className={`like-icon ${!isSignedIn ? 'login-required' : isLiked(image, user.emailAddresses[0].emailAddress) ? 'liked' : ''}`}
-                             onClick={(e) => {
-                               e.stopPropagation(); // Prevent the click event from propagating
-                               if (!isSignedIn) {
-                                 loginModal.onOpen();
-                               } else if (!isLiked(image, user.emailAddresses[0].emailAddress)) {
-                                 handleLike(image.id); // Handle the like action
-                               }
-                             }}
-                             style={{ cursor: 'pointer' }}
-                           >
-                             <FontAwesomeIcon icon={faHeart} />
-                           </div>
-                           <div
-                      className="publish-icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        togglePublish(image.id, image.published);
-                      }}
-                      style={{ cursor: "pointer" }}
-                    >
-                      {image.published ? (
-                        <>Unpublish <FontAwesomeIcon icon={faEyeSlash} title="Unpublished" /></>
-                      ) : (
-                        <>Publish<FontAwesomeIcon icon={faEye} title="Published" /></>
-                      )}
-                    </div>
-              <div className="like-count">
-                             {image.likes.length} likes
-                           </div>
+               <button className="Btn"
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent the click event from propagating
+                  if (!isSignedIn) {
+                    loginModal.onOpen();
+                  } else if (!isLiked(image, user.emailAddresses[0].emailAddress)) {
+                    handleLike(image.id); // Handle the like action
+                  }
+                }}>
+  <span className="leftContainer">
+  <FontAwesomeIcon icon={faHeart} />
+    <span className="like"> {!isSignedIn ? 'login-required' :isLiked(image, user.emailAddresses[0].emailAddress) ? 'liked' : 'Like'}</span>
+  </span>
+  <span className="likeCount">
+  {image.likes.length} likes
+  </span>
+</button>
+           </div>
+           <hr style={{ height: '1px', background: '#ccc', border: 'none', margin: '10px 0' }} />
+           <button className="publish"
+           onClick={(e) => {
+            e.stopPropagation();
+            togglePublish(image.id, image.published);
+          }}> {image.published ? (
+            <>Unpublish <FontAwesomeIcon icon={faEyeSlash} title="Unpublished" /></>
+          ) : (
+            <>Publish<FontAwesomeIcon icon={faEye} title="Published" /></>
+          )}
+</button>
+                         
                            <div>
                      <div style={{ marginBottom: '10px' }}>
                        <h2 style={{ fontSize: '1em', fontWeight: 'bold' }}>Prompt :</h2>

@@ -50,18 +50,34 @@
 .like-icon.login-required {
   color: #ccc; /* Change the heart icon color to a light gray */
   cursor: pointer; /* Show a pointer cursor to indicate it's clickable */
-}
-.vertical-modal-container {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  text-align: center;
-  padding: 20px;
+}/* Add these styles to your global styles or within your component styles */
+
+/* Custom styles for the modal */
+.custom-modal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80%; /* Adjust the width as needed */
+  max-width: 600px; /* Set a maximum width if necessary */
+  background-color: #fff; /* Set the background color */
+  border-radius: 8px; /* Add border-radius for rounded corners */
+  outline: none; /* Remove the default outline */
 }
 
-.modal-image-container {
-  margin-bottom: 20px;
+/* Custom styles for the overlay */
+.custom-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5); /* Set the overlay background color with transparency */
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
+
 
 
 
@@ -212,14 +228,14 @@
   --bg-color: rgb(255, 255, 255);
   --main-color: black;
   padding: 20px;
-  background: lightblue;
+  background: rgb(233, 246, 255);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
   gap: 20px;
   border-radius: 5px;
-  border: 2px solid var(--main-color);
+  border: 1px solid var(--main-color);
   box-shadow: 4px 4px var(--main-color);
 }
 
@@ -242,7 +258,7 @@
   border-radius: 5px;
   border: 2px solid var(--main-color);
   background-color: var(--bg-color);
-  box-shadow: 4px 4px var(--main-color);
+  box-shadow: 2px 2px var(--main-color);
   font-size: 15px;
   font-weight: 600;
   color: var(--font-color);
@@ -299,7 +315,7 @@
   border-radius: 5px;
   border: 2px solid var(--main-color);
   background-color: var(--bg-color);
-  box-shadow: 4px 4px var(--main-color);
+  box-shadow: 2px 2px var(--main-color);
   font-size: 17px;
   font-weight: 600;
   color: var(--font-color);
@@ -388,4 +404,21 @@
   background-color: #0093E9;
   background-image: linear-gradient(160deg, #0093E9 0%, #80D0C7 100%);
   cursor: pointer;
+}
+.movingBar {
+  background-color: #333;
+  color: #fff;
+  padding: 1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  animation: scrollLeft 10s linear infinite; /* Adjust animation duration as needed */
+}
+
+@keyframes scrollLeft {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
 }

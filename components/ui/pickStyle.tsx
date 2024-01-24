@@ -5,6 +5,7 @@ import { styleData } from '@/app/static/styles';
 import "@/app/(dashboard)/style.css"
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPalette } from '@fortawesome/free-solid-svg-icons';
+import SelectedStyleCard from './selectedCard';
 export default function PickStyle({ onSelectedStyleChange }: { onSelectedStyleChange: (newSelectedStyle: string) => void }) {
   const [selected, setSelected] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -40,12 +41,18 @@ export default function PickStyle({ onSelectedStyleChange }: { onSelectedStyleCh
   };
    
   return (
-    <>
+    <>  
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+
+
       <button
-       className="button-surprise ml-auto mb-1"
+       className="button-surprise mr-10 ml-auto mb-1"
        onClick={openModal}>      
      <FontAwesomeIcon icon={faPalette} className="mr-1" />
        Pick Style</button>
+       <SelectedStyleCard selectedStyle={selected} />
+
+       </div>
       <Modal
         isOpen={isModalOpen}
         onRequestClose={closeModal}

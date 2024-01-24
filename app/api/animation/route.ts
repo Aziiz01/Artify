@@ -3,14 +3,12 @@ import { checkSubscription, countCredit } from "@/lib/subscription";
 import axios from "axios";
 import toast from 'react-hot-toast';
 
-export async function Upscale(userId: string, uploadedImage: File | null, passedImage: string, selectedModel: string, fast_count: number) {
+export async function Animation_post(userId: string, uploadedImage: File | null, passedImage: string, seed: number, cfg_scale: number,motion_bucket_id : number,fast_count: number) {
   const apiKey = "sk-5ZsXF8IuUTMG2CP7DBGqO978F5zCC3xJeQDnP836Fo87IXBp";
 
   const count = 3;
-  console.log("fast_count: " + fast_count)
-  try {
-    const formData = new FormData();
 
+  try {
     const freeTrial = await checkApiLimit(userId, count);
     const isPro = await checkSubscription(userId);
 
@@ -39,17 +37,26 @@ export async function Upscale(userId: string, uploadedImage: File | null, passed
           return -1;
         }
 
-        const formData = new FormData();
-        formData.append('image', initImageBuffer);
 
-        const response = await fetch(`https://api.stability.ai/v1/generation/${selectedModel}/image-to-image/upscale`, {
-          headers: {
-            Accept: 'application/json',
-            Authorization: `Bearer ${apiKey}`,
-          },
-          method: "POST",
-          body: formData,
-        });
+// to check
+
+
+        const formData = new FormData();
+        formData.append("image", initImageBuffer);
+        formData.append('seed', String(seed));
+        formData.append('cfg_scale', String(cfg_scale));
+        formData.append('motion_bucket_id', String(motion_bucket_id));
+        
+        const options: RequestInit = {
+            method: 'POST',
+            headers: {
+              authorization: `Bearer ${apiKey}`,
+              'content-type': 'multipart/form-data; boundary=---011000010111000001101001',
+            },
+            body: formData,
+          };
+
+        const response = await fetch('https://api.stability.ai/v2alpha/generation/image-to-video', options);
 
         if (!response.ok) {
           throw new Error(`Non-200 response: ${await response.text()}`);
@@ -57,29 +64,14 @@ export async function Upscale(userId: string, uploadedImage: File | null, passed
 
         const responseJSON = await response.json();
 
-        // Create an array to store the HTML img elements
-        const htmlImgElements: HTMLImageElement[] = [];
-
-        responseJSON.artifacts.forEach((image: any, index: any) => {
-          // Construct the data URL for the image
-          const dataUrl = `data:image/png;base64,${image.base64}`;
-
-          // Create an HTML img element
-          const imgElement = document.createElement('img');
-          imgElement.src = dataUrl;
-          imgElement.alt = `Generated Image ${index + 1}`;
-
-          // Push the img element to the array
-          htmlImgElements.push(imgElement);
-        });
-
-        // Return the array of HTML img elements
-        return htmlImgElements;
+      
+        // Return the id of the video
+        return responseJSON.id;
       }
     }
   } catch (error) {
-    console.error('Error while upscaling:', error);
-    toast.error('Error while upscaling');
+    console.error('Error while animating:', error);
+    toast.error('Error while animating');
     return null;
   }
 }

@@ -150,7 +150,7 @@ import { response } from 'express';
           // theImageData = newImageData;
           // // generateImageDatas.push(newImageData);
           // console.log(theImageData);
-          // revalidatePath('/testingPage');
+          // revalidatePath('/testingPage' ad);
 
 
           try {
