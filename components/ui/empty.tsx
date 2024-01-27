@@ -1,5 +1,5 @@
 import Image from "next/image";
-import '../css/loader.css'
+
 
 interface EmptyProps {
   label: string;
@@ -9,26 +9,13 @@ export const Empty = ({
   label
 }: EmptyProps) => {
   return (
-    <div>
-  <div className="grid grid-cols-2 gap-10">
-  <div className="toold-card">
-  <Image className ="imgd" src="/toold.svg" height={20} width={10}  alt="toolImage"/>
-  <div className="text">
-    <p className="h3"> Enahance your images </p>
-    <p className="p">PRO ONLY </p>
-
-</div></div>
-   
-  <div className="toold-card p-4">
-Enhance Images  </div>
-  <div className="toold-card p-4">
-Upscaling  </div>
-  <div className="toold-card p-4">
-    Animate Images
-  </div>
-</div>
-
- 
+    <div className="h-full p-20 flex flex-col items-center justify-center">
+      <div className="relative h-72 w-72">
+        <Image src="/Empty.png" fill alt="Empty" />
       </div>
+      <p className="text-muted-foreground text-sm text-center">
+        {label}
+      </p>
+    </div>
   );
 };

@@ -7,7 +7,7 @@ export async function SDXL(userId : string,textInput: string,negativePrompt:stri
 
   try {
      const path =`https://api.stability.ai/v1/generation/${selectedModel}/text-to-image`;
-     const apiKey = "sk-5ZsXF8IuUTMG2CP7DBGqO978F5zCC3xJeQDnP836Fo87IXBp";
+     const apiKey = "sk-2vgfIXbit39igI072CfLslVmrHR7EjR25SinDtk72beOBr1M";
       const headers = {
         Accept: "application/json",
         Authorization: `Bearer ${apiKey}`,
