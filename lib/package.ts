@@ -21,15 +21,7 @@ export const getPackage = async () => {
     } else   {
       return false;
     }
-    
-      
       }
     
-    
-  
-    
- 
-  
-
   return 0; 
 };
